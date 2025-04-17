@@ -125,7 +125,13 @@ def get_node(node_id):
 
 @app.route('/api/process', methods=['POST'])
 def process_document():
-    """Process the strategic vision document and build the knowledge graph."""
+    """
+    Process the strategic vision document and build the knowledge graph.
+    
+    Note: This endpoint is being simplified as we transition away from automated
+    text processing to human-created knowledge graphs. For now, it only uses the
+    sample generator for consistent demo functionality.
+    """
     global graph_data
     
     try:
@@ -138,38 +144,24 @@ def process_document():
         if current_dir not in sys.path:
             sys.path.append(current_dir)
         
-        # Get parameters from request
-        generator_name = request.args.get('generator', 'sample')
-        api_key = request.args.get('api_key', None)
-        
-        # Import our document processing module
-        from document_processor import process_document
-        
-        # Import our graph generators
-        from graph_generators import create_generator
+        # We always use the sample generator for now 
+        # (ignoring any generator parameter in the request)
+        from graph_generators import SampleGraphGenerator
+        generator = SampleGraphGenerator()
+        logger.info(f"Using generator: {generator.get_name()}")
         
         # Get absolute path to PDF file
         script_dir = os.path.dirname(os.path.abspath(__file__))
         base_dir = os.path.dirname(script_dir)
         pdf_path = os.path.join(base_dir, 'data', '2030-strategic-vision.pdf')
         
-        # Extract the full document text
+        # Extract the document text (just for reference, not used for processing)
         from document_processor import extract_text_from_pdf
         document_text = extract_text_from_pdf(pdf_path)
         logger.info(f"Extracted text from PDF: {len(document_text)} characters")
         
-        # Create the appropriate graph generator
-        try:
-            logger.info(f"Creating graph generator: {generator_name}")
-            generator = create_generator(generator_name, api_key=api_key)
-            logger.info(f"Using generator: {generator.get_name()}")
-        except ValueError as e:
-            logger.warning(f"Invalid generator '{generator_name}', falling back to sample: {e}")
-            from graph_generators import SampleGraphGenerator
-            generator = SampleGraphGenerator()
-        
-        # Generate the graph
-        logger.info("Generating knowledge graph...")
+        # Generate the graph with sample data generator
+        logger.info("Generating knowledge graph using sample data...")
         graph_data = generator.generate_graph(document_text)
         logger.info(f"Generated graph with {len(graph_data['nodes'])} nodes and {len(graph_data['links'])} links")
         

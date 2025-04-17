@@ -1,7 +1,6 @@
 *.cpython
 *.pyc
-__pycache__
-*.pyo
+__pycache__/*
 *.pyd
 *.egg-info
 *.egg
