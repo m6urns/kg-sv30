@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, render_template, send_from_directory
 import os
 import json
 import logging
+from flask_cors import CORS
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, 
@@ -11,6 +12,8 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__, 
             static_folder='../static',
             template_folder='../templates')
+
+CORS(app)
 
 # Global variable to store the processed graph data
 graph_data = None
@@ -272,4 +275,4 @@ with app.app_context():
         logger.warning(f"Error loading or generating initial data: {e}")
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
