@@ -86,10 +86,10 @@ def run_flask_app():
         from app import app
         
         # Open browser
-        webbrowser.open('http://localhost:5000')
+        # webbrowser.open('http://localhost:5000')
         
         # Run the app
-        app.run(debug=True)
+        app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
         
         return True
     except Exception as e:

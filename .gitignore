@@ -1,0 +1,11 @@
+*.cpython
+*.pyc
+__pycache__
+*.pyo
+*.pyd
+*.egg-info
+*.egg
+*.whl
+*.db
+*.sqlite
+*.log
