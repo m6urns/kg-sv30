@@ -1,0 +1,191 @@
+/* Main Layout */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+}
+
+.container-fluid {
+  height: 100vh;
+  padding: 0;
+}
+
+.row {
+  height: 100%;
+  margin: 0;
+}
+
+/* Sidebar */
+.sidebar {
+  background-color: #f8f9fa;
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+  border-right: 1px solid #dee2e6;
+}
+
+.sidebar h1 {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  color: #343a40;
+}
+
+/* Graph Container */
+#graph-container {
+  height: 100vh;
+  width: 100%;
+  background-color: #ffffff;
+}
+
+/* Details Panel */
+.details-panel {
+  background-color: #f8f9fa;
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+  border-left: 1px solid #dee2e6;
+}
+
+.details-panel h2 {
+  font-size: 1.4rem;
+  margin-bottom: 15px;
+}
+
+.details-panel h3 {
+  font-size: 1.1rem;
+  margin-top: 15px;
+  margin-bottom: 10px;
+}
+
+.details-panel ul {
+  padding-left: 20px;
+}
+
+.details-panel li {
+  margin-bottom: 10px;
+}
+
+/* Graph Visualization */
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.node.central-node {
+  stroke: #000;
+  stroke-width: 2px;
+}
+
+.link {
+  stroke-opacity: 0.6;
+}
+
+.label {
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.community-label {
+  font-size: 14px;
+  pointer-events: none;
+  font-weight: bold;
+}
+
+/* Tooltip */
+.tooltip {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  pointer-events: none;
+  max-width: 300px;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Search */
+.search-container {
+  margin-bottom: 20px;
+}
+
+#search-results {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-top: 10px;
+  display: none;
+}
+
+#search-results ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#search-results li {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+#search-results li:hover {
+  background-color: #f0f0f0;
+}
+
+/* Cluster Panel */
+.community-section {
+  margin-bottom: 15px;
+  padding: 10px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  background-color: #fff;
+}
+
+.community-section h3 {
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+
+.community-section h4 {
+  font-size: 0.9rem;
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+.community-section ul {
+  list-style: none;
+  padding-left: 10px;
+}
+
+.community-section a {
+  text-decoration: none;
+}
+
+/* Status messages */
+#status-message {
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.loading {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+}

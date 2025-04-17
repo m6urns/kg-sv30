@@ -1,0 +1,877 @@
+1. Project Overview
+We're building a knowledge graph-based system that enables users to explore a strategic vision document through an interactive visualization. The system will:
+
+Automatically extract topics from the strategic vision document using BERTopic
+Discover natural thematic clusters using community detection algorithms
+Create an interactive knowledge graph visualization with NetworkX and D3.js
+Enable users to search, filter, and explore connections between strategic goals
+
+This approach will help department stakeholders discover how their specific goals connect to broader organizational objectives, facilitating cross-departmental alignment and strategic planning.
+2. Technology Stack
+Backend
+
+Python 3.8+: Core programming language
+BERTopic: For topic extraction and semantic relationship modeling
+NetworkX: For graph data structure, analysis, and community detection
+Flask/FastAPI: For creating a REST API to serve data to the frontend
+Sentence-Transformers: For generating embeddings of document segments
+
+Frontend
+
+D3.js: For interactive knowledge graph visualization
+HTML/CSS/JavaScript: For web interface
+Bootstrap: For responsive UI components
+Webpack: For bundling frontend assets
+
+3. Development Phases
+Phase 1: Document Processing & Topic Extraction
+
+Parse the strategic vision document into meaningful segments
+Implement BERTopic modeling for topic extraction
+Analyze semantic relationships between topics
+
+Phase 2: Knowledge Graph Construction
+
+Convert topic model into NetworkX graph structure
+Apply community detection to identify natural clusters
+Generate labels for discovered topic clusters
+
+Phase 3: Visualization Layer
+
+Develop D3.js visualization components with cluster-based coloring
+Implement interactive features (zooming, filtering, searching)
+Create UI components for cluster navigation
+
+Phase 4: Integration & Testing
+
+Connect backend and frontend components
+Implement user interaction features
+Test with actual users and refine based on feedback
+
+4. Implementation Details
+Document Processing & Topic Modeling
+pythonimport re
+import pandas as pd
+from bertopic import BERTopic
+from sentence_transformers import SentenceTransformer
+
+def load_document(file_path):
+    """Load and preprocess strategic vision document."""
+    # Implementation depends on document format (PDF, DOCX, TXT, etc.)
+    # Return a list of document segments (paragraphs or sections)
+    pass
+
+def extract_topics(doc_segments):
+    """Extract topics from document segments using BERTopic."""
+    # Initialize the embedding model
+    embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+    
+    # Create BERTopic model with custom parameters for better topic coherence
+    topic_model = BERTopic(
+        embedding_model=embedding_model,
+        nr_topics="auto",  # Automatically determine optimal number of topics
+        min_topic_size=5,  # Minimum size of topics
+        diversity=0.2      # Ensure diverse topic representations
+    )
+    
+    # Fit the model to document segments
+    topics, probs = topic_model.fit_transform(doc_segments)
+    
+    # Get topic information
+    topic_info = topic_model.get_topic_info()
+    topic_keywords = {i: [word for word, _ in words] 
+                      for i, words in topic_model.get_topics().items() 
+                      if i != -1}  # Skip outlier topic
+    
+    # Calculate topic similarities
+    similarities = topic_model.calculate_topic_similarities()
+    
+    return {
+        "model": topic_model,
+        "doc_topics": topics,
+        "doc_probs": probs,
+        "topic_info": topic_info,
+        "topic_keywords": topic_keywords,
+        "topic_similarities": similarities
+    }
+Community Detection for Topic Clusters
+pythonimport networkx as nx
+from networkx.algorithms import community
+
+def detect_topic_communities(G):
+    """Detect communities of related topics in the knowledge graph.
+    
+    Args:
+        G: NetworkX graph of topics and documents
+        
+    Returns:
+        Dictionary mapping nodes to community IDs
+    """
+    # Create a subgraph containing only topic nodes and their relationships
+    topic_nodes = [node for node, attrs in G.nodes(data=True) 
+                  if attrs.get('type') == 'topic']
+    topic_graph = G.subgraph(topic_nodes)
+    
+    # Apply community detection algorithm (Louvain method)
+    communities = community.louvain_communities(topic_graph)
+    
+    # Map nodes to community IDs
+    node_to_community = {}
+    for i, comm in enumerate(communities):
+        for node in comm:
+            node_to_community[node] = i
+    
+    # Generate descriptive labels for each community
+    community_labels = generate_community_labels(G, communities)
+    
+    # Add community information to the original graph
+    for node, comm_id in node_to_community.items():
+        G.nodes[node]['community'] = comm_id
+        G.nodes[node]['community_label'] = community_labels[comm_id]
+    
+    return {
+        'node_to_community': node_to_community,
+        'communities': communities,
+        'labels': community_labels
+    }
+
+def generate_community_labels(G, communities):
+    """Generate descriptive labels for each community based on topic keywords."""
+    community_labels = {}
+    
+    for i, comm in enumerate(communities):
+        # Collect all keywords from topics in this community
+        all_keywords = []
+        for node in comm:
+            keywords = G.nodes[node].get('keywords', [])
+            all_keywords.extend(keywords)
+        
+        # Count keyword frequencies
+        keyword_counts = {}
+        for keyword in all_keywords:
+            keyword_counts[keyword] = keyword_counts.get(keyword, 0) + 1
+        
+        # Sort keywords by frequency
+        sorted_keywords = sorted(keyword_counts.items(), 
+                               key=lambda x: x[1], 
+                               reverse=True)
+        
+        # Use top 3 keywords as community label
+        top_keywords = [k for k, _ in sorted_keywords[:3]]
+        label = " & ".join(top_keywords) if top_keywords else f"Cluster {i}"
+        community_labels[i] = label
+    
+    return community_labels
+
+def identify_central_topics(G, communities):
+    """Identify the most central topics in each community."""
+    central_topics = {}
+    
+    for i, comm in enumerate(communities):
+        # Create subgraph for this community
+        subgraph = G.subgraph(comm)
+        
+        # Calculate centrality measures
+        centrality = nx.eigenvector_centrality_numpy(subgraph)
+        
+        # Sort nodes by centrality
+        sorted_nodes = sorted(centrality.items(), 
+                             key=lambda x: x[1], 
+                             reverse=True)
+        
+        # Select top 3 most central nodes
+        top_nodes = [node for node, _ in sorted_nodes[:3]]
+        central_topics[i] = top_nodes
+    
+    return central_topics
+Knowledge Graph Construction
+pythonimport networkx as nx
+import json
+
+def build_knowledge_graph(topics_data, doc_segments, threshold=0.4):
+    """Build knowledge graph from topic model."""
+    G = nx.Graph()
+    
+    # Add topic nodes
+    for topic_id, keywords in topics_data["topic_keywords"].items():
+        if topic_id != -1:  # Skip outlier topic
+            G.add_node(
+                f"topic_{topic_id}",
+                type="topic",
+                label=f"Topic {topic_id}",
+                keywords=keywords[:5],  # Top 5 keywords
+                size=len([t for t in topics_data["doc_topics"] if t == topic_id]),
+                docs=[]  # Will store document segments belonging to this topic
+            )
+    
+    # Add document segment nodes and connect to topics
+    for i, (segment, topic_id, prob) in enumerate(zip(
+            doc_segments, 
+            topics_data["doc_topics"], 
+            topics_data["doc_probs"])):
+        
+        if topic_id != -1:  # Skip outliers
+            doc_node_id = f"doc_{i}"
+            G.add_node(
+                doc_node_id,
+                type="document",
+                label=segment[:50] + "..." if len(segment) > 50 else segment,
+                text=segment,
+                topic=topic_id
+            )
+            
+            # Connect document to its topic
+            G.add_edge(
+                doc_node_id, 
+                f"topic_{topic_id}",
+                weight=prob,
+                type="belongs_to"
+            )
+            
+            # Add this document to the topic's document list
+            G.nodes[f"topic_{topic_id}"]["docs"].append(doc_node_id)
+    
+    # Add edges between related topics
+    similarities = topics_data["topic_similarities"]
+    for i in range(len(similarities)):
+        for j in range(i+1, len(similarities)):
+            if i != -1 and j != -1:  # Skip outlier topic
+                similarity = similarities[i, j]
+                if similarity > threshold:
+                    G.add_edge(
+                        f"topic_{i}", 
+                        f"topic_{j}",
+                        weight=float(similarity),
+                        type="related_to"
+                    )
+    
+    # Detect topic communities
+    community_data = detect_topic_communities(G)
+    
+    # Identify central topics in each community
+    central_topics = identify_central_topics(G, community_data['communities'])
+    
+    # Add central topic information to graph
+    for comm_id, topics in central_topics.items():
+        for topic in topics:
+            G.nodes[topic]['is_central'] = True
+    
+    return G
+
+def export_graph_for_d3(G):
+    """Convert NetworkX graph to D3.js compatible format."""
+    data = {
+        "nodes": [],
+        "links": []
+    }
+    
+    # Add nodes
+    for node, attrs in G.nodes(data=True):
+        node_data = {"id": node, **attrs}
+        data["nodes"].append(node_data)
+    
+    # Add links
+    for source, target, attrs in G.edges(data=True):
+        link_data = {
+            "source": source,
+            "target": target,
+            **attrs
+        }
+        data["links"].append(link_data)
+    
+    return data
+API Endpoints
+pythonfrom flask import Flask, jsonify, request, send_from_directory
+import json
+
+app = Flask(__name__)
+
+# Load processed graph data
+with open('graph_data.json', 'r') as f:
+    graph_data = json.load(f)
+
+@app.route('/api/graph', methods=['GET'])
+def get_graph():
+    """Return the full graph data."""
+    return jsonify(graph_data)
+
+@app.route('/api/communities', methods=['GET'])
+def get_communities():
+    """Return information about detected communities."""
+    communities = {}
+    
+    for node in graph_data["nodes"]:
+        if node.get("type") == "topic" and "community" in node:
+            comm_id = node["community"]
+            if comm_id not in communities:
+                communities[comm_id] = {
+                    "id": comm_id,
+                    "label": node.get("community_label", f"Cluster {comm_id}"),
+                    "topics": [],
+                    "central_topics": []
+                }
+            
+            topic_info = {
+                "id": node["id"],
+                "label": node["label"],
+                "keywords": node.get("keywords", []),
+                "size": node.get("size", 1)
+            }
+            
+            communities[comm_id]["topics"].append(topic_info)
+            
+            if node.get("is_central", False):
+                communities[comm_id]["central_topics"].append(topic_info)
+    
+    return jsonify(list(communities.values()))
+
+@app.route('/api/search', methods=['GET'])
+def search():
+    """Search for nodes matching query."""
+    query = request.args.get('q', '').lower()
+    if not query:
+        return jsonify([])
+    
+    results = []
+    for node in graph_data["nodes"]:
+        # Search in node label and keywords
+        if (query in node.get("label", "").lower() or 
+            any(query in kw.lower() for kw in node.get("keywords", []))):
+            results.append(node)
+    
+    return jsonify(results)
+
+@app.route('/api/node/<node_id>', methods=['GET'])
+def get_node(node_id):
+    """Get detailed information about a specific node."""
+    for node in graph_data["nodes"]:
+        if node["id"] == node_id:
+            # Get connected nodes
+            connected = []
+            for link in graph_data["links"]:
+                if link["source"] == node_id:
+                    connected.append({
+                        "node": next(n for n in graph_data["nodes"] if n["id"] == link["target"]),
+                        "relationship": link.get("type", "related_to")
+                    })
+                elif link["target"] == node_id:
+                    connected.append({
+                        "node": next(n for n in graph_data["nodes"] if n["id"] == link["source"]),
+                        "relationship": link.get("type", "related_to")
+                    })
+            
+            return jsonify({
+                "node": node,
+                "connections": connected
+            })
+    
+    return jsonify({"error": "Node not found"}), 404
+
+if __name__ == '__main__':
+    app.run(debug=True)
+D3.js Visualization
+javascript// Core visualization component
+function createKnowledgeGraph(data, container) {
+  const width = container.clientWidth;
+  const height = container.clientHeight || 600;
+  
+  // Create SVG container
+  const svg = d3.select(container)
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .call(d3.zoom().on("zoom", function(event) {
+      g.attr("transform", event.transform);
+    }));
+  
+  const g = svg.append("g");
+  
+  // Create tooltip
+  const tooltip = d3.select("body")
+    .append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0);
+  
+  // Generate color scale for communities
+  const communities = [...new Set(data.nodes
+    .filter(d => d.community !== undefined)
+    .map(d => d.community))];
+  
+  const colorScale = d3.scaleOrdinal()
+    .domain(communities)
+    .range(d3.schemeCategory10);
+  
+  // Define forces with community clustering
+  const simulation = d3.forceSimulation(data.nodes)
+    .force("link", d3.forceLink(data.links).id(d => d.id).distance(100))
+    .force("charge", d3.forceManyBody().strength(-300))
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    .force("collision", d3.forceCollide().radius(d => getNodeSize(d) + 10))
+    // Add community clustering force
+    .force("cluster", forceCluster());
+  
+  // Draw links
+  const link = g.selectAll(".link")
+    .data(data.links)
+    .enter()
+    .append("line")
+    .attr("class", "link")
+    .attr("stroke-width", d => Math.sqrt(d.weight) * 2)
+    .attr("stroke", getLinkColor);
+  
+  // Draw nodes
+  const node = g.selectAll(".node")
+    .data(data.nodes)
+    .enter()
+    .append("circle")
+    .attr("class", d => `node ${d.is_central ? "central-node" : ""}`)
+    .attr("r", getNodeSize)
+    .attr("fill", getNodeColor)
+    .call(drag(simulation))
+    .on("mouseover", showTooltip)
+    .on("mouseout", hideTooltip)
+    .on("click", nodeClicked);
+  
+  // Add node labels
+  const label = g.selectAll(".label")
+    .data(data.nodes)
+    .enter()
+    .append("text")
+    .attr("class", "label")
+    .text(d => d.label.length > 15 ? d.label.substring(0, 15) + "..." : d.label)
+    .attr("font-size", 12)
+    .attr("dx", 15)
+    .attr("dy", 4);
+  
+  // Add community labels
+  const communityLabels = g.selectAll(".community-label")
+    .data(communities)
+    .enter()
+    .append("text")
+    .attr("class", "community-label")
+    .text(d => {
+      // Find a node in this community to get the label
+      const communityNode = data.nodes.find(node => node.community === d);
+      return communityNode ? communityNode.community_label : `Cluster ${d}`;
+    })
+    .attr("font-size", 16)
+    .attr("font-weight", "bold")
+    .attr("fill", d => colorScale(d))
+    .attr("opacity", 0.7);
+  
+  // Update positions on simulation tick
+  simulation.on("tick", () => {
+    link
+      .attr("x1", d => d.source.x)
+      .attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x)
+      .attr("y2", d => d.target.y);
+    
+    node
+      .attr("cx", d => d.x)
+      .attr("cy", d => d.y);
+    
+    label
+      .attr("x", d => d.x)
+      .attr("y", d => d.y);
+    
+    // Update community label positions to center of each community
+    communityLabels.each(function(communityId) {
+      const communityNodes = data.nodes.filter(n => n.community === communityId);
+      if (communityNodes.length > 0) {
+        const centerX = d3.mean(communityNodes, d => d.x);
+        const centerY = d3.mean(communityNodes, d => d.y);
+        d3.select(this)
+          .attr("x", centerX)
+          .attr("y", centerY);
+      }
+    });
+  });
+  
+  // Helper functions
+  function getNodeSize(d) {
+    let size = 5;
+    if (d.type === "topic") {
+      size = 10 + (d.size || 1) / 2;
+    }
+    // Make central topics larger
+    if (d.is_central) {
+      size *= 1.5;
+    }
+    return size;
+  }
+  
+  function getNodeColor(d) {
+    if (d.type === "topic") {
+      // Color by community for topics
+      return d.community !== undefined ? colorScale(d.community) : "#6baed6";
+    }
+    return "#fd8d3c"; // Document nodes
+  }
+  
+  function getLinkColor(d) {
+    if (d.type === "belongs_to") return "#bdbdbd";
+    
+    // For related_to links, blend the colors of the communities
+    if (d.source.community !== undefined && 
+        d.target.community !== undefined && 
+        d.source.community === d.target.community) {
+      return colorScale(d.source.community);
+    }
+    
+    return "#9ecae1";
+  }
+  
+  function showTooltip(event, d) {
+    let content = `<strong>${d.label}</strong><br/>`;
+    
+    if (d.type === "topic") {
+      content += `Keywords: ${d.keywords.join(", ")}<br/>`;
+      if (d.community_label) {
+        content += `Cluster: ${d.community_label}<br/>`;
+      }
+      content += `Documents: ${d.docs.length}`;
+      if (d.is_central) {
+        content += `<br/><em>Central topic in this cluster</em>`;
+      }
+    } else {
+      content += `${d.text.substring(0, 100)}...`;
+    }
+    
+    tooltip.transition()
+      .duration(200)
+      .style("opacity", .9);
+    
+    tooltip.html(content)
+      .style("left", (event.pageX + 10) + "px")
+      .style("top", (event.pageY - 28) + "px");
+  }
+  
+  function hideTooltip() {
+    tooltip.transition()
+      .duration(500)
+      .style("opacity", 0);
+  }
+  
+  function nodeClicked(event, d) {
+    // Show details panel with node information
+    showNodeDetails(d);
+    
+    // Highlight connected nodes
+    highlightConnections(d);
+  }
+  
+  // Force to cluster nodes by community
+  function forceCluster() {
+    const strength = 0.15;
+    let nodes;
+    
+    function force(alpha) {
+      // For each node
+      for (const node of nodes) {
+        if (node.community === undefined) continue;
+        
+        // Find other nodes in same community
+        const cluster = nodes.filter(n => n.community === node.community);
+        if (cluster.length === 0) continue;
+        
+        // Calculate cluster center
+        const clusterX = d3.mean(cluster, d => d.x);
+        const clusterY = d3.mean(cluster, d => d.y);
+        
+        // Apply force toward cluster center
+        node.vx += (clusterX - node.x) * alpha * strength;
+        node.vy += (clusterY - node.y) * alpha * strength;
+      }
+    }
+    
+    force.initialize = function(_nodes) {
+      nodes = _nodes;
+    }
+    
+    return force;
+  }
+  
+  function drag(simulation) {
+    function dragstarted(event) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      event.subject.fx = event.subject.x;
+      event.subject.fy = event.subject.y;
+    }
+    
+    function dragged(event) {
+      event.subject.fx = event.x;
+      event.subject.fy = event.y;
+    }
+    
+    function dragended(event) {
+      if (!event.active) simulation.alphaTarget(0);
+      event.subject.fx = null;
+      event.subject.fy = null;
+    }
+    
+    return d3.drag()
+      .on("start", dragstarted)
+      .on("drag", dragged)
+      .on("end", dragended);
+  }
+  
+  return {
+    simulation,
+    svg,
+    update: updateGraph,
+    communities: communities,
+    colorScale: colorScale
+  };
+}
+
+// UI Components
+function setupClusterPanel() {
+  // Fetch communities data
+  fetch('/api/communities')
+    .then(response => response.json())
+    .then(communities => {
+      const panel = document.getElementById('cluster-panel');
+      
+      communities.forEach(community => {
+        const section = document.createElement('div');
+        section.className = 'community-section';
+        
+        // Create header
+        const header = document.createElement('h3');
+        header.textContent = community.label;
+        section.appendChild(header);
+        
+        // Create entry points list
+        if (community.central_topics.length > 0) {
+          const entriesTitle = document.createElement('h4');
+          entriesTitle.textContent = 'Key Topics:';
+          section.appendChild(entriesTitle);
+          
+          const entriesList = document.createElement('ul');
+          community.central_topics.forEach(topic => {
+            const item = document.createElement('li');
+            const link = document.createElement('a');
+            link.textContent = topic.label;
+            link.href = '#';
+            link.onclick = (e) => {
+              e.preventDefault();
+              focusOnNode(topic.id);
+            };
+            item.appendChild(link);
+            entriesList.appendChild(item);
+          });
+          section.appendChild(entriesList);
+        }
+        
+        panel.appendChild(section);
+      });
+    });
+}
+
+// Search functionality
+function setupSearch() {
+  const searchInput = document.getElementById("search-input");
+  const searchResults = document.getElementById("search-results");
+  
+  searchInput.addEventListener("input", debounce(async (e) => {
+    const query = e.target.value.trim();
+    if (!query) {
+      searchResults.innerHTML = "";
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      const results = await response.json();
+      
+      displaySearchResults(results, searchResults);
+    } catch (error) {
+      console.error("Search error:", error);
+    }
+  }, 300));
+  
+  function displaySearchResults(results, container) {
+    container.innerHTML = "";
+    
+    if (results.length === 0) {
+      container.innerHTML = "<p>No results found</p>";
+      return;
+    }
+    
+    const ul = document.createElement("ul");
+    
+    results.forEach(result => {
+      const li = document.createElement("li");
+      li.textContent = result.label;
+      li.addEventListener("click", () => {
+        // Focus the graph on this node
+        focusOnNode(result.id);
+        searchResults.innerHTML = "";
+        searchInput.value = "";
+      });
+      ul.appendChild(li);
+    });
+    
+    container.appendChild(ul);
+  }
+}
+
+// Utility functions
+function debounce(func, wait) {
+  let timeout;
+  return function(...args) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
+function focusOnNode(nodeId) {
+  // Implementation to center and highlight a specific node
+}
+
+function showNodeDetails(node) {
+  // Fetch detailed information about the node
+  fetch(`/api/node/${node.id}`)
+    .then(response => response.json())
+    .then(data => {
+      const detailsPanel = document.getElementById('details-panel');
+      
+      // Clear previous content
+      detailsPanel.innerHTML = '';
+      
+      // Create header
+      const header = document.createElement('h2');
+      header.textContent = data.node.label;
+      detailsPanel.appendChild(header);
+      
+      // Create content based on node type
+      if (data.node.type === 'topic') {
+        // Show topic keywords
+        const keywords = document.createElement('p');
+        keywords.innerHTML = '<strong>Keywords:</strong> ' + 
+                            data.node.keywords.join(', ');
+        detailsPanel.appendChild(keywords);
+        
+        // Show community
+        if (data.node.community_label) {
+          const community = document.createElement('p');
+          community.innerHTML = '<strong>Cluster:</strong> ' + 
+                              data.node.community_label;
+          detailsPanel.appendChild(community);
+        }
+        
+        // Show related documents
+        const docsTitle = document.createElement('h3');
+        docsTitle.textContent = 'Related Document Segments:';
+        detailsPanel.appendChild(docsTitle);
+        
+        const docList = document.createElement('ul');
+        const relatedDocs = data.connections
+          .filter(conn => conn.node.type === 'document')
+          .map(conn => conn.node);
+        
+        relatedDocs.forEach(doc => {
+          const item = document.createElement('li');
+          item.textContent = doc.text;
+          docList.appendChild(item);
+        });
+        
+        detailsPanel.appendChild(docList);
+      } else {
+        // Show document text
+        const text = document.createElement('p');
+        text.textContent = data.node.text;
+        detailsPanel.appendChild(text);
+        
+        // Show related topic
+        const topic = data.connections
+          .find(conn => conn.node.type === 'topic' && 
+                     conn.relationship === 'belongs_to');
+        
+        if (topic) {
+          const topicInfo = document.createElement('p');
+          topicInfo.innerHTML = '<strong>Topic:</strong> ' + 
+                              topic.node.label;
+          detailsPanel.appendChild(topicInfo);
+        }
+      }
+      
+      // Show panel
+      detailsPanel.style.display = 'block';
+    });
+}
+
+// Initialize the application
+function initApp() {
+  // Fetch graph data
+  fetch('/api/graph')
+    .then(response => response.json())
+    .then(data => {
+      // Create visualization
+      const container = document.getElementById('graph-container');
+      const graphViz = createKnowledgeGraph(data, container);
+      
+      // Setup UI components
+      setupClusterPanel();
+      setupSearch();
+    });
+}
+
+// Start the application when DOM is loaded
+document.addEventListener('DOMContentLoaded', initApp);
+Main HTML Structure
+html<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Strategic Vision Navigator</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <div class="col-md-3 sidebar">
+        <h1>Strategic Vision Navigator</h1>
+        
+        <!-- Search Box -->
+        <div class="search-container">
+          <h3>Search</h3>
+          <input type="text" id="search-input" placeholder="Search topics...">
+          <div id="search-results"></div>
+        </div>
+        
+        <!-- Clusters Panel -->
+        <div class="clusters-container">
+          <h3>Topic Clusters</h3>
+          <div id="cluster-panel"></div>
+        </div>
+      </div>
+      
+      <!-- Main Content -->
+      <div class="col-md-6">
+        <!-- Graph Visualization -->
+        <div id="graph-container"></div>
+      </div>
+      
+      <!-- Details Panel -->
+      <div class="col-md-3 details-panel" id="details-panel">
+        <!-- Node details will be shown here -->
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="js/graph.js"></script>
+</body>
+</html>
+5. Testing Strategy
+
+Unit Testing:
+
+Test BERTopic extraction with sample document segments
+Verify community detection algorithm produces coherent clusters
+Test graph construction and D3.js visualization components separately
