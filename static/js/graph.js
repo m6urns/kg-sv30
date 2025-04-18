@@ -1,6 +1,20 @@
 // Global variables
 let graphViz = null;
 
+// Helper function for node sizing
+function getNodeSize(d) {
+  let size = 5;
+  if (d.type === 'topic') {
+    size = 10 + (d.size || 1) / 2;
+    if (size > 25) size = 25; // cap maximum size
+  }
+  // Make central topics larger
+  if (d.is_central) {
+    size *= 1.5;
+  }
+  return size;
+}
+
 // DOM elements
 const sampleBtn = document.getElementById('sample-btn');
 const loadBtn = document.getElementById('load-btn');
@@ -96,16 +110,177 @@ function displaySearchResults(results) {
   results.forEach(result => {
     const li = document.createElement('li');
     li.textContent = result.label;
-    li.addEventListener('click', () => {
-      focusOnNode(result.id);
-      searchResults.style.display = 'none';
-      searchInput.value = '';
+    li.addEventListener('click', async () => {
+      // Fetch the detailed node data from the API instead of using the search result
+      try {
+        const response = await fetch(`/api/node/${result.id}`);
+        const data = await response.json();
+        
+        if (data.node) {
+          // Hide search results
+          searchResults.style.display = 'none';
+          searchInput.value = '';
+          
+          // Display node details in the details panel
+          displayNodeDetails(data);
+          
+          // If a graph visualization exists, focus on the node in the graph
+          if (graphViz) {
+            const graphNode = graphViz.nodes.find(n => n.id === result.id);
+            if (graphNode) {
+              // Center the view on this node
+              const transform = d3.zoomIdentity
+                .translate(graphContainer.clientWidth / 2 - graphNode.x, graphContainer.clientHeight / 2 - graphNode.y);
+              
+              graphViz.svg.transition()
+                .duration(750)
+                .call(graphViz.zoom.transform, transform);
+              
+              // Highlight this node in the graph
+              graphViz.nodeElements
+                .attr('stroke-width', d => d.is_central ? 2 : 1.5)
+                .attr('r', d => {
+                  // Inline node sizing logic to avoid the getNodeSize reference error
+                  let size = 5;
+                  if (d.type === 'topic') {
+                    size = 10 + (d.size || 1) / 2;
+                    if (size > 25) size = 25;
+                  }
+                  if (d.is_central) size *= 1.5;
+                  return size;
+                });
+              
+              // Highlight the selected node
+              graphViz.nodeElements
+                .filter(d => d.id === result.id)
+                .attr('stroke-width', 3)
+                .attr('r', d => {
+                  // Inline node sizing logic again
+                  let size = 5;
+                  if (d.type === 'topic') {
+                    size = 10 + (d.size || 1) / 2;
+                    if (size > 25) size = 25;
+                  }
+                  if (d.is_central) size *= 1.5;
+                  return size * 1.3;
+                });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching node details:', error);
+      }
     });
     ul.appendChild(li);
   });
   
   searchResults.appendChild(ul);
   searchResults.style.display = 'block';
+}
+
+// Helper function to display node details in the details panel
+function displayNodeDetails(data) {
+  detailsPanel.innerHTML = '';
+  
+  // Create header
+  const header = document.createElement('h2');
+  header.textContent = data.node.label;
+  detailsPanel.appendChild(header);
+  
+  // Create content based on node type
+  if (data.node.type === 'topic') {
+    // Show topic keywords
+    const keywords = document.createElement('p');
+    keywords.innerHTML = '<strong>Keywords:</strong> ' + 
+                       (data.node.keywords || []).join(', ');
+    detailsPanel.appendChild(keywords);
+    
+    // Show community
+    if (data.node.community_label) {
+      const community = document.createElement('p');
+      community.innerHTML = '<strong>Cluster:</strong> ' + 
+                         data.node.community_label;
+      detailsPanel.appendChild(community);
+    }
+    
+    // Show related topics
+    const relatedTopics = data.connections
+      .filter(conn => conn.node.type === 'topic')
+      .map(conn => conn.node);
+    
+    if (relatedTopics.length > 0) {
+      const topicsTitle = document.createElement('h3');
+      topicsTitle.textContent = 'Related Topics:';
+      detailsPanel.appendChild(topicsTitle);
+      
+      const topicsList = document.createElement('ul');
+      relatedTopics.forEach(topic => {
+        const item = document.createElement('li');
+        const link = document.createElement('a');
+        link.textContent = topic.label;
+        link.href = '#';
+        link.onclick = (e) => {
+          e.preventDefault();
+          focusOnNode(topic.id);
+        };
+        item.appendChild(link);
+        topicsList.appendChild(item);
+      });
+      
+      detailsPanel.appendChild(topicsList);
+    }
+    
+    // Show related documents
+    const docsTitle = document.createElement('h3');
+    docsTitle.textContent = 'Related Document Segments:';
+    detailsPanel.appendChild(docsTitle);
+    
+    const docList = document.createElement('ul');
+    const relatedDocs = data.connections
+      .filter(conn => conn.node.type === 'document')
+      .map(conn => conn.node);
+    
+    relatedDocs.forEach(doc => {
+      const item = document.createElement('li');
+      const link = document.createElement('a');
+      link.textContent = doc.label;
+      link.href = '#';
+      link.onclick = (e) => {
+        e.preventDefault();
+        focusOnNode(doc.id);
+      };
+      item.appendChild(link);
+      docList.appendChild(item);
+    });
+    
+    detailsPanel.appendChild(docList);
+  } else {
+    // Show document text
+    const text = document.createElement('p');
+    text.textContent = data.node.text;
+    detailsPanel.appendChild(text);
+    
+    // Show related topic
+    const topic = data.connections
+      .find(conn => conn.node.type === 'topic' && 
+                 conn.relationship === 'belongs_to');
+    
+    if (topic) {
+      const topicInfo = document.createElement('p');
+      topicInfo.innerHTML = '<strong>Topic:</strong> ';
+      
+      const link = document.createElement('a');
+      link.textContent = topic.node.label;
+      link.href = '#';
+      link.onclick = (e) => {
+        e.preventDefault();
+        focusOnNode(topic.node.id);
+      };
+      
+      topicInfo.appendChild(link);
+      detailsPanel.appendChild(topicInfo);
+    }
+  }
 }
 
 function focusOnNode(nodeId) {
@@ -134,13 +309,31 @@ function highlightNode(node) {
   // Reset all nodes
   graphViz.nodeElements
     .attr('stroke-width', d => d.is_central ? 2 : 1.5)
-    .attr('r', d => getNodeSize(d));
+    .attr('r', d => {
+      // Inline node sizing logic to avoid the getNodeSize reference error
+      let size = 5;
+      if (d.type === 'topic') {
+        size = 10 + (d.size || 1) / 2;
+        if (size > 25) size = 25;
+      }
+      if (d.is_central) size *= 1.5;
+      return size;
+    });
   
   // Highlight selected node
   graphViz.nodeElements
     .filter(d => d.id === node.id)
     .attr('stroke-width', 3)
-    .attr('r', d => getNodeSize(d) * 1.3);
+    .attr('r', d => {
+      // Inline node sizing logic again
+      let size = 5;
+      if (d.type === 'topic') {
+        size = 10 + (d.size || 1) / 2;
+        if (size > 25) size = 25;
+      }
+      if (d.is_central) size *= 1.5;
+      return size * 1.3;
+    });
 }
 
 async function setupClusterPanel() {
@@ -194,107 +387,8 @@ async function showNodeDetails(node) {
     const response = await fetch(`/api/node/${node.id}`);
     const data = await response.json();
     
-    detailsPanel.innerHTML = '';
-    
-    // Create header
-    const header = document.createElement('h2');
-    header.textContent = data.node.label;
-    detailsPanel.appendChild(header);
-    
-    // Create content based on node type
-    if (data.node.type === 'topic') {
-      // Show topic keywords
-      const keywords = document.createElement('p');
-      keywords.innerHTML = '<strong>Keywords:</strong> ' + 
-                         (data.node.keywords || []).join(', ');
-      detailsPanel.appendChild(keywords);
-      
-      // Show community
-      if (data.node.community_label) {
-        const community = document.createElement('p');
-        community.innerHTML = '<strong>Cluster:</strong> ' + 
-                           data.node.community_label;
-        detailsPanel.appendChild(community);
-      }
-      
-      // Show related topics
-      const relatedTopics = data.connections
-        .filter(conn => conn.node.type === 'topic')
-        .map(conn => conn.node);
-      
-      if (relatedTopics.length > 0) {
-        const topicsTitle = document.createElement('h3');
-        topicsTitle.textContent = 'Related Topics:';
-        detailsPanel.appendChild(topicsTitle);
-        
-        const topicsList = document.createElement('ul');
-        relatedTopics.forEach(topic => {
-          const item = document.createElement('li');
-          const link = document.createElement('a');
-          link.textContent = topic.label;
-          link.href = '#';
-          link.onclick = (e) => {
-            e.preventDefault();
-            focusOnNode(topic.id);
-          };
-          item.appendChild(link);
-          topicsList.appendChild(item);
-        });
-        
-        detailsPanel.appendChild(topicsList);
-      }
-      
-      // Show related documents
-      const docsTitle = document.createElement('h3');
-      docsTitle.textContent = 'Related Document Segments:';
-      detailsPanel.appendChild(docsTitle);
-      
-      const docList = document.createElement('ul');
-      const relatedDocs = data.connections
-        .filter(conn => conn.node.type === 'document')
-        .map(conn => conn.node);
-      
-      relatedDocs.forEach(doc => {
-        const item = document.createElement('li');
-        const link = document.createElement('a');
-        link.textContent = doc.label;
-        link.href = '#';
-        link.onclick = (e) => {
-          e.preventDefault();
-          focusOnNode(doc.id);
-        };
-        item.appendChild(link);
-        docList.appendChild(item);
-      });
-      
-      detailsPanel.appendChild(docList);
-    } else {
-      // Show document text
-      const text = document.createElement('p');
-      text.textContent = data.node.text;
-      detailsPanel.appendChild(text);
-      
-      // Show related topic
-      const topic = data.connections
-        .find(conn => conn.node.type === 'topic' && 
-                   conn.relationship === 'belongs_to');
-      
-      if (topic) {
-        const topicInfo = document.createElement('p');
-        topicInfo.innerHTML = '<strong>Topic:</strong> ';
-        
-        const link = document.createElement('a');
-        link.textContent = topic.node.label;
-        link.href = '#';
-        link.onclick = (e) => {
-          e.preventDefault();
-          focusOnNode(topic.node.id);
-        };
-        
-        topicInfo.appendChild(link);
-        detailsPanel.appendChild(topicInfo);
-      }
-    }
+    // Use our new displayNodeDetails function to show the node details
+    displayNodeDetails(data);
   } catch (error) {
     console.error('Error fetching node details:', error);
   }
