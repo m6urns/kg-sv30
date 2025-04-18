@@ -1,20 +1,6 @@
 // Global variables
 let graphViz = null;
 
-// Calculate node size consistently throughout the application
-function calculateNodeSize(d) {
-  let size = 5;
-  if (d.type === 'topic') {
-    size = 10 + (d.size || 1) / 2;
-    if (size > 25) size = 25; // cap maximum size
-  }
-  // Make central topics larger
-  if (d.is_central) {
-    size *= 1.5;
-  }
-  return size;
-}
-
 // DOM elements
 const sampleBtn = document.getElementById('sample-btn');
 const loadBtn = document.getElementById('load-btn');
@@ -88,13 +74,7 @@ function showStatus(message, type) {
   statusMessage.className = type;
 }
 
-function debounce(func, wait) {
-  let timeout;
-  return function(...args) {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), wait);
-  };
-}
+// debounce function is now in utils.js
 
 function displaySearchResults(results) {
   searchResults.innerHTML = '';
@@ -643,6 +623,39 @@ async function loadGraphData() {
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
+  // Handle HTTPS specific issues
+  if (window.location.protocol === 'https:') {
+    console.log('Running over HTTPS protocol');
+    
+    // Ensure calculateNodeSize function exists
+    if (typeof calculateNodeSize !== 'function') {
+      console.warn('calculateNodeSize not found, defining fallback function');
+      // Create fallback function if the one from utils.js didn't load
+      window.calculateNodeSize = function(d) {
+        let size = 5;
+        if (d.type === 'topic') {
+          size = 10 + (d.size || 1) / 2;
+          if (size > 25) size = 25;
+        }
+        if (d.is_central) size *= 1.5;
+        return size;
+      };
+    }
+    
+    // Ensure debounce function exists
+    if (typeof debounce !== 'function') {
+      console.warn('debounce not found, defining fallback function');
+      // Create fallback function if the one from utils.js didn't load
+      window.debounce = function(func, wait) {
+        let timeout;
+        return function(...args) {
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+      };
+    }
+  }
+  
   initializeEventListeners();
   
   // Try to load saved data if available

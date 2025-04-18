@@ -57,6 +57,15 @@
   </div>
   
   <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="/static/js/utils.js"></script>
   <script src="/static/js/graph.js"></script>
+  
+  <!-- Disable Cloudflare analytics to prevent blocked requests -->
+  <script>
+    // Prevent Cloudflare analytics from loading if it exists
+    if (window.cflare) {
+      window.cflare.beacon = function() {};
+    }
+  </script>
 </body>
 </html>
