@@ -1,8 +1,8 @@
 // Global variables
 let graphViz = null;
 
-// Helper function for node sizing
-function getNodeSize(d) {
+// Calculate node size consistently throughout the application
+function calculateNodeSize(d) {
   let size = 5;
   if (d.type === 'topic') {
     size = 10 + (d.size || 1) / 2;
@@ -139,31 +139,13 @@ function displaySearchResults(results) {
               // Highlight this node in the graph
               graphViz.nodeElements
                 .attr('stroke-width', d => d.is_central ? 2 : 1.5)
-                .attr('r', d => {
-                  // Inline node sizing logic to avoid the getNodeSize reference error
-                  let size = 5;
-                  if (d.type === 'topic') {
-                    size = 10 + (d.size || 1) / 2;
-                    if (size > 25) size = 25;
-                  }
-                  if (d.is_central) size *= 1.5;
-                  return size;
-                });
+                .attr('r', d => calculateNodeSize(d));
               
               // Highlight the selected node
               graphViz.nodeElements
                 .filter(d => d.id === result.id)
                 .attr('stroke-width', 3)
-                .attr('r', d => {
-                  // Inline node sizing logic again
-                  let size = 5;
-                  if (d.type === 'topic') {
-                    size = 10 + (d.size || 1) / 2;
-                    if (size > 25) size = 25;
-                  }
-                  if (d.is_central) size *= 1.5;
-                  return size * 1.3;
-                });
+                .attr('r', d => calculateNodeSize(d) * 1.3);
             }
           }
         }
@@ -309,31 +291,13 @@ function highlightNode(node) {
   // Reset all nodes
   graphViz.nodeElements
     .attr('stroke-width', d => d.is_central ? 2 : 1.5)
-    .attr('r', d => {
-      // Inline node sizing logic to avoid the getNodeSize reference error
-      let size = 5;
-      if (d.type === 'topic') {
-        size = 10 + (d.size || 1) / 2;
-        if (size > 25) size = 25;
-      }
-      if (d.is_central) size *= 1.5;
-      return size;
-    });
+    .attr('r', d => calculateNodeSize(d));
   
   // Highlight selected node
   graphViz.nodeElements
     .filter(d => d.id === node.id)
     .attr('stroke-width', 3)
-    .attr('r', d => {
-      // Inline node sizing logic again
-      let size = 5;
-      if (d.type === 'topic') {
-        size = 10 + (d.size || 1) / 2;
-        if (size > 25) size = 25;
-      }
-      if (d.is_central) size *= 1.5;
-      return size * 1.3;
-    });
+    .attr('r', d => calculateNodeSize(d) * 1.3);
 }
 
 async function setupClusterPanel() {
@@ -439,7 +403,7 @@ function createKnowledgeGraph(data, container) {
     .force('link', d3.forceLink(data.links).id(d => d.id).distance(100))
     .force('charge', d3.forceManyBody().strength(-300))
     .force('center', d3.forceCenter(width / 2, height / 2))
-    .force('collision', d3.forceCollide().radius(d => getNodeSize(d) + 10))
+    .force('collision', d3.forceCollide().radius(d => calculateNodeSize(d) + 10))
     .force('cluster', forceCluster());
   
   // Draw links
@@ -457,7 +421,7 @@ function createKnowledgeGraph(data, container) {
     .enter()
     .append('circle')
     .attr('class', d => `node ${d.is_central ? 'central-node' : ''}`)
-    .attr('r', getNodeSize)
+    .attr('r', calculateNodeSize)
     .attr('fill', getNodeColor)
     .call(drag(simulation))
     .on('mouseover', showTooltip)
@@ -520,19 +484,7 @@ function createKnowledgeGraph(data, container) {
     });
   });
   
-  // Helper functions
-  function getNodeSize(d) {
-    let size = 5;
-    if (d.type === 'topic') {
-      size = 10 + (d.size || 1) / 2;
-      if (size > 25) size = 25; // cap maximum size
-    }
-    // Make central topics larger
-    if (d.is_central) {
-      size *= 1.5;
-    }
-    return size;
-  }
+  // Helper functions for this visualization (scoped to this function)
   
   function getNodeColor(d) {
     if (d.type === 'topic') {
