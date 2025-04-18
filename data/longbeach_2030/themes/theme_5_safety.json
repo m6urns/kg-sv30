@@ -1,0 +1,110 @@
+{
+    "section": "Our Community",
+    "theme": {
+      "id": 5,
+      "title": "Public Safety",
+      "description": "People are safe and secure in their homes and neighborhoods.",
+      "quote": "The kids are so excited to see female officers out here.",
+      "quote_source": "Long Beach Day Nursery personnel",
+      "overview": "The vision for a safer Long Beach begins with strong and connected families, education that meets the needs of everyone, and diverse workforce pathways and employment. In furtherance of the community's overall wellness, the City will support forward-thinking public safety agencies that enhance public safety through partnerships to include innovation, collaboration, and engagement. From policy writing to program implementation, the departments promoting public safety will incorporate community feedback and seek partnerships to better the City. The departments will reflect the communities they serve and have a myriad of alternative crisis response teams to ensure each call has a tailored response prioritizing wellness and safety of all. A safer Long Beach is also one that is prepared to handle any unplanned disasters and all emergencies that arise. This requires engagement of residents, community-based organizations, and government systems working together to address social impacts that can improve overall safety and wellness. The following recommendations encourage building strategic relationships, promoting community wellness, updating government policies, increasing investments in youth, and ensuring all City staff are prepared for the next shock or stressor as they emerge. These strategies build both individual and community resilience through planning, prevention, intervention, and community building.",
+      "informed_by": [
+        "Community Priority Budget Surveys (2017 – 2022)",
+        "Racial Equity and Reconciliation Initiative (2020)",
+        "My Brother's Keeper (2016)",
+        "President Obama's Task Force on 21st Century Policing (2015)",
+        "Emergency Operations Plan (2015)",
+        "Hazard Mitigation Plan (2015)",
+        "Crisis Communications Plan (2019)"
+      ],
+      "goals": [
+        {
+          "id": "5.1",
+          "title": "CHILDREN AND YOUTH ARE SAFE FROM VIOLENCE.",
+          "strategies": [
+            "Create safe passages through increased police presence and community intervention liaisons near schools with higher incidence of violence in the surrounding areas.",
+            "Provide school and career pathways for all youth and provide intentional focus on increasing these opportunities for youth who have had touch points with the criminal justice system.",
+            "Expand support and programs to connect young adults who are coming out of the criminal justice system to occupational training, life skills development, mentoring, job placement, and post-secondary education.",
+            "Connect children and public safety professionals to increase youth mentorship opportunities, create safe spaces, strengthen relations, and create public safety career pathways for youth who are from the community.",
+            "Increase the overall support and resources for physical health, mental health, and emotional wellness.",
+            "Implement innovative youth detention reform and diversion strategies including strengthening positive youth development opportunities, mental health crisis intervention programs and community interventionists to build youth trust and connections to resources.",
+            "Examine innovative detention reform strategies that will best support Long Beach.",
+            "Invest in upstream prevention strategies such as early childhood education, living wage jobs, affordable housing, healthy communities, and other social services that will ensure sustainable peace advancement and diversion from the criminal justice system.",
+            "Invest in programs and opportunities focused on strengthening fatherhood skills, building family connection and connecting fathers to workforce skills and employment opportunities."
+          ]
+        },
+        {
+          "id": "5.2",
+          "title": "COMMUNITY MEMBERS FEEL SAFE AND SECURE.",
+          "strategies": [
+            "Create service-oriented public safety units within the Police Department that build community resilience to improve neighborhood safety.",
+            "Invest in modern policing practices to increase accountability for criminal behavior through solving cases and increasing police presence in the City, while involving community input.",
+            "Reduce property crime and victimization by increasing prevention and immediate intervention efforts throughout the community.",
+            "Respond promptly to emergency calls with a service-oriented approach.",
+            "Further bridge the gap between police and community through community events, policing summits, and other opportunities to bring police and community together in non-emergency settings.",
+            "Focus on a relationship-based, community policing model, including creating and implementing programs which allow officers to spend time engaging, in person, with people in their assigned beats.",
+            "Strengthen neighborhood group partnerships to increase safety and accountability.",
+            "Increase coordinated, collective place-based efforts to reduce gun violence, address community level trauma, and increase youth development and social connection within the community.",
+            "Engage and uplift community voices, foster trust and relationships, and encourage community capacity to act locally.",
+            "Increase training for community members in de-escalation, conflict resolutions, and trauma-informed care to solve crises before they become emergencies.",
+            "Support programs and activities that center the needs of crime and trauma survivors and build relationships across the community."
+          ]
+        },
+        {
+          "id": "5.3",
+          "title": "CITY DEPARTMENTS DIRECTLY IMPACTING PUBLIC SAFETY WILL CONTINUALLY IMPROVE POLICIES AND PROCEDURES TO MEET BEST PRACTICES, LEGAL MANDATES, AND COMMUNITY EXPECTATIONS.",
+          "strategies": [
+            "Ensure all public safety departments use data-driven and community-focused practices to equitably and strategically deploy resources to promote community wellness.",
+            "Invest in the academic and physical preparation, recruitment, and promotion of Police and Fire personnel who reflect the diversity of Long Beach.",
+            "Improve public safety tactics, training, retention, reporting, and accountability metrics to better serve the community in an equitable and just way.",
+            "Update departmental policies and practices through incorporating community voices, national best practices, and subject matter experts' insights.",
+            "Incorporate best practices and community input into the Citizen Police Complaint Commission processes.",
+            "Invest in non-police alternatives for non-violent emergency calls for service to defuse situations, connect individuals to support, and reduce touch points with the criminal justice system."
+          ]
+        },
+        {
+          "id": "5.4",
+          "title": "CITY DEPARTMENTS WILL PROMOTE PARTNERSHIPS THAT PRIORITIZE COMMUNITY WELLNESS.",
+          "strategies": [
+            "Partner with relevant City and non-City Departments to further strengthen cross-collaborative efforts to connect individuals to the services they need.",
+            "Continue to build partnerships between City departments, community organizations, and community partners to build trust and accountability.",
+            "Build a strong framework for community-based violence prevention and intervention programs, policies, and practices.",
+            "Increase funding, capacity, resources, and visibility of local community-based prevention/intervention models and gang outreach programs, including intervention workers, youth employment programs, summer programming, safe routes to school programs, and other best practices.",
+            "Improve data sharing to facilitate collaborative decision making across Departments to improve the community's wellness.",
+            "Enhance the City's ability to equitably and effectively respond to calls for service in the Long Beach community."
+          ]
+        },
+        {
+          "id": "5.5",
+          "title": "PUBLIC SAFETY DEPARTMENTS WILL BE A NATIONAL STANDARD FOR TRANSPARENCY WITH THE PUBLIC.",
+          "strategies": [
+            "Increase communications to improve community awareness about the City's public safety efforts.",
+            "Build annual reports and public dashboards to increase visibility surrounding public safety operations and goals.",
+            "Increase community policing practices to build rapport and connection between community members and the Police Department, strengthen trust and transparency, and improve accountability for those who work in the public safety field.",
+            "Respond to community expectations by sharing best practices on new innovative ways to inform the public on emerging trends in public safety.",
+            "Increase transparency by sharing data that discloses outcomes of the Citizen Police Complaint Commission."
+          ]
+        },
+        {
+          "id": "5.6",
+          "title": "THE CITY IS PREPARED FOR THE NEXT UNPLANNED DISASTER.",
+          "strategies": [
+            "Ensure detailed Citywide policies and procedures are in place to create an equitable framework for operating under disrupted conditions.",
+            "Develop an Emergency Operations Center structure plan, and cross-train City staff on it, so the City can operate safely and efficiently in the event of a natural or man made disaster, Invest in emergency preparedness technology resources, including enhanced call center capabilities.",
+            "Establish public health priorities and public safety act quickly and efficiently in the event of natural and man-made emergencies and disasters, while coordinating with the existing emergency response structures in the city."
+          ]
+        },
+        {
+          "id": "5.7",
+          "title": "THE CITY IS PREPARED FOR THE 2028 OLYMPIC SUMMER GAMES.",
+          "strategies": [
+            "Create a plan to maximize the City's international profile as a result of the 2028 Olympic Games and how to best utilize the opportunity to gain international recognition, investment, economic development, and community benefit.",
+            "Build a stronger collaborative partnership with the Long Beach Airport, Port of Long Beach, Olympic Committee and other regional partners.",
+            "Improve communication capabilities with our neighboring public safety agencies, including Los Angeles City and Los Angeles County Law Enforcement and Fire agencies. Ensure we pre-plan and address mutual concerns.",
+            "Ensure city preparedness to successfully host the 2028 Olympic Games by solicitation and incorporation of best practices into police department management of these large-scale events and ensuring all fire protection concerns, emergency medical services requirements and potential safety impacts to our community are identified.",
+            "Support our All-Hazard Incident Management Team and continue our collaborative efforts to effectively lead our city through any event that may impact our residents, including our financial and cultural interests.",
+            "Conduct event management activities between City's public safety partners to ensure effective communication and well-coordinated efforts to provide a safe, peaceful and enjoyable environment for the anticipated influx of visitors as well as our own residents."
+          ]
+        }
+      ]
+    }
+  }

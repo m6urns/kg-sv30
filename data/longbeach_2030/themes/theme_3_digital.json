@@ -1,0 +1,63 @@
+{
+    "section": "Our Community",
+    "theme": {
+      "id": 3,
+      "title": "Digital Inclusion / Technology",
+      "description": "People have access to technology to learn, communicate, engage, and thrive in our City.",
+      "quote": "I just want to thank everyone for getting me this tablet, keyboard, and hotspot. It's more than what I was hoping for and will help me in restarting my business. This is a great program and a great asset for Long Beach!",
+      "quote_source": "Long Beach Resident",
+      "overview": "Our vision for a digitally equitable and resilient Long Beach is one where every individual has access to and use of computer literacy training, the internet and technology devices to be successful in society, democracy and the economy regardless of their background, neighborhood, or identity. Resilience in technology also means improving our capacity to respond to the most-pressing civic challenges using data-informed decision-making and deploying emerging technology in a transparent, equitable, and responsible manner. Ensuring digital equity for all communities in Long Beach enhances each community member and uplifts the entire City. At the same time, technology has incredible potential to improve the quality of life for Long Beach residents, facilitate accessible delivery of City services, and meet key citywide priorities ranging from reducing homelessness to building community resilience. Long Beach is committed to reducing historic inequities and disparities by ensuring technological advancements are accessible to all and improve the quality of life for communities that have been underserved. These strategies will reduce disparities and result in accessibility and inclusivity practices that ensure civic technology benefits all Long Beach residents. Specifically, we will focus efforts on households of color, immigrants, low-income households, people with disabilities and older adults to ensure equitable access is made to everyone.",
+      "informed_by": [
+        "Smart City Initiative (2020)",
+        "Digital Inclusion Roadmap (2021)",
+        "Youth and Emerging Adults Strategic Plan (2021)"
+      ],
+      "goals": [
+        {
+          "id": "3.1",
+          "title": "GOVERNMENT PLANNING AND FUNDING BRIDGE THE DIGITAL DIVIDE.",
+          "strategies": [
+            "Support expansion of programs and public-private partnerships to be dedicated to internet access, hardware acquisition, and digital literacy training for low-income households.",
+            "Develop and implement plans to improve access to high-speed internet to facilitate business development and job growth.",
+            "Develop and implement a business plan that provides internet access and hardware for all homes and businesses in the city within a decade."
+          ]
+        },
+        {
+          "id": "3.2",
+          "title": "LOW-COST TECHNOLOGY DEVICES AND HIGH-SPEED INTERNET ARE AVAILABLE IN COMMUNITIES WITH THE LEAST ACCESS.",
+          "strategies": [
+            "Ensure access to reliable, secure and supported Internet-enabled technology devices.",
+            "Expand the citywide fiber network infrastructure to equitably serve the full Long Beach community, with an emphasis on under-connected communities.",
+            "Promote and expand free and low-cost, high-speed, quality in-home Internet services for all communities.",
+            "Promote and expand public WiFi resources in the West, Central, and North neighborhoods of Long Beach where WiFi is not as prevalant towards ubiquitous WiFi.",
+            "Administer free quality WiFi at public libraries, public parks, local businesses, public transit stops, and community organizations."
+          ]
+        },
+        {
+          "id": "3.3",
+          "title": "COMMUNITY ACCESS TO TECHNOLOGY IS IMPROVED THROUGH PARTNERSHIPS AND ETHICAL TECHNOLOGY STANDARDS.",
+          "strategies": [
+            "Invest in strategies that advance solutions to civic challenges by engaging the community, City staff, and private sector to explore and implement emerging technology.",
+            "Develop and maintain robust data privacy, digital ethics, and data security standards and accountability structures.",
+            "Develop programs to codesign civic technology with residents, small businesses, and other stakeholder groups who stand to benefit the most from digital literacy gains.",
+            "Strengthen the local technology ecosystem through partnerships with local businesses and community based organizations to bolster local industry clusters, investments in tech workforce development for existing residents, community training and work to ensure that Long Beach has the infrastructure needed to thrive in the digital economy.",
+            "Adopt proactive accessibility, transparency, and inclusivity practices that ensure civic technology benefits all Long Beach residents and specifically reaches those who face barriers to access including Black, Latino, Cambodian and other communities of color, immigrants, low-income households, and older adults.",
+            "Create public computer stations at libraries and other public spaces to facilitate digital access for all residents.",
+            "Ensure that every household and business has access to the training necessary to access online City services, pay bills, conduct online meetings, access K-12 and higher education, advocate for their interests, health visits, and more.",
+            "Ensure high-quality multilingual and accessible technical support for Internet-enabled technology devices, programs, and applications.",
+            "Expand and create pathways to digital skills to ensure job employability and the ability to participate in society.",
+            "Expand access to essential employability skills designed to boost the City's overall educational attainment and digital literacy."
+          ]
+        },
+        {
+          "id": "3.4",
+          "title": "A SIMPLE, ACCESSIBLE, AND CUSTOMER FRIENDLY ONLINE PLATFORM IS AVAILABLE FOR RESIDENTS WHO NEED CITY SERVICES.",
+          "strategies": [
+            "Invest in a universally accessible single sign on solution that provides a user-friendly, web-based portal for accessing resident-facing applications, paying for City services, and aggregating access to multiple City services.",
+            "Embrace a \"digital by default\" approach to ensure all City services are available online anytime and anywhere to enhance resident, businesses, and visitors' experience with the City.",
+            "Create a trained, agile Digital Services Team and adopt modern user-centered design methods for service development to ensure a unified City brand and experience."
+          ]
+        }
+      ]
+    }
+  }

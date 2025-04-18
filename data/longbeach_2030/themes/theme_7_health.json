@@ -1,0 +1,71 @@
+{
+    "section": "Our Community",
+    "theme": {
+      "id": 7,
+      "title": "Health, Behavioral Health and Wellness",
+      "description": "People and communities are healthy and well.",
+      "quote": "I will say, I was impressed with the city's outreach, clear messaging, and commitment to access for both COVID-19 tests and then vaccines. I would love to see this sort of robust public service infrastructure continue with other healthcare initiatives that would address more silent, but no less critical, issues in our communities: drug addiction, family planning, access to fresh and healthy foods, etc.",
+      "quote_source": "City Budget Survey 2021",
+      "overview": "We envision a Long Beach where everyone within our diverse communities is safe, healthy, and has the resources to thrive. Every resident in every neighborhood will have the resources they need to live a physically, mentally, and socially healthy life. This includes building individual resilience, the ability to grow and recover from difficult situations, among Long Beach residents. The following recommendations address the underlying conditions impacting health, mental health, and overall wellness. This includes healthy births, health care access, access to healthy foods, safe outdoor places for exercise and community gatherings, healthy and safe family structures, and social support and connections. These strategies seek to protect our most vulnerable residents including older adults, people with disabilities, LGTBQIA+ community and members of Black, Latino, Cambodian, and other communities of color. In order to achieve our goal, we will work collectively to improve the chances for good health and opportunity in all Long Beach neighborhoods.",
+      "informed_by": [
+        "Mobility Element (2013)",
+        "Racial Equity and Reconciliation Framework (2020)",
+        "Strategic Plan for Older Adults (2016)",
+        "Youth and Emerging Adults Strategic Plan (2021)",
+        "Health and Human Services Strategic Plan (2021)",
+        "Community Health Improvement Plan (2021)",
+        "Parks, Recreation, and Marine Strategic Plan (2021)"
+      ],
+      "goals": [
+        {
+          "id": "7.1",
+          "title": "COMMUNITY RESOURCES ENCOURAGE HEALTHY EATING, ACTIVE LIFESTYLES AND PREVENT CHRONIC DISEASES SUCH AS DIABETES AND HYPERTENSION.",
+          "strategies": [
+            "Support and engage in efforts to increase access to affordable, healthy and culturally specific food through expanding healthy market partnerships, farmers markets, community gardens and pop-up farm stands in communities with low access to healthy foods.",
+            "Partner with Long Beach Unified School District (LBUSD) and private schools to promote healthy food consumption at school dining cafeterias and classrooms as well as increase school garden and health education opportunities.",
+            "Increase opportunities in underserved communities to recreational resources such as local pools for swimming lessons, multipurpose trails that allow for walking, jogging, biking, and other connection corridors to increase access to destination resources.",
+            "Increase youth programming at parks and communities without parks through mobile recess, bike rodeo, and other innovative localized opportunities.",
+            "Increase communications and outreach to local communities in-language and remove barriers to youth enrollment in parks programming in low-income communities.",
+            "Create safe, inviting, affirming, and welcoming spaces for people of all physical abilities across the City and ensure parks and libraries are inclusive and safe spaces by building staff capacity and providing training in diversity, equity, and trauma.",
+            "Develop joint use agreements with Long Beach Unified School District, churches and other organizations for recreational, learning, and health-related activities."
+          ]
+        },
+        {
+          "id": "7.2",
+          "title": "ACCESS TO OPEN SPACE AND CONNECTEDNESS TO NATURE AND ACTIVE LIVING IS ENHANCED AND EXPANDED.",
+          "strategies": [
+            "Improve park space and public development around the Los Angeles and San Gabriel Rivers, with a focus on areas that need greater park space.",
+            "Increase opportunities for active living by investing in developing and maintaining parks, playgrounds and open spaces in park-poor neighborhoods to create safe, clean spaces for people and community events.",
+            "Invest in projects at the beach that restore habitat and improve water flow and quality.",
+            "Offer state of the art beach facilities that welcome the entire community and provide recreational opportunities for generations to enjoy."
+          ]
+        },
+        {
+          "id": "7.3",
+          "title": "ALL COMMUNITY MEMBERS CAN ACCESS QUALITY PHYSICAL AND BEHAVIORAL HEALTH CARE SERVICES.",
+          "strategies": [
+            "Increase health care enrollment into Medi-Cal, Covered CA, My Health LA, and other private insurance coverage.",
+            "Partner with medical providers and insurance providers to ensure people across the City have access to a medical center to support chronic disease prevention as well as case management to support connection and access to needed services and care.",
+            "Ensure that pregnant women have access to culturally supportive and affirming pre-and post-natal care and support to ensure healthy births, and help families reach their breastfeeding and chestfeeding goals as the first step toward a positive future.",
+            "Increase access to local mental health services for all ages and needs through school-based, community-based, and City-based services for youth, families, and adult individuals.",
+            "Invest in health care initiatives, programs, and providers that are working to reduce health inequities for people with disabilities, LGTBQIA+, Black, Latino, Cambodian, and other communities of color utilizing culturally affirming and trauma-informed practices.",
+            "Utilize technology platforms such as Unite Us to connect people to both physical health and behavioral health services, as well as to economic and social support needed to maintain health and wellness.",
+            "Build community power and partnerships to implement place-based efforts in Long Beach neighborhoods and engage community members and partners to achieve improved health, safety and wellness outcomes.",
+            "Invest in the City's children and youth to ensure their future health, wellness, and resiliency, particularly in neighborhoods and communities most impacted by poverty, racism, trauma, and crime.",
+            "Support and strengthen the capacity and funding for community-based organizations that serve Black, Latino, Cambodian and other communities of color to create a network of early prevention and intervention activities and ensure equitable access to health and behavioral health care for those most impacted by systemic racism."
+          ]
+        },
+        {
+          "id": "7.4",
+          "title": "THE CITY'S OLDER ADULTS HAVE THE RESOURCES AND SUPPORT THEY NEED TO BE AS HEALTHY AND INDEPENDENT AS POSSIBLE AS THEY AGE.",
+          "strategies": [
+            "Strengthen and resource the Healthy Aging Center and improve access to senior center services across the City, particularly in low-income communities.",
+            "Increase the number of social, civic, and inter-generational engagement opportunities for older adults.",
+            "Ensure that older adults have safe and affordable transportation and assistance services to allow them to participate in activities.",
+            "Work with local public and community-based providers of essential programs, activities, and services for older adults to promote and increase access to senior and community centers that provide social, educational, nutritional, recreational and leisure programs, and information and assistance services.",
+            "Improve access to information about mental health programs and improve outreach, education, and screenings for mental health services for older adults, especially among communities of color, in mental health, health care, and social and recreational settings."
+          ]
+        }
+      ]
+    }
+  }

@@ -1,0 +1,79 @@
+{
+    "section": "Our Community",
+    "theme": {
+      "id": 6,
+      "title": "Mobility, Equity Placemaking, and Reimagining the Public Right of Way",
+      "description": "Mobility and infrastructure needs are met for all individuals and communities in Long Beach.",
+      "quote": "More bikes and pedestrians on the street make it safer for everyone.",
+      "quote_source": "Comment from Active Transportation Program Cycle 5",
+      "overview": "Long Beach seeks to achieve a balanced, multi-modal transportation network that enhances connectivity, retains our community character, encourages active lifestyles, and enhances environmental sustainability by reducing gasoline consumption and greenhouse gas emissions. An equitable transportation system uses multiple modes of travel including walking, biking, use of motor vehicles, public transportation, and regional transportation access through rail and air transportation. All these modes of transportation are supported in Long Beach. Through 2030, Long Beach will continue building and maintaining a reliable, vibrant, and equitable network across all neighborhoods so that every resident feels safe traveling to and from their home, place of work, and recreational activities. Our community can expect continuous investment in citywide infrastructure, especially in areas that address the impacts of climate change and prepare for any challenge that comes our way.",
+      "informed_by": [
+        "Mobility Element (2013)",
+        "Climate Action and Adaptation Plan (2021)",
+        "Strategic Plan for Older Adults (2016)",
+        "Youth and Emerging Adults Strategic Plan (2021)",
+        "Health and Human Services Strategic Plan (2021)",
+        "Bicycle Master Plan (2016)",
+        "CX3 Pedestrian Plans (2016)",
+        "Safe Streets Long Beach Action Plan (2020)",
+        "Downtown & TOD Pedestrian Master Plan (2016)",
+        "Downtown Plan (2012)",
+        "Southeast Area Specific Plan (2017)"
+      ],
+      "goals": [
+        {
+          "id": "6.1",
+          "title": "RESIDENTS HAVE MULTIPLE CHOICES TO GET AROUND THE CITY BESIDES DRIVING.",
+          "strategies": [
+            "Provide a safe, high-quality roadway, sidewalk, and alley network for all users.",
+            "Ensure a minimum standard of maintenance and cleanliness of all streets and sidewalks across the City, focusing investments on Long Beach streets and alleys that are rated poor or very poor.",
+            "Deliver equitable transportation services and capital improvements that prioritize safety and usability issues.",
+            "Maintain regional air, water, and freight transportation networks.",
+            "Work with neighboring jurisdictions to connect facilities and provide seamless travel between cities and amenities.",
+            "Embrace innovation and appropriate transportation technology."
+          ]
+        },
+        {
+          "id": "6.2",
+          "title": "GETTING AROUND LONG BEACH IS ACCESSIBLE AND CONVENIENT.",
+          "strategies": [
+            "Promote roadway safety for all users through education, roadway design, and regulations such as speed limits.",
+            "Plan, maintain, and operate mobility systems consistent with the principles of complete streets, active living, and sustainable community design.",
+            "Employ mobility practices that maintain and enhance safety for all ability levels while strengthening community, sense of place, urban design, and the natural environment.",
+            "Coordinate with public transit providers including Metro and Long Beach Transit.",
+            "Continue to strengthen the citywide distracted driving and driving under the influence prevention programs.",
+            "Celebrate the co-benefits of mobility choices that free up time and money for other priorities.",
+            "Ensure streets and medians in transportation corridors are clean and cleared of debris to improve safety and access."
+          ]
+        },
+        {
+          "id": "6.3",
+          "title": "HEALTHY AND CLIMATE-FRIENDLY TRANSPORTATION MODE CHOICES ARE CONVENIENT.",
+          "strategies": [
+            "Encourage mode of travel options particularly for short trips, including walking, micro-mobility, and public transit to improve quality of life and reduce carbon emissions.",
+            "Focus new housing and development near public transit.",
+            "Encourage a mix of uses in a neighborhood so that people have a range of convenient transportation options for their daily trips, such as options to walk, bike, or take public transit from home to work, school or shopping.",
+            "Support flexible, convenient, affordable, and energy-efficient transportation options.",
+            "Celebrate and encourage active modes of transportation through special events, open street festivals, and community programming."
+          ]
+        },
+        {
+          "id": "6.4",
+          "title": "COMMUNITIES ARE CONNECTED AND ALLOW RESIDENTS TO MORE EQUITABLY AND SAFELY VISIT ALL AMENITIES THAT THE CITY HAS TO OFFER.",
+          "strategies": [
+            "Better connect residents to citywide assets and areas, including downtown, regional parks, neighborhood parks and the waterfront, by improving streets, sidewalks, micro-mobility options and expanding the bikeshare program.",
+            "Increase contiguous park space and accessible greenbelt for recreational and family development activities."
+          ]
+        },
+        {
+          "id": "6.5",
+          "title": "RESIDENTS OF ALL ABILITIES ARE CONSIDERED IN TRANSPORTATION PLANNING AND ROADWAY IMPROVEMENTS.",
+          "strategies": [
+            "Utilize universal design to address pedestrian and bicycle safety and access in the design and maintenance of all street projects.",
+            "Address transportation needs for older adults and people of all ability statuses.",
+            "Coordinate and collaborate with local school districts to provide enhanced, safer bicycle and pedestrian connections to school facilities throughout Long Beach."
+          ]
+        }
+      ]
+    }
+  }

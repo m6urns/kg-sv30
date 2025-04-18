@@ -1,0 +1,60 @@
+{
+    "section": "Our Community",
+    "theme": {
+      "id": 8,
+      "title": "Climate and Environmental Sustainability",
+      "description": "Long Beach is environmentally sustainable and resilient.",
+      "quote": "We must focus on park equity. I live in East Long Beach but West Long Beach has so many fewer park resources.",
+      "quote_source": "PRM Strategic Plan",
+      "overview": "Adapting Long Beach to climate change and reducing our contribution to its causes presents an unprecedented opportunity to improve the health of our environment and quality of life for all Long Beach residents and begin to remedy longstanding social, economic and environmental inequities. By 2030, we envision a Long Beach where everyone can live in thriving communities built on sustainability and resilience. All communities will have access to clean air, clean water, flourishing ecosystems, and protection from extreme weather events. These goals and strategies focus on reducing our carbon footprint, preparing for extreme climate events, investing in environmental justice communities, increasing the efficiency of natural resource use, and creating more liveable communities. Through a coordinated response to climate change, we can help address public health disparities, foster economic opportunities, and realize a healthy, sustainable, and resilient future.",
+      "informed_by": [
+        "Climate Action and Adaptation Plan (2021)",
+        "Racial Equity and Reconciliation Framework (2020)",
+        "Parks, Recreation, and Marine Strategic Plan (2021)",
+        "Green Port Policy (2005)"
+      ],
+      "goals": [
+        {
+          "id": "8.1",
+          "title": "LONG BEACH RESIDENTS AND NEIGHBORHOODS ARE SAFE AND RESILIENT IN THE FACE OF CLIMATE CHANGE.",
+          "strategies": [
+            "Prepare for climate change impacts and keep people safe during extreme weather events, such as extreme heat, flooding, and drought by supporting a healthy and resilient city.",
+            "Prioritize climate investments and environmental justice in communities that are already disproportionately burdened by issues such as poor air quality and extreme heat.",
+            "Plan for and invest in safe and adaptable infrastructure that can withstand the impacts of climate change and reduce future greenhouse gas emissions from transportation, waste, buildings, and energy use."
+          ]
+        },
+        {
+          "id": "8.2",
+          "title": "CLIMATE INVESTMENTS BENEFIT THE 3 E'S: ENVIRONMENT, EQUITY, AND THE ECONOMY.",
+          "strategies": [
+            "Invest in strategies that maximize co-benefits related to health, equity and inclusive economic development.",
+            "Maximize opportunities for green jobs and workforce development that prioritizes young people, communities of color, and environmental justice communities through programs such as Youth Climate Corps.",
+            "Invest in multi-modal transportation options that reduce the City's carbon footprint, including active transportation and public transit.",
+            "Acknowledge the climate and land stewardship and history of local indigenous communities."
+          ]
+        },
+        {
+          "id": "8.3",
+          "title": "CLIMATE STRATEGIES ARE INTEGRATED INTO CITY PROCESSES AND INFRASTRUCTURE INVESTMENTS.",
+          "strategies": [
+            "Incentivize and mandate lower carbon, more resilient buildings and neighborhoods through renewable energy, energy efficiency, electrification, material reuse, and other green building and development practices.",
+            "Incorporate climate mitigation and adaptation strategies into all city infrastructure investments such as through the City's Capital Improvement Plan.",
+            "Support climate investments through a combination of new funding mechanisms, alternative financing options, and reprioritization of existing funding and budgets.",
+            "Enhance livable and green space in historically red-lined and otherwise disinvested communities to build climate resiliency.",
+            "Track and monitor progress toward greenhouse gas reductions and the community's adaptive capacity.",
+            "Build and invest in the urban stormwater treatment centers to divert and treat polluted stormwater runoff or reuse as alternative water source."
+          ]
+        },
+        {
+          "id": "8.4",
+          "title": "MORE LIVABLE COMMUNITIES WITH HOUSING, JOBS AND RECREATIONAL SPACES ARE CREATED THROUGH CLIMATE INVESTMENTS.",
+          "strategies": [
+            "Prioritize natural solutions to climate change, such as tree planting and stewardship, rainwater reuse, stormwater infiltration, and other green infrastructure strategies.",
+            "Facilitate the development of complete communities where housing, jobs, shopping, and community services are located close together.",
+            "Maximize opportunities to create more liveable communities through climate investments, such as tree plantings that increase shade along streets and make walking, biking, and spending time in public spaces more inviting and comfortable.",
+            "Develop targeted education and outreach campaigns to raise climate change and adaptation awareness and promote a personal sense of community climate stewardship."
+          ]
+        }
+      ]
+    }
+  }

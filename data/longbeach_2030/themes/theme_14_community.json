@@ -1,0 +1,35 @@
+{
+    "section": "Our Government",
+    "theme": {
+      "id": 14,
+      "title": "For the Community",
+      "description": "Our City acknowledges and values the expertise of its community members and organizations and ensures pathways to involve them in policy and program decision-making and implementation that impacts them.",
+      "quote": null,
+      "quote_source": null,
+      "overview": "We recognize the community as an active partner in policy and program decision making, and therefore, we plan to strengthen our relationships with community groups, especially those that have been historically marginalized, by providing more opportunities to engage and partner on projects. To get there, we must build trust in the community by growing and maintaining genuine relationships with residents and reducing the barriers to participate in city processes.",
+      "informed_by": [],
+      "goals": [
+        {
+          "id": "14.1",
+          "title": "AUTHENTIC RELATIONSHIPS WITH THE COMMUNITY ARE DEVELOPED AND FOSTERED.",
+          "strategies": [
+            "Embrace communication, recognizing that sharing information about important topics is a core service, and incorporating communication into normal City operations.",
+            "Enhance trust by openly and regularly communicating information that impacts residents.",
+            "Create robust communication infrastructure that meets the diverse needs of our communities, including limited English speakers, those without technology, older adults, and people with disabilities and regularly highlights the array of programming and services to the public.",
+            "Provide opportunities for employees to develop cultural competency and trauma-informed practices for engaging with community members with an understanding that backgrounds come in many forms including backgrounds of people facing issues related to poverty, race, ethnicity, and experience.",
+            "Build and strengthen the culture of service among City employees.",
+            "Create and utilize engagement tools, practices, and skills that innovatively cross over economic barriers to authentically engage with communities that have historically been underrepresented in City efforts."
+          ]
+        },
+        {
+          "id": "14.2",
+          "title": "A STRONG CIVIC ENGAGEMENT INFRASTRUCTURE INVITES AND SUPPORTS INCLUSION OF ALL VOICES.",
+          "strategies": [
+            "Build trust with community leaders and groups to reach and uplift community voices through the City's civic engagement infrastructure.",
+            "Implement language access policy consistently throughout the City.",
+            "Create and continue to update a database of community-based organizations and community partners that departments can contact for outreach and collaboration."
+          ]
+        }
+      ]
+    }
+  }

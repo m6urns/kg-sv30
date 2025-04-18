@@ -1,0 +1,124 @@
+{
+    "title": "Long Beach 2030 Strategic Vision",
+    "description": "A citywide vision guiding long-range decision-making and policy direction through 2030",
+    "publication_year": "2022",
+    "vision_statement": "ALL PEOPLE AND COMMUNITIES IN LONG BEACH have access to quality education across the life span to learn and grow, have economic opportunity, have access to technology to learn, communicate, engage and thrive, have housing that is safe, inviting, fully accessible and affordable, are safe and secure in their neighbourhoods, have mobility and infrastructure that is safe and meets their needs, are healthy and well, and live in a sustainable and resilient environment.",
+    "anchors": {
+      "equity": "Equity is when everyone can reach their highest level of health and potential for a successful life, regardless of their background and identity. We envision a Long Beach where a person's zip code or identity does not determine the opportunities they and their families have for a healthy and prosperous life.",
+      "resiliency": "Resiliency is the capacity of individuals, families, communities, and our government to heal from trauma, and strengthen our adaptability and experiences of wellbeing in ways that can prevent future trauma. It also focuses on our systems' capacity to absorb stresses, shocks and changes stemming from ecological, social and economic impacts and maintain function in the face of external stresses imposed upon it."
+    },
+    "sections": [
+      {
+        "id": 1,
+        "name": "Our Community",
+        "description": "The collective vision for Long Beach as a community and the outcomes we would like to see in our neighborhoods across the City.",
+        "themes": [
+          {
+            "id": 1,
+            "title": "Education",
+            "description": "People have access to quality education across their life span to learn and grow.",
+            "goals_count": 3,
+            "file_path": "themes/theme_1_education.json"
+          },
+          {
+            "id": 2,
+            "title": "Economic Opportunity, Equity and Resiliency",
+            "description": "Long Beach provides economic opportunity for all.",
+            "goals_count": 8,
+            "file_path": "themes/theme_2_economic.json"
+          },
+          {
+            "id": 3,
+            "title": "Digital Inclusion / Technology",
+            "description": "People have access to technology to learn, communicate, engage, and thrive in our City.",
+            "goals_count": 4,
+            "file_path": "themes/theme_3_digital.json"
+          },
+          {
+            "id": 4,
+            "title": "Housing and Homelessness",
+            "description": "Housing is available, safe, inviting and affordable",
+            "goals_count": 6,
+            "file_path": "themes/theme_4_housing.json"
+          },
+          {
+            "id": 5,
+            "title": "Public Safety",
+            "description": "People are safe and secure in their homes and neighborhoods.",
+            "goals_count": 7,
+            "file_path": "themes/theme_5_safety.json"
+          },
+          {
+            "id": 6,
+            "title": "Mobility, Equity Placemaking, and Reimagining the Public Right of Way",
+            "description": "Mobility and infrastructure needs are met for all individuals and communities in Long Beach.",
+            "goals_count": 5,
+            "file_path": "themes/theme_6_mobility.json"
+          },
+          {
+            "id": 7,
+            "title": "Health, Behavioral Health and Wellness",
+            "description": "People and communities are healthy and well.",
+            "goals_count": 4,
+            "file_path": "themes/theme_7_health.json"
+          },
+          {
+            "id": 8,
+            "title": "Climate and Environmental Sustainability",
+            "description": "Long Beach is environmentally sustainable and resilient.",
+            "goals_count": 4,
+            "file_path": "themes/theme_8_climate.json"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "name": "Our Government",
+        "description": "The vision for our City government, outlining the goals and strategies across six categories that support the effective operation needed to implement the community vision.",
+        "themes": [
+          {
+            "id": 9,
+            "title": "Financial Wellbeing",
+            "description": "The City is fiscally resilient to meet current and future challenges.",
+            "goals_count": 1,
+            "file_path": "themes/theme_9_financial.json"
+          },
+          {
+            "id": 10,
+            "title": "City Employees",
+            "description": "Employees are energized, thriving, engaged and reflect the diversity of communities in our City.",
+            "goals_count": 2,
+            "file_path": "themes/theme_10_employees.json"
+          },
+          {
+            "id": 11,
+            "title": "Learning Organization",
+            "description": "Our City is a learning organization that utilizes innovation, experimentation, and data to continuously learn and grow.",
+            "goals_count": 1,
+            "file_path": "themes/theme_11_learning.json"
+          },
+          {
+            "id": 12,
+            "title": "Technology",
+            "description": "We are technology and data informed.",
+            "goals_count": 1,
+            "file_path": "themes/theme_12_technology.json"
+          },
+          {
+            "id": 13,
+            "title": "Expectations Aligned with Resources and Priorities",
+            "description": "Expectations and resources are aligned.",
+            "goals_count": 1,
+            "file_path": "themes/theme_13_expectations.json"
+          },
+          {
+            "id": 14,
+            "title": "For the Community",
+            "description": "Our City acknowledges and values the expertise of its community members and organizations and ensures pathways to involve them in policy and program decision-making and implementation that impacts them.",
+            "goals_count": 2,
+            "file_path": "themes/theme_14_community.json"
+          }
+        ]
+      }
+    ]
+  }

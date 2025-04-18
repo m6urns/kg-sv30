@@ -1,0 +1,26 @@
+{
+    "section": "Our Government",
+    "theme": {
+      "id": 11,
+      "title": "Learning Organization",
+      "description": "Our City is a learning organization that utilizes innovation, experimentation, and data to continuously learn and grow.",
+      "quote": null,
+      "quote_source": null,
+      "overview": "We recognize that technology and new information will continue to transform our society, and we need to be able to adapt and evolve with the changes. We commit to being a learning organization that learns from each other, collaborates on projects, explores new ways of providing service, and continually builds staff skills. Collaboration across departments will be key to this vision and will help us leverage each other's experience and expertise by coordinating on projects and services to best serve our residents.",
+      "informed_by": [],
+      "goals": [
+        {
+          "id": "11.1",
+          "title": "DEPARTMENTS COLLABORATE TO ALIGN GOALS, LEVERAGE RESOURCES, AND CONTINUE TO LEARN AND GROW.",
+          "strategies": [
+            "Modernize internal communications systems and processes to improve coordination across departments.",
+            "Create opportunities for our staff to participate in cross-departmental programs to expand knowledge sharing and skill building among city departments.",
+            "Strengthen data, quality control, and learning infrastructure to ensure the City is continuously focused on learning and improving.",
+            "Ensure City staff are trained and implementing an equity lens in program and service delivery, including utilizing data and performance metrics to track and monitor progress.",
+            "Improve service delivery by identifying solutions to streamline internal processes and pilot innovative ways of doing business.",
+            "Create more partnerships with schools, government partners, and private industry to meet crosscutting goals, and advance racial equity across City and partner functions."
+          ]
+        }
+      ]
+    }
+  }

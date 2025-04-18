@@ -1,0 +1,28 @@
+{
+    "section": "Our Government",
+    "theme": {
+      "id": 9,
+      "title": "Financial Wellbeing",
+      "description": "The City is fiscally resilient to meet current and future challenges.",
+      "quote": null,
+      "quote_source": null,
+      "overview": "In 2030, we envision a fiscally resilient city with healthy reserves to fund needed community programs and protect against future emergencies. To get there, we need diverse and sustainable revenue streams, and regular oversight of our financial health. The following strategies help build our fiscal resilience and put our City in the best position to serve our community.",
+      "informed_by": [],
+      "goals": [
+        {
+          "id": "9.1",
+          "title": "CITY GOVERNMENT IS FISCALLY RESILIENT, EQUITABLE, TRANSPARENT, AND PERFORMANCE BASED.",
+          "strategies": [
+            "Make wise financial investments in municipal services, fully understanding our ability to pay for current and future costs and understanding both risks and rewards, based on sound financial policies.",
+            "Diversify and expand sustainable and predictable revenue streams.",
+            "Build and maintain fund development capacity across City departments and capacity to effectively manage grants.",
+            "Create robust financial capacity and infrastructure across all departments to ensure the ability to effectively budget, manage, and report for all funding streams as well as plan for resourcing of programs and community needs.",
+            "Develop financial plans that are clear and long-term, with sufficient fiscal reserves.",
+            "Improve awareness of the importance of financial health and wellbeing across all departments and programs.",
+            "Allocate resources to ensure equitable outcomes across our City by intentionally investing funds and resources in our people and those communities most impacted by racism.",
+            "Maintain adequate fiscal reserves for emergencies."
+          ]
+        }
+      ]
+    }
+  }

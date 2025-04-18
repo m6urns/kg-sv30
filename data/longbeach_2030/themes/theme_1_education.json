@@ -1,0 +1,54 @@
+{
+    "section": "Our Community",
+    "theme": {
+      "id": 1,
+      "title": "Education",
+      "description": "People have access to quality education across their life span to learn and grow.",
+      "quote": "The library! Both me and my daughter would have gone crazy without their online programs and ebooks.",
+      "quote_source": "City Budget Survey 2021",
+      "overview": "Education is one of the core foundational elements to opportunity and success that stretches across our entire lifespan. By 2030, we envision a Long Beach where children in all neighborhoods have access to quality education, childcare, afterschool programs, post-secondary education, and are prepared to successfully enter the workforce. We value the importance of education and know there is more we can do to ensure all children thrive on their educational journey. We will work with our partners to take important steps to address identified gaps, leading the implementation of the Early Childhood Education Strategic Plan and the Youth and Emerging Adult Strategic Plan; partnering with LBUSD and parochial and independent schools, Long Beach Community College, Long Beach State, and multiple community partners to create the Long Beach College Promise. We will focus on providing a pathway to post-secondary education as well as with Pacific Gateway to enhance the school to work pathway while simultaneously building workplace skills. The following strategies reinforce investments in early childhood education and educational support opportunities.",
+      "informed_by": [
+        "Library Strategic Plan (2017)",
+        "Racial Equity and Reconciliation Framework (2020)",
+        "Early Childhood Education Strategic Plan (2018)",
+        "Youth and Emerging Strategic Plan (2021)",
+        "My Brother's Keeper (2016)",
+        "Long Beach Unified School District Strategic Plan (2017)"
+      ],
+      "goals": [
+        {
+          "id": "1.1",
+          "title": "ALL CHILDREN HAVE ACCESS TO EARLY CHILDHOOD EDUCATION.",
+          "strategies": [
+            "Expand access for infant/toddler and preschool-aged early care and education and partner with LBUSD and community providers to implement universal pre-K.",
+            "Implement an access hub technology solution that connects parents to early childhood providers that meet their location and scheduling needs, including evenings and weekends.",
+            "Engage the business community to understand the importance of childcare and early learning opportunities to business viability and economic growth and explore initiatives that incentive businesses in Long Beach to provide on-site early childhood educational opportunities to employees and surrounding community members.",
+            "Invest in the early childhood education workforce, professional development, and jobs in education that pay a living wage.",
+            "Increase access to resources across the City that support families with young children."
+          ]
+        },
+        {
+          "id": "1.2",
+          "title": "ACCESS TO EDUCATION AND SUPPORT OPPORTUNITIES IS EQUITABLE.",
+          "strategies": [
+            "Invest in afterschool and summer programs and use schools and city facilities including libraries as community learning centers to expand learning opportunities beyond the bell for both students and their parents.",
+            "Invest in trauma-informed mentoring, life skill development, and gathering spaces to create safe spaces and learning opportunities for youth impacted by poverty, trauma, and/or difficult family situations.",
+            "Increase access to library resources for those with limited resources by expanding hours in underserved communities and using the Mobile Studio to provide classes and workshops for those with limited access to library locations.",
+            "Reduce barriers to library use for residents by eliminating fines.",
+            "Create opportunities for families with young children and youth to access resources, from the City and partner agencies, such as the Celebration of the Young Child and the Youth Festival."
+          ]
+        },
+        {
+          "id": "1.3",
+          "title": "YOUTH AND YOUNG ADULTS HAVE ACCESS AND RESOURCES IN THE COLLEGE PROMISE.",
+          "strategies": [
+            "Ensure the Long Beach College Promise reaches, engages, and supports Black, Latino, Cambodian, and other students of color to complete their educational goals.",
+            "Expand partnerships with employers across the City to ensure internship opportunities are made available for youth and young adults who want to further explore workforce options.",
+            "Expand the College Promise pipeline by strengthening the relationships between the City of Long Beach, LBUSD, Parochial and Independent schools, LBCC, CSULB, and employers across the City.",
+            "Increase mentorship opportunities with partnering agencies and institutions across the City for youth and young adults.",
+            "Increase resources and staffing to enhance the College Promise connection from the City of Long Beach to all of the partnering institutions."
+          ]
+        }
+      ]
+    }
+  }

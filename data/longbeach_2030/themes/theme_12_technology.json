@@ -1,0 +1,29 @@
+{
+    "section": "Our Government",
+    "theme": {
+      "id": 12,
+      "title": "Technology",
+      "description": "We are technology and data informed.",
+      "quote": null,
+      "quote_source": null,
+      "overview": "Technology is fundamental to how we function. From our \"Go Long Beach\" app to permit management software, technology is instrumental to improving the lives of our residents, serving our businesses, and providing a high-quality experience for visitors. It is equally important to give City staff the technological tools and skills to succeed. Our city is committed to creating technology and data-informed solutions to maximize our collective impact and our ability to serve, understand, engage and meet the expectations of our residents. City staff seek a work environment that is transparent, collaborative, and empowering. These growing demands inform the technology mission and vision for the City, as well as the goals and strategies below. Over the next several years, we will invest in vital technology and learning opportunities for all City staff, to improve our resiliency in the face of uncertainties and to foster a culture of civic pride so we may passionately and equitably serve all Long Beach residents.",
+      "informed_by": [],
+      "goals": [
+        {
+          "id": "12.1",
+          "title": "THE CITY IS TECHNOLOGY AND DATA DRIVEN.",
+          "strategies": [
+            "Implement a 24/7 City Hall philosophy, with technology giving everyone the ability to access City services and information anytime, anywhere.",
+            "Facilitate collaboration for City employees anytime, anywhere using modern, reliable technologies.",
+            "Invest in City staff's access to regular technology training opportunities to enhance digital competency levels.",
+            "Invest in data privacy and cybersecurity measures to prevent City data breaches and protect residents' personal data.",
+            "Commit to and build a mature data management practice capable of responsible data proliferation.",
+            "Promote regular strategic technology planning and collaboration to identify and implement integrated citywide and department technology priorities.",
+            "Develop a digital services practice and make user experience central to City services.",
+            "Develop digital workflows for City processes and services and streamline record management systems across all City departments.",
+            "Provide a technology infrastructure to deliver services wherever and whenever needed to support staff productivity, public safety, critical operations, resident digital services, and citywide security and resiliency."
+          ]
+        }
+      ]
+    }
+  }

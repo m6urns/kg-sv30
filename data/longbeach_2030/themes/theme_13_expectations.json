@@ -1,0 +1,25 @@
+{
+    "section": "Our Government",
+    "theme": {
+      "id": 13,
+      "title": "Expectations Aligned with Resources and Priorities",
+      "description": "Expectations and resources are aligned.",
+      "quote": null,
+      "quote_source": null,
+      "overview": "As a City full of passionate and smart individuals, we often have more ideas than the resources needed to address our community issues. In an ideal world, we would have unlimited resources to see all the ideas through. However, the reality is that certain programs need to be prioritized based on urgency, department staff capacity, and available funding. We are committed to thinking and operating as one City family. To do this, we are ensuring that our leadership and departments have a clear understanding of what staff can accomplish given their current resources. As a result, leaders and staff will have a clear understanding and alignment with our strategic goals. They will help adequately resource new and ongoing programs and prioritize efforts that focus on the most urgent improvements and focus on our most vulnerable neighborhoods.",
+      "informed_by": [],
+      "goals": [
+        {
+          "id": "13.1",
+          "title": "CITY LEADERSHIP HAS A CLEAR UNDERSTANDING OF THE IMPACTS OF POLICY AND PROGRAM REQUESTS ON FUNDING, EMPLOYEE CAPACITY, AND TECHNOLOGY.",
+          "strategies": [
+            "Establish clear understanding of the impacts of policy and program requests on funding, employee capacity, and technology.",
+            "Ensure City leadership recognizes that in addition to financial resources, staff time is a critical resource that must be conserved and effectively put to use, by way of deliberate decision making on the highest and best use of that time to serve the community.",
+            "Engage City elected officials and City Manager in prioritizing various initiatives requested by the Mayor and City Council, and balance those with the ongoing City Manager and department assignments.",
+            "Ensure that direction and expectations established by City elected officials and leadership align with strategic priorities and with existing financial, staffing and technological capacity when giving policy or programmatic direction or prioritize resources to meet the direction.",
+            "Set common goals and performance indicators and align efforts to achieve them."
+          ]
+        }
+      ]
+    }
+  }

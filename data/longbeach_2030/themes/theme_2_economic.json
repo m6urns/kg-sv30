@@ -1,0 +1,101 @@
+{
+    "section": "Our Community",
+    "theme": {
+      "id": 2,
+      "title": "Economic Opportunity, Equity and Resiliency",
+      "description": "Long Beach provides economic opportunity for all.",
+      "quote": "Pandemic UI kept me afloat because I moved back in with my family, where my rent was reduced by $600. The stimulus helped my family manage household expenses because I couldn't contribute.",
+      "quote_source": "City Budget Survey 2021",
+      "overview": "Today, our commitment is to refresh, reassess, refocus, and uplift ongoing economic development activities that will truly make Long Beach a 'city of opportunity for all.' Our goal for the new decade is to recommend an effective and sustainable path to position Long Beach as a leader and model of equitable economic opportunity and resiliency for cities of the future. The following goals and recommendations include specific strategies for Black, Latino, Cambodian, other people of color, women, veterans, the disability community and LGBTQIA+ communities, who face distinct and compounding barriers to economic opportunity that include starting and maintaining a business and generating generational wealth. We are reimagining policies and programs that take affirmative steps to deliver resources, open-up access to capital, and tap into the power of networks so that historically disadvantaged businesses can compete. At the same time, we must invest in our youth, history, and culture and arts of Long Beach to stimulate economic development and celebrate the diversity of our community.",
+      "informed_by": [
+        "Economic Development Blueprint (2017)",
+        "Economic Development Blueprint (2022)",
+        "Everyone In (2017)",
+        "Racial Equity and Reconciliation Initiative (2020)",
+        "Youth and Emerging Adults Strategic Plan (2021)"
+      ],
+      "goals": [
+        {
+          "id": "2.1",
+          "title": "A WELL-TRAINED WORKFORCE THAT IS COMPETITIVELY ALIGNED WITH THE NEEDS OF LOCAL EMPLOYERS.",
+          "strategies": [
+            "Create dedicated funding sources to invest in the creation of geographically based Economic Innovation Districts that colocate industry anchors and employers with educational and training partners (including Long Beach City College, California State University Long Beach, Long Beach Unified School District, and the Pacific Gateway Workforce Innovation Network).",
+            "Ensure the Long Beach College Promise reaches and engages students from underserved communities to support completing educational goals and connect the Long Beach Promise to a jobs and housing promise to retain talent in the city for Long Beach employers.",
+            "Develop hiring pipelines from high school, vocational skills training, and institutions of higher education into green jobs, especially jobs supporting space/technology for Black, Latino and Cambodian students and other students of color, students with disabilities and LGBTQIA+ students.",
+            "Expand internship partner programs with high schools and post-secondary institutions to build job skills for underserved youth and provide pathways for the future City workforce.",
+            "Deploy and expand workforce development services to Long Beach teen centers, libraries, and other youth-focused locations to enhance early exposure to job training and life skills.",
+            "Create workforce development training programs for older adults and/or retirees seeking to re-enter the workforce.",
+            "Work to ensure that internships and workforce development efforts are focused on at least a living wage and meet future employment needs across employment sectors."
+          ]
+        },
+        {
+          "id": "2.2",
+          "title": "NEW AND EXISTING ENTREPRENEURS HAVE SUPPORTIVE, ACCESSIBLE, AND RELIABLE PATHWAYS TO CONFIDENTLY START AND GROW SUCCESSFUL BUSINESSES.",
+          "strategies": [
+            "Create business incubators to provide technical assistance for both new and existing small businesses and help them navigate business licenses, permitting requirements, and loans and grants.",
+            "Modernize and streamline City regulations to make it easy, affordable, and efficient to start or grow a business in Long Beach.",
+            "Establish one-stop centers for technical, financial, and regulatory assistance for small businesses in locations throughout the city.",
+            "Utilize one-stop centers for support and resources for new and small businesses to help them get started, participate, and succeed in City procurement opportunities.",
+            "Establish a municipal small business support team with dedicated staff to provide representation, advocacy, and technical assistance to every small business in the City."
+          ]
+        },
+        {
+          "id": "2.3",
+          "title": "CITY PROCUREMENT OPPORTUNITIES HELP DIVERSE LOCAL SMALL BUSINESSES EXPAND, CREATE JOBS, AND REINVEST IN LONG BEACH.",
+          "strategies": [
+            "Streamline and simplify the city procurement processes and outreach to underrepresented vendors to encourage participation in city opportunities.",
+            "Provide outreach to underrepresented local vendors to encourage participation in the City's procurement process.",
+            "Provide training and education resources to local businesses to assist with participation in City procurement processes.",
+            "Simplify the process for participating in city procurement, including adjusting insurance requirements and simplifying and reducing required forms."
+          ]
+        },
+        {
+          "id": "2.4",
+          "title": "PUBLIC AND PRIVATE REAL ESTATE INVESTMENT IS PROMOTED IN ALL AREAS OF THE CITY WITH FOCUSED INVESTMENT IN AREAS AND PEOPLE THAT HAVE HISTORICALLY EXPERIENCED DISINVESTMENT.",
+          "strategies": [
+            "Establish geographically-based Economic Empowerment Zones that boost investment to small local businesses and affordable housing, especially in communities of color.",
+            "Modernize land use regulations, entitlement, and permitting processes to support new and equitable economic opportunities.",
+            "Create opportunities for low-income residents and business owners to purchase housing and commercial real estate."
+          ]
+        },
+        {
+          "id": "2.5",
+          "title": "ECONOMIC EQUITY AND WEALTH CREATION ARE ADVANCED FOR HISTORICALLY MARGINALIZED INDIVIDUALS AND HOUSEHOLDS.",
+          "strategies": [
+            "Provide financial literacy training through teen centers, libraries, workforce development organizations, and other community-based organizations.",
+            "Enhance public safety in commercial corridors to ensure safe spaces that support thriving businesses across the City by establishing business improvement districts and improving lighting, urban greening, walkability, and/or beautification as desired by the community.",
+            "Ensure workplaces support parents and children including supporting early childhood education opportunities, dedicated spaces for expressing milk and changing tables for those visiting with children."
+          ]
+        },
+        {
+          "id": "2.6",
+          "title": "INVESTMENT IN THE UNIQUE CULTURE, HISTORY, AND ARTS OF LONG BEACH RESIDENTS STIMULATES ECONOMIC DEVELOPMENT AND UPLIFTS DIVERSE COMMUNITIES.",
+          "strategies": [
+            "Establish a public private partnership to develop city-sponsored cultural plans that celebrate the diverse culture and history of the City and create a greater sense of pride across all Long Beach, attracting investment and uplifting our Black, Latino, Cambodian and other communities of color, the disability community and LGBTQIA+ community.",
+            "Utilize a portion of the 1% for the arts funding to beautify and tell the story of Black, Latino, Cambodian and other communities of color and the LGBTQIA+ community and implement the cultural plans developed and adopted by City Council.",
+            "Invest in the sustainability, development, and arts in Business Improvement Districts, specifically in communities with larger populations of Black, Latino, Cambodian and other people of color.",
+            "Utilize opportunity zones to increase investment, employment, and revitalization in communities with larger populations of Black, Latino, Cambodian and other communities of color.",
+            "Protect Black, Latino, Cambodian and other communities of color and people with disabilities from the negative effects of gentrification and rising housing costs associated with investment and revitalization efforts.",
+            "Develop a Corporate Social Responsibility (CSR) program to encourage new and existing businesses to invest and participate in the Long Beach community and engender a sense of community pride and ownership."
+          ]
+        },
+        {
+          "id": "2.7",
+          "title": "PROVIDE ONGOING SUPPORT AND INVESTMENT FOR ARTISTS LIVING AND WORKING IN LONG BEACH.",
+          "strategies": [
+            "Identify, maintain and expand structural and one-time funding sources to support artists and cultural organizations in the City.",
+            "Coordinate and align implementation of arts support programs such as Measure B, Percent for the Arts, and Long Beach Recovery Act (LBRA) to amplify their impact."
+          ]
+        },
+        {
+          "id": "2.8",
+          "title": "ENSURE THAT ARTS SUPPORT PROGRAMS REACH AND ENGAGE ARTISTS AND ORGANIZATIONS UPLIFTING DIVERSE COMMUNITIES.",
+          "strategies": [
+            "Promote arts education programs throughout the entire City, including partnering with our educational institutions to ensure early and ongoing arts programming.",
+            "Coordinate City arts support programs with the Arts Council to make it easy for artists to apply for and receive support for their art.",
+            "Establish geographically-based priorities to align arts support with a citywide cultural plan."
+          ]
+        }
+      ]
+    }
+  }

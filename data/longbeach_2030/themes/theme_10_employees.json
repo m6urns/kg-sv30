@@ -1,0 +1,37 @@
+{
+    "section": "Our Government",
+    "theme": {
+      "id": 10,
+      "title": "City Employees",
+      "description": "Employees are energized, thriving, engaged and reflect the diversity of communities in our City.",
+      "quote": null,
+      "quote_source": null,
+      "overview": "The health of our city government begins at the heart with each city employee. City employees are the drivers behind city services and community programs, and their hard work and passion for our community must be recognized. The following strategies are designed to create a safe, diverse, and supportive work environment with improvements to hiring, staff wellbeing, and work culture.",
+      "informed_by": [],
+      "goals": [
+        {
+          "id": "10.1",
+          "title": "DIVERSE, TALENTED CITY STAFF REFLECT THE COMMUNITY, FEEL VALUED AND HEARD.",
+          "strategies": [
+            "Simplify and streamline hiring processes so staff can be hired more quickly and efficiently.",
+            "Recognize staff performance with equitable compensation and professional growth opportunities.",
+            "Create mentoring and succession planning programs to ensure a healthy transition when people leave the organization.",
+            "Recruit city staff with a focus on diversity, equity, and inclusivity.",
+            "Create new models for employee recruitment, support, and retention.",
+            "Support the mental health and wellbeing of staff to develop personal resiliency, stress management, and adaptability through trauma-informed practices.",
+            "Continue and strengthen the work culture that allows for flexible work schedules and increased investments in technology to support remote working.",
+            "Expand safe and supportive work environments where city staff feel comfortable sharing ideas.",
+            "Support and strengthen the wellbeing of the staff and their family by ensuring that a dedicated space is provided to express breastmilk in their designated workspace."
+          ]
+        },
+        {
+          "id": "10.2",
+          "title": "CITY EMPLOYEES UNDERSTAND AND ARE COMMITTED TO EQUITY IN PROGRAM AND BUDGET PLANNING, IMPLEMENTATION, AND OUTCOMES.",
+          "strategies": [
+            "Provide City employees with multiple touch points, tools, and opportunities to learn, grow and incorporate equity into their work so that it becomes a part of everyday policy and practice.",
+            "Strengthen City leadership knowledge base around equity so that they apply an equity lens to all work-related matters and encourage their teams to do so as well."
+          ]
+        }
+      ]
+    }
+  }

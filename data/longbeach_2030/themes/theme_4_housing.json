@@ -1,0 +1,96 @@
+{
+    "section": "Our Community",
+    "theme": {
+      "id": 4,
+      "title": "Housing and Homelessness",
+      "description": "Housing is available, safe, inviting and affordable",
+      "quotes": [
+        {
+          "text": "[Homeless Services is] the only place I've known that caters strictly to the homeless population and treats them like actual human beings. After reaching out to countless programs, service providers and alleged resources for the homeless, I was on the verge of giving up. Then a trio of workers from the Multi Service Center approached me and a few other distraught citizens underneath the bridge. The staff here has given me clothing, Tap cards, and is currently helping me acquire a place to live.",
+          "source": "Homeless Services Participant"
+        },
+        {
+          "text": "The most important issue is the fairness of housing.",
+          "source": "Century Villages at Cabrillo Youth Resident (Housing Element)"
+        }
+      ],
+      "overview": "Housing is basic infrastructure that is essential to people's health, quality of life and our overall economy. By 2030, we envision a Long Beach that has safe and quality housing that is available and affordable for residents across all income levels, and is the most affordable and accessible beach community in California. To get there, we will expand on existing efforts to address the lack of sufficient housing supply and provide housing assistance, housing support services, and services for people experiencing homelessness. Increasing the feasibility of developing underutilized sites throughout the City and focusing the greatest amount of new housing near transit and jobs are some of the strategies needed for the City to increase our housing supply while minimizing the City's carbon footprint. Other strategies specifically focus on housing discrimination, housing accessibility, behavioral health services, and community empowerment. The following recommendations help us meet our housing commitment and continue to affirm that housing is a fundamental human right for all residents.",
+      "informed_by": [
+        "Housing Element (2021)",
+        "Everybody Home Initiative (2017)",
+        "Racial Equity and Reconciliation Initiative (2020)",
+        "The Downtown Plan (2012)",
+        "South East Area Specific Plan (2017)",
+        "Uptown Plan (2021)",
+        "Midtown Plan (2015)"
+      ],
+      "goals": [
+        {
+          "id": "4.1",
+          "title": "LONG BEACH IS THE MOST AFFORDABLE BEACH COMMUNITY.",
+          "strategies": [
+            "Provide housing assistance and coordinated housing support services to meet resident needs.",
+            "Prioritize existing funding sources and explore new funding mechanisms and resources for affordable and workforce housing.",
+            "Minimize displacement and protect tenants who are vulnerable to eviction and displacement.",
+            "Ensure the opportunity for enough housing to be built so that housing prices are not unnecessarily high due to lack of supply."
+          ]
+        },
+        {
+          "id": "4.2",
+          "title": "NEW HOUSING IS DEVELOPED TO MEET THE NEEDS OF RESIDENTS AT ALL INCOME AND ABILITY LEVELS.",
+          "strategies": [
+            "Increase opportunities for development of new housing to meet existing and projected resident needs, with a focus on new housing near transit and jobs.",
+            "Revitalize under-utilized commercial corridors throughout the city by allowing a mix of compatible uses including housing, jobs, shopping and services.",
+            "Continue to incentivize or mandate mixed-income, multi-family housing development throughout the City using strategies such as inclusionary housing requirements and density bonus incentives."
+          ]
+        },
+        {
+          "id": "4.3",
+          "title": "HOUSING DISCRIMINATION NO LONGER EXISTS.",
+          "strategies": [
+            "Provide services to combat rental housing discrimination against Black, Latino, Cambodian and other communities of color and disability.",
+            "Provide homeownership assistance and support services to first-time homebuyers with a focus on low-income communities of color who have historically faced barriers to homeownership.",
+            "Establish incentives to facilitate the development of for-sale housing that is priced for entry level homeowners and those who work in Long Beach.",
+            "Empower community members to participate in community development such as through community land trusts or other models for facilitating community ownership of affordable housing.",
+            "Increase access to housing in high-opportunity areas where children have what they need to thrive, including quality schools, open space and a clean environment."
+          ]
+        },
+        {
+          "id": "4.4",
+          "title": "BARRIERS TO ACCESSING SHELTER ARE ELIMINATED.",
+          "strategies": [
+            "Increase the number of emergency shelter beds, transitional housing options and permanent supportive units to meet the need in Long Beach, including tiny homes and other modular unit opportunities, motels, and new construction.",
+            "Partner with and incentivize landlords to open existing and new units, including units that are structurally accessible, for subsidized housing.",
+            "Increase the interim and permanent housing resources available to families experiencing homelessness and ensure consistent and timely access to those resources.",
+            "Expand programs such as the Family Self Sufficiency Program to reduce reliance on housingsubsidies by supporting them in building an escrow account and connecting people to education, workforce development, child care and other supportive services.",
+            "Implement mobile Multi-Service Center (MSC) services and intake units for increased outreach and connection to services across the City.",
+            "Identify resources and partners available to assess and connect people experiencing homelessness to resources after hours and weekends.",
+            "Educate the community about City homeless services and what the community can do to be a part of the solution.",
+            "Expand collaborative discharge planning processes at hospitals and institutions so that people experiencing homelessness are discharged into safe and supportive housing."
+          ]
+        },
+        {
+          "id": "4.5",
+          "title": "HOUSEHOLDS AT RISK OF BEING EVICTED HAVE WHAT THEY NEED TO REMAIN HOUSED.",
+          "strategies": [
+            "Strengthen education, resources, and coordination of services for children, youth and young adults experiencing housing insecurity/homelessness to improve academic success and break the cycle of future homelessness.",
+            "Increase prevention funding and essential services for people who are precariously housed, including but not limited to support with rental payments, security deposits or utility bills, eviction prevention services, motel vouchers, legal aid, and credit counseling.",
+            "Develop and implement housing and service models including prevention, retention, housing access, and support services specifically to meet the needs of older adults, people with disabilities, transition-aged youth, LGTBQIA+ and re-entry populations who are at-risk of, or experiencing housing insecurity/homelessness.",
+            "Increase funding to support transitional-aged youth, disengaged youth, and youth who may be experiencing housing insecurity/homelessness.",
+            "Expand options for on-the-job training and living wage employment opportunities for dislocated workers, re-entry population, and transition-aged youth at risk of, or experiencing, homelessness.",
+            "Develop programs and policies that prevent the displacement of low-income communities of color that result in gentrification as new market rate housing is being constructed."
+          ]
+        },
+        {
+          "id": "4.6",
+          "title": "BEHAVIORAL HEALTH SERVICES AND CASE MANAGEMENT ARE ACCESSIBLE AND AFFORDABLE.",
+          "strategies": [
+            "Expand long-term behavioral health treatment and prevention capacity within the City of Long Beach by leveraging County funding and services, leveraging MediCal funding and partnering with local hospitals and non-profit providers to expand services.",
+            "Increase substance use managed withdrawal services, sobering center opportunities, and recuperative care beds through partnerships with LA County, State, and local hospitals and non-profit providers.",
+            "Increase case management and support services at existing and future scattered site housing locations.",
+            "Further implement behavioral health crisis intervention teams to provide mental health and substance use outreach and connection to services."
+          ]
+        }
+      ]
+    }
+  }
