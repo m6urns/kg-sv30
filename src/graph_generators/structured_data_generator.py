@@ -454,7 +454,7 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         
         # Create links between strategies based on keyword similarity
         # Only link strategies that have sufficient similarity
-        STRATEGY_SIMILARITY_THRESHOLD = 0.125  # Minimum similarity required to create a link
+        STRATEGY_SIMILARITY_THRESHOLD = 0.12  # Minimum similarity required to create a link
         
         # Count how many similarity links we create
         similarity_link_count = 0

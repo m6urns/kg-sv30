@@ -1,5 +1,6 @@
 // Global variables
 let graphViz = null;
+let nodeViewHistory = []; // Added to track node navigation history
 
 // DOM elements
 const sampleBtn = document.getElementById('sample-btn');
@@ -74,6 +75,23 @@ function showStatus(message, type) {
   statusMessage.className = type;
 }
 
+// Add function to navigate back in history
+function navigateBack() {
+  if (nodeViewHistory.length > 1) {
+    // Remove current node
+    nodeViewHistory.pop();
+    
+    // Get previous node
+    const previousNodeId = nodeViewHistory[nodeViewHistory.length - 1];
+    
+    // Remove it temporarily so it doesn't get added twice
+    nodeViewHistory.pop();
+    
+    // Focus on the node - this will add it back to history
+    focusOnNode(previousNodeId);
+  }
+}
+
 // debounce function is now in utils.js
 
 function displaySearchResults(results) {
@@ -142,7 +160,33 @@ function displaySearchResults(results) {
 
 // Helper function to display node details in the details panel
 function displayNodeDetails(data) {
+  // Add node to history if it's different from the most recent
+  const nodeId = data.node.id;
+  if (nodeViewHistory.length === 0 || nodeViewHistory[nodeViewHistory.length - 1] !== nodeId) {
+    nodeViewHistory.push(nodeId);
+    
+    // Limit history size
+    if (nodeViewHistory.length > 50) {
+      nodeViewHistory.shift();
+    }
+  }
+  
   detailsPanel.innerHTML = '';
+  
+  // Add back button if there's history
+  if (nodeViewHistory.length > 1) {
+    const navBar = document.createElement('div');
+    navBar.className = 'node-navigation-bar';
+    
+    const backButton = document.createElement('button');
+    backButton.id = 'node-back-button';
+    backButton.className = 'node-navigation-button';
+    backButton.innerHTML = '&larr; Back';
+    backButton.onclick = navigateBack;
+    
+    navBar.appendChild(backButton);
+    detailsPanel.appendChild(navBar);
+  }
   
   // Create header
   const header = document.createElement('h2');
@@ -857,7 +901,7 @@ function createKnowledgeGraph(data, container) {
       const communityNode = data.nodes.find(node => node.community === d);
       return communityNode ? communityNode.community_label : `Cluster ${d}`;
     })
-    .attr('font-size', 16)
+    .attr('font-size', 15)
     .attr('font-weight', 'bold')
     .attr('fill', d => colorScale(d))
     .attr('opacity', 0.7);
@@ -890,32 +934,6 @@ function createKnowledgeGraph(data, container) {
       }
     });
   });
-  
-  // Helper functions for this visualization (scoped to this function)
-  
-  // function getNodeColor(d) {
-  //   if (d.type === 'topic') {
-  //     // Color by community for topics
-  //     return d.community !== undefined ? colorScale(d.community) : '#6baed6';
-  //   }
-  //   return '#fd8d3c'; // Document nodes
-  // }
-  
-  // function getLinkColor(d) {
-  //   if (d.type === 'belongs_to' || d.type === 'part_of_theme' || d.type === 'part_of_goal') return '#bdbdbd';
-    
-  //   // For similar_content links, use a distinct color
-  //   if (d.type === 'similar_content') return '#9467bd'; // Purple for similarity links
-    
-  //   // For related_to links, blend the colors of the communities
-  //   if (d.source.community !== undefined && 
-  //       d.target.community !== undefined && 
-  //       d.source.community === d.target.community) {
-  //     return colorScale(d.source.community);
-  //   }
-    
-  //   return '#9ecae1';
-  // }
 
   function getNodeColor(d) {
     // All nodes should use their community color
@@ -948,7 +966,7 @@ function createKnowledgeGraph(data, container) {
     }
     
     // For similar_content links, use a distinct color
-    if (d.type === 'similar_content') return '#9467bd'; // Purple for similarity links
+    if (d.type === 'similar_content') return '#787878'; // Purple for similarity links
     
     // For related_to links between nodes in the same community, use community color
     if (d.source.community !== undefined && 
