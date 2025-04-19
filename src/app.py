@@ -144,10 +144,9 @@ def process_document():
         if current_dir not in sys.path:
             sys.path.append(current_dir)
         
-        # We always use the sample generator for now 
-        # (ignoring any generator parameter in the request)
-        from graph_generators import SampleGraphGenerator
-        generator = SampleGraphGenerator()
+        # Use the structured data generator by default
+        from graph_generators import StructuredDataGraphGenerator
+        generator = StructuredDataGraphGenerator()
         logger.info(f"Using generator: {generator.get_name()}")
         
         # Get absolute path to JSON data
@@ -188,9 +187,9 @@ def process_document():
         
         # Try to use sample data as fallback
         try:
-            logger.info("Using sample generator as fallback after processing error")
-            from graph_generators import SampleGraphGenerator
-            generator = SampleGraphGenerator()
+            logger.info("Using structured data generator as fallback after processing error")
+            from graph_generators import StructuredDataGraphGenerator
+            generator = StructuredDataGraphGenerator()
             
             # Try to get the vision statement from JSON if possible
             try:
@@ -265,19 +264,20 @@ with app.app_context():
                 graph_data = json.load(f)
             logger.info(f"Pre-loaded graph data with {len(graph_data['nodes'])} nodes and {len(graph_data['links'])} links")
         else:
-            # No saved data, generate sample data
-            from generate_sample_data import generate_sample_strategic_vision_data
-            logger.info("Initializing with sample data (no saved data found)")
-            graph_data = generate_sample_strategic_vision_data()
+            # No saved data, generate using structured data
+            from graph_generators import StructuredDataGraphGenerator
+            logger.info("Initializing with structured data (no saved data found)")
+            generator = StructuredDataGraphGenerator()
+            graph_data = generator.generate_graph("")
             
-            # Save the sample data
+            # Save the generated data
             static_dir = os.path.join(base_dir, 'static')
             os.makedirs(static_dir, exist_ok=True)
             
             with open(os.path.join(static_dir, 'graph_data.json'), 'w') as f:
                 json.dump(graph_data, f)
             
-            logger.info("Generated and saved sample data")
+            logger.info("Generated and saved structured data graph")
     except Exception as e:
         logger.warning(f"Error loading or generating initial data: {e}")
 
