@@ -157,6 +157,14 @@ function displayNodeDetails(data) {
                        (data.node.keywords || []).join(', ');
     detailsPanel.appendChild(keywords);
     
+    // Show overview/description if available
+    if (data.node.description || data.node.overview) {
+      const description = document.createElement('p');
+      description.className = 'node-description theme-description';
+      description.textContent = data.node.overview || data.node.description;
+      detailsPanel.appendChild(description);
+    }
+    
     // Show community
     if (data.node.community_label) {
       const community = document.createElement('p');
@@ -176,8 +184,12 @@ function displayNodeDetails(data) {
       detailsPanel.appendChild(topicsTitle);
       
       const topicsList = document.createElement('ul');
+      topicsList.className = 'hierarchy-list';
+      
       relatedTopics.forEach(topic => {
         const item = document.createElement('li');
+        item.className = 'theme-item';
+        
         const link = document.createElement('a');
         link.textContent = topic.label;
         link.href = '#';
@@ -185,6 +197,7 @@ function displayNodeDetails(data) {
           e.preventDefault();
           focusOnNode(topic.id);
         };
+        
         item.appendChild(link);
         topicsList.appendChild(item);
       });
@@ -192,18 +205,22 @@ function displayNodeDetails(data) {
       detailsPanel.appendChild(topicsList);
     }
     
-    // Show related documents
+    // Show related documents (goals)
     const docsTitle = document.createElement('h3');
-    docsTitle.textContent = 'Related Document Segments:';
+    docsTitle.textContent = 'Related Goals:';
     detailsPanel.appendChild(docsTitle);
     
     const docList = document.createElement('ul');
+    docList.className = 'hierarchy-list';
+    
     const relatedDocs = data.connections
       .filter(conn => conn.node.type === 'document')
       .map(conn => conn.node);
     
     relatedDocs.forEach(doc => {
       const item = document.createElement('li');
+      item.className = 'goal-item';
+      
       const link = document.createElement('a');
       link.textContent = doc.label;
       link.href = '#';
@@ -211,25 +228,29 @@ function displayNodeDetails(data) {
         e.preventDefault();
         focusOnNode(doc.id);
       };
+      
       item.appendChild(link);
       docList.appendChild(item);
     });
     
     detailsPanel.appendChild(docList);
-  } else {
-    // Show document text
+  } 
+  // Handle goal nodes with strategies (document nodes with has_strategy_links)
+  else if (data.node.type === 'document' && (data.node.has_strategy_links || data.node.display_type === 'strategy_list') && data.node.strategy_entries) {
+    // Show document text/description
     const text = document.createElement('p');
     text.textContent = data.node.text;
+    text.className = 'node-description goal-description';
     detailsPanel.appendChild(text);
     
     // Show related topic
     const topic = data.connections
       .find(conn => conn.node.type === 'topic' && 
-                 conn.relationship === 'belongs_to');
+                 (conn.relationship === 'belongs_to' || conn.relationship === 'part_of_theme'));
     
     if (topic) {
       const topicInfo = document.createElement('p');
-      topicInfo.innerHTML = '<strong>Topic:</strong> ';
+      topicInfo.innerHTML = '<strong>Theme:</strong> ';
       
       const link = document.createElement('a');
       link.textContent = topic.node.label;
@@ -242,6 +263,132 @@ function displayNodeDetails(data) {
       topicInfo.appendChild(link);
       detailsPanel.appendChild(topicInfo);
     }
+    
+    // Show strategies
+    const strategiesTitle = document.createElement('h3');
+    strategiesTitle.textContent = 'Strategies:';
+    detailsPanel.appendChild(strategiesTitle);
+    
+    const strategiesList = document.createElement('ul');
+    strategiesList.className = 'hierarchy-list';
+    
+    data.node.strategy_entries.forEach(strategy => {
+      const item = document.createElement('li');
+      item.className = 'strategy-item';
+      
+      const link = document.createElement('a');
+      // Format according to the item_format if specified, otherwise use default format
+      const displayText = strategy.section + ': ' + strategy.summary;
+      link.textContent = displayText;
+      link.href = strategy.url || '#';
+      
+      // Extract strategy ID from the URL if it exists
+      let strategyId = strategy.id;
+      if (!strategyId && strategy.url) {
+        // If there's a URL like "#/strategy/strategy_id", extract the ID
+        const match = strategy.url.match(/#\/strategy\/(.+)$/);
+        if (match) strategyId = match[1];
+      }
+      
+      if (strategyId) {
+        link.onclick = (e) => {
+          e.preventDefault();
+          focusOnNode(strategyId);
+        };
+      }
+      
+      item.appendChild(link);
+      strategiesList.appendChild(item);
+    });
+    
+    detailsPanel.appendChild(strategiesList);
+  }
+  // Strategy nodes
+  else if (data.node.type === 'strategy') {
+    // Show strategy text
+    const text = document.createElement('p');
+    text.textContent = data.node.text;
+    text.className = 'node-description strategy-description';
+    detailsPanel.appendChild(text);
+    
+    // Show relationships
+    const relationshipsContainer = document.createElement('div');
+    
+    // Show parent goal
+    const goal = data.connections
+      .find(conn => conn.node.type === 'document' && 
+                 conn.relationship === 'part_of_goal');
+    
+    if (goal) {
+      const goalInfo = document.createElement('p');
+      goalInfo.innerHTML = '<strong>Goal:</strong> ';
+      
+      const link = document.createElement('a');
+      link.textContent = goal.node.label;
+      link.href = '#';
+      link.onclick = (e) => {
+        e.preventDefault();
+        focusOnNode(goal.node.id);
+      };
+      
+      goalInfo.appendChild(link);
+      relationshipsContainer.appendChild(goalInfo);
+    }
+    
+    // Show theme (if available through connections)
+    const theme = data.connections
+      .find(conn => conn.node.type === 'topic');
+    
+    if (theme) {
+      const themeInfo = document.createElement('p');
+      themeInfo.innerHTML = '<strong>Theme:</strong> ';
+      
+      const link = document.createElement('a');
+      link.textContent = theme.node.label;
+      link.href = '#';
+      link.onclick = (e) => {
+        e.preventDefault();
+        focusOnNode(theme.node.id);
+      };
+      
+      themeInfo.appendChild(link);
+      relationshipsContainer.appendChild(themeInfo);
+    }
+    
+    detailsPanel.appendChild(relationshipsContainer);
+  }
+  // Default handling for other node types
+  else {
+    // Show document text
+    const text = document.createElement('p');
+    text.textContent = data.node.text;
+    text.className = 'node-description';
+    detailsPanel.appendChild(text);
+    
+    // Show related topic and/or goal
+    const relationshipsContainer = document.createElement('div');
+    
+    const topic = data.connections
+      .find(conn => conn.node.type === 'topic' && 
+                 (conn.relationship === 'belongs_to' || conn.relationship === 'part_of_theme'));
+    
+    if (topic) {
+      const topicInfo = document.createElement('p');
+      topicInfo.innerHTML = '<strong>Theme:</strong> ';
+      
+      const link = document.createElement('a');
+      link.textContent = topic.node.label;
+      link.href = '#';
+      link.onclick = (e) => {
+        e.preventDefault();
+        focusOnNode(topic.node.id);
+      };
+      
+      topicInfo.appendChild(link);
+      relationshipsContainer.appendChild(topicInfo);
+    }
+    
+    detailsPanel.appendChild(relationshipsContainer);
   }
 }
 

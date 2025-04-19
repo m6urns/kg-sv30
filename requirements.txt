@@ -3,7 +3,3 @@ networkx>=2.8.0
 numpy>=1.20.0
 matplotlib>=3.5.0
 scikit-learn>=1.0.0
-# Optional dependencies (not required for sample data)
-# openai>=1.0.0
-# bertopic>=0.14.1
-# sentence-transformers>=2.2.2

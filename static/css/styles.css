@@ -189,3 +189,117 @@ body {
   color: #856404;
   border: 1px solid #ffeeba;
 }
+
+/* Hierarchical Navigation Styling */
+.hierarchy-list {
+  list-style-type: none;
+  padding-left: 0;
+  margin-top: 12px;
+}
+
+.hierarchy-list li {
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid #6c757d;
+  transition: all 0.2s ease;
+}
+
+.hierarchy-list li:hover {
+  background-color: #e9ecef;
+  border-left: 3px solid #0d6efd;
+}
+
+.hierarchy-list a {
+  display: block;
+  color: #495057;
+  text-decoration: none;
+}
+
+.hierarchy-list a:hover {
+  color: #0d6efd;
+}
+
+/* Color-coding for different levels */
+.theme-item {
+  border-left-color: #28a745 !important; /* Green for themes */
+}
+
+.theme-item:hover {
+  border-left-color: #218838 !important;
+  background-color: #e8f5e9;
+}
+
+.goal-item {
+  border-left-color: #007bff !important; /* Blue for goals */
+}
+
+.goal-item:hover {
+  border-left-color: #0069d9 !important;
+  background-color: #e6f2ff;
+}
+
+.strategy-item {
+  border-left-color: #fd7e14 !important; /* Orange for strategies */
+}
+
+.strategy-item:hover {
+  border-left-color: #e76b00 !important;
+  background-color: #fff3e6;
+}
+
+/* Description styling */
+.node-description {
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: #f1f8ff;
+  border-radius: 4px;
+  border-left: 4px solid #0366d6;
+}
+
+.theme-description {
+  background-color: #e8f5e9;
+  border-left-color: #28a745;
+}
+
+.goal-description {
+  background-color: #e6f2ff;
+  border-left-color: #007bff;
+}
+
+.strategy-description {
+  background-color: #fff3e6;
+  border-left-color: #fd7e14;
+}
+
+/* Keep backward compatibility with previous class names */
+.strategies-list {
+  list-style-type: none;
+  padding-left: 0;
+  margin-top: 12px;
+}
+
+.strategies-list li {
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid #fd7e14;
+  transition: all 0.2s ease;
+}
+
+.strategies-list li:hover {
+  background-color: #fff3e6;
+  border-left: 3px solid #e76b00;
+}
+
+.strategies-list a {
+  display: block;
+  color: #495057;
+  text-decoration: none;
+}
+
+.strategies-list a:hover {
+  color: #fd7e14;
+}

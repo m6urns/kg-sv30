@@ -215,8 +215,29 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                 # Extract strategies for reference but handle them in the strategy generator
                 strategies = goal.get('strategies', [])
                 
+                # Create an HTML representation of strategies for display when this goal is clicked
+                strategy_html = f"<h3>{labeled_goal_title}</h3><ul>"
+                for i, strategy in enumerate(strategies):
+                    # Create section number for the strategy (e.g., "1.1.1")
+                    strategy_section = f"{goal_id}.{i+1}"
+                    strategy_html += f'<li><strong>{strategy_section}</strong>: {strategy}</li>'
+                strategy_html += "</ul>"
+                
                 # Generate a unique node ID for the goal - standardize the format
                 node_id = f"goal_{theme_id}_{goal_id.replace('.', '_')}"
+                
+                # Prepare an array of strategy entries for UI rendering
+                strategy_entries = []
+                for i, strategy in enumerate(strategies):
+                    strategy_section = f"{goal_id}.{i+1}"
+                    strategy_id = f"strategy_{theme_id}_{goal_id.replace('.', '_')}_{i}"
+                    strategy_entries.append({
+                        "id": strategy_id,
+                        "section": strategy_section,
+                        "text": strategy,
+                        "summary": strategy[:60] + "..." if len(strategy) > 60 else strategy,
+                        "url": f"#/strategy/{strategy_id}" # Navigation URL for frontend
+                    })
                 
                 # Create the goal node with enhanced attributes
                 goal_node = {
@@ -229,11 +250,18 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                     "theme_title": theme_title,
                     "raw_goal_id": goal_id,                   # Store the original goal ID for easier lookup later
                     "strategies_count": len(strategies),
+                    "strategies_html": strategy_html,         # HTML representation for display
+                    "strategy_entries": strategy_entries,     # Structured data for UI rendering
+                    "display_type": "strategy_list",          # Hint for UI to display as a list of clickable strategies
                     "community": community_id,                # Same community as parent theme
                     "community_label": community_label,
                     "level": "secondary",                     # Mark as secondary node
                     "depth": 1                                # Depth level in hierarchy
                 }
+                
+                # Add has_strategy_links flag if the goal has strategies
+                if len(strategies) > 0:
+                    goal_node["has_strategy_links"] = True
                 
                 goal_nodes.append(goal_node)
                 
@@ -450,31 +478,47 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                 "id": strategy["id"],
                 "section": strategy["section_number"],
                 "text": strategy["text"],
-                "summary": strategy["summary"]
+                "summary": strategy["summary"],
+                "url": f"#/node/{strategy['id']}"  # Direct link to the strategy node
             }
             goal_strategies[goal_id].append(strategy_info)
         
-        # Add strategies to each goal node
+        # Add strategies to each goal node if not already present
         for goal_id, strategies in goal_strategies.items():
-            if goal_id in goal_map:
+            if goal_id in goal_map and "strategy_entries" not in goal_map[goal_id]:
                 # Sort strategies by section number
                 strategies.sort(key=lambda s: s["section"])
-                goal_map[goal_id]["strategies"] = strategies
+                goal_map[goal_id]["strategy_entries"] = strategies
         
         # Combine all nodes
         all_nodes = theme_nodes + goal_nodes + strategy_nodes
         
-        # Add visualization metadata for the UI
+        # Add updated visualization metadata for the UI
         visualization_metadata = {
             "node_types": {
-                "theme": {"label": "Theme", "icon": "circle", "size": "large"},
-                "goal": {"label": "Goal", "icon": "square", "size": "medium"},
+                "topic": {"label": "Theme", "icon": "circle", "size": "large"},
+                "document": {"label": "Goal", "icon": "square", "size": "medium"},
                 "strategy": {"label": "Strategy", "icon": "triangle", "size": "small"}
             },
             "layout": {
                 "hierarchical": True,
                 "levels": 3,
                 "section_key": "section_number"
+            },
+            "interactions": {
+                "goal_click": {
+                    "display": "strategy_list", 
+                    "source": "strategy_entries",
+                    "clickable": True,
+                    "title_field": "label",           # Added field
+                    "item_format": "{section}: {summary}", # Added field
+                    "link_field": "url"               # Added field
+                },
+                "strategy_click": {
+                    "display": "text",
+                    "source": "text",
+                    "title_format": "{section_number}: Strategy" # Added field
+                }
             }
         }
         
