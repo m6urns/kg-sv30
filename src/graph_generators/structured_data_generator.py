@@ -78,7 +78,9 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         words = text.lower().split()
         
         # Remove common stopwords and short words
-        stopwords = set(['the', 'and', 'is', 'of', 'to', 'in', 'for', 'a', 'with', 'that', 'are', 'by', 'on', 'as'])
+        stopwords = set(['the', 'and', 'is', 'of', 'to', 'in', 'for', 'a', 'with', 'that', 'are', 'by', 'on', 'as',
+                         'be', 'all', 'an', 'at', 'but', 'by', 'can', 'from', 'have', 'he', 'i', 'more', 'not', 
+                         'or', 'such', 'they', 'this', 'through', 'we', 'was', 'will', 'our', 'their', 'these'])
         filtered_words = [word for word in words if word not in stopwords and len(word) > 3]
         
         # Count occurrences
@@ -87,33 +89,60 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         # Return most common words
         return [word for word, _ in word_counts.most_common(max_keywords)]
     
-    def _calculate_similarity(self, theme1: Dict, theme2: Dict) -> float:
+    def _calculate_similarity(self, node1: Dict, node2: Dict) -> float:
         """
-        Calculate thematic similarity between two themes.
+        Calculate similarity between two nodes based on their keywords or text.
         
         Args:
-            theme1: First theme dictionary
-            theme2: Second theme dictionary
+            node1: First node dictionary
+            node2: Second node dictionary
             
         Returns:
             Similarity score between 0.0 and 1.0
         """
-        # Base similarity on keyword overlap
-        keywords1 = set(theme1.get("keywords", []))
-        keywords2 = set(theme2.get("keywords", []))
-        
-        if not keywords1 or not keywords2:
-            return 0.3  # Default mild similarity if keywords missing
-        
-        # Calculate Jaccard similarity
-        similarity = len(keywords1.intersection(keywords2)) / len(keywords1.union(keywords2))
-        
-        # Add similarity boost for themes in same section
-        if theme1.get("section_id") == theme2.get("section_id"):
-            similarity += 0.2
+        # For theme nodes, use existing keywords
+        if node1.get("type") == "topic" and node2.get("type") == "topic":
+            keywords1 = set(node1.get("keywords", []))
+            keywords2 = set(node2.get("keywords", []))
             
-        # Cap similarity at 1.0
-        return min(similarity, 1.0)
+            if not keywords1 or not keywords2:
+                return 0.3  # Default mild similarity if keywords missing
+            
+            # Calculate Jaccard similarity
+            similarity = len(keywords1.intersection(keywords2)) / len(keywords1.union(keywords2))
+            
+            # Add similarity boost for themes in same section
+            if node1.get("section_id") == node2.get("section_id"):
+                similarity += 0.2
+                
+            # Cap similarity at 1.0
+            return min(similarity, 1.0)
+        
+        # For strategy nodes, extract keywords from text content
+        elif node1.get("type") == "strategy" and node2.get("type") == "strategy":
+            # Extract keywords from strategy text
+            text1 = node1.get("text", "")
+            text2 = node2.get("text", "")
+            
+            # Extract more keywords from strategies for better matching
+            keywords1 = set(self._extract_keywords(text1, max_keywords=8))
+            keywords2 = set(self._extract_keywords(text2, max_keywords=8))
+            
+            if not keywords1 or not keywords2:
+                return 0.0  # No similarity if no keywords
+            
+            # Calculate Jaccard similarity
+            similarity = len(keywords1.intersection(keywords2)) / len(keywords1.union(keywords2))
+            
+            # Add similarity boost for strategies in same theme
+            if node1.get("theme_id") == node2.get("theme_id"):
+                similarity += 0.1
+                
+            # Cap similarity at 1.0
+            return min(similarity, 1.0)
+        
+        # Default for other node combinations
+        return 0.0
     
     def _generate_theme_nodes(self) -> List[Dict[str, Any]]:
         """
@@ -236,7 +265,7 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                         "section": strategy_section,
                         "text": strategy,
                         "summary": strategy[:60] + "..." if len(strategy) > 60 else strategy,
-                        "url": f"#/strategy/{strategy_id}" # Navigation URL for frontend
+                        "url": f"#/node/{strategy_id}" # Navigation URL for frontend
                     })
                 
                 # Create the goal node with enhanced attributes
@@ -358,7 +387,7 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                 strategy_node = {
                     "id": strategy_id,
                     "type": "strategy",               # Specific node type for strategies
-                    "label": f"Strategy {i+1}",       # Simple label for graph display
+                    "label": f"Strategy {strategy_section}",  # Use section number for better identification
                     "display_label": labeled_strategy, # Detailed label for UI display
                     "section_number": strategy_section, # Strategy section number
                     "summary": summary,               # Short summary
@@ -420,28 +449,116 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                 "type": "part_of_goal"  # Changed from "implements" for clarity
             })
         
-        # Link themes to each other based on content similarity
-        for i, theme1 in enumerate(theme_nodes):
-            for theme2 in theme_nodes[i+1:]:
-                # Calculate similarity based on keywords and section
-                similarity = self._calculate_similarity(theme1, theme2)
+        # Removed the code that creates links between theme nodes (level 0)
+        # as requested
+        
+        # Create links between strategies based on keyword similarity
+        # Only link strategies that have sufficient similarity
+        STRATEGY_SIMILARITY_THRESHOLD = 0.125  # Minimum similarity required to create a link
+        
+        # Count how many similarity links we create
+        similarity_link_count = 0
+        
+        # Compare each strategy with others
+        for i, strategy1 in enumerate(strategy_nodes):
+            # Only compare with strategies that haven't been compared yet
+            for strategy2 in strategy_nodes[i+1:]:
+                # Skip strategies that are in the same goal (they're already linked indirectly)
+                if strategy1["goal_id"] == strategy2["goal_id"]:
+                    continue
                 
-                # Only create links for themes with meaningful similarity
-                if similarity > 0.2:
+                # Calculate similarity between these strategies
+                similarity = self._calculate_similarity(strategy1, strategy2)
+                
+                # Only create links if similarity is above threshold
+                if similarity >= STRATEGY_SIMILARITY_THRESHOLD:
                     links.append({
-                        "source": theme1["id"],
-                        "target": theme2["id"],
+                        "source": strategy1["id"],
+                        "target": strategy2["id"],
                         "weight": round(similarity, 2),
-                        "type": "related_to"
+                        "type": "similar_content"
                     })
+                    similarity_link_count += 1
         
         # Debug information to verify we're processing strategies
         if strategy_nodes:
             print(f"Generated {len(strategy_nodes)} strategy nodes and {len([l for l in links if l['type'] == 'part_of_goal'])} strategy links")
+            print(f"Created {similarity_link_count} similarity links between strategies")
         else:
             print("WARNING: No strategy nodes were generated!")
         
         return links
+    
+    def _add_connections_to_nodes(self, all_nodes: List[Dict[str, Any]], links: List[Dict[str, Any]]) -> None:
+        """
+        Add a 'connections' attribute to strategy nodes listing similar strategies.
+        
+        Args:
+            all_nodes: List of all node dictionaries
+            links: List of all link dictionaries
+        """
+        # Create a dictionary for quick node lookup
+        node_map = {node["id"]: node for node in all_nodes}
+        
+        # Get all strategy nodes
+        strategy_nodes = [node for node in all_nodes if node["type"] == "strategy"]
+        
+        # Initialize connections attribute for each strategy node
+        for node in strategy_nodes:
+            node["connections"] = []
+        
+        # Process each link
+        for link in links:
+            source_id = link["source"]
+            target_id = link["target"]
+            link_type = link["type"]
+            weight = link.get("weight", 1.0)
+            
+            # Skip hierarchical relationship links
+            if link_type in ["part_of_theme", "part_of_goal"]:
+                continue
+            
+            # Only process similarity links between strategies
+            if link_type != "similar_content":
+                continue
+                
+            # Check if both source and target are strategy nodes
+            source_node = node_map.get(source_id)
+            target_node = node_map.get(target_id)
+            
+            if not source_node or not target_node:
+                continue
+                
+            if source_node["type"] == "strategy" and target_node["type"] == "strategy":
+                # Add connection to source node
+                source_node["connections"].append({
+                    "node_id": target_id,
+                    "node_label": target_node.get("display_label", target_node["label"]),
+                    "node_type": target_node["type"],
+                    "link_type": link_type,
+                    "weight": weight,
+                    "goal_id": target_node.get("goal_id", ""),
+                    "goal_title": target_node.get("goal_title", ""),
+                    "theme_id": target_node.get("theme_id", ""),
+                    "theme_title": target_node.get("theme_title", "")
+                })
+                
+                # Add connection to target node
+                target_node["connections"].append({
+                    "node_id": source_id,
+                    "node_label": source_node.get("display_label", source_node["label"]),
+                    "node_type": source_node["type"],
+                    "link_type": link_type,
+                    "weight": weight,
+                    "goal_id": source_node.get("goal_id", ""),
+                    "goal_title": source_node.get("goal_title", ""),
+                    "theme_id": source_node.get("theme_id", ""),
+                    "theme_title": source_node.get("theme_title", "")
+                })
+        
+        # Sort connections by weight (highest first) for each strategy node
+        for node in strategy_nodes:
+            node["connections"].sort(key=lambda x: x["weight"], reverse=True)
     
     def generate_graph(self, document_text, **kwargs):
         """
@@ -461,6 +578,12 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         
         # Generate links between nodes
         links = self._generate_links(theme_nodes, goal_nodes, strategy_nodes)
+        
+        # Combine all nodes
+        all_nodes = theme_nodes + goal_nodes + strategy_nodes
+        
+        # Add connections information to nodes
+        self._add_connections_to_nodes(all_nodes, links)
         
         # Add strategies to goal metadata for better UI rendering when a goal is clicked
         # This makes it easier for the UI to display all strategies when a goal is clicked
@@ -490,15 +613,17 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                 strategies.sort(key=lambda s: s["section"])
                 goal_map[goal_id]["strategy_entries"] = strategies
         
-        # Combine all nodes
-        all_nodes = theme_nodes + goal_nodes + strategy_nodes
-        
         # Add updated visualization metadata for the UI
         visualization_metadata = {
             "node_types": {
                 "topic": {"label": "Theme", "icon": "circle", "size": "large"},
-                "document": {"label": "Goal", "icon": "square", "size": "medium"},
+                "document": {"label": "Goal", "icon": "square", "size": "large"},
                 "strategy": {"label": "Strategy", "icon": "triangle", "size": "small"}
+            },
+            "link_types": {
+                "part_of_theme": {"label": "Part of Theme", "style": "solid", "arrow": True},
+                "part_of_goal": {"label": "Part of Goal", "style": "solid", "arrow": True},
+                "similar_content": {"label": "Similar Content", "style": "dashed", "arrow": False}
             },
             "layout": {
                 "hierarchical": True,
@@ -510,14 +635,25 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                     "display": "strategy_list", 
                     "source": "strategy_entries",
                     "clickable": True,
-                    "title_field": "label",           # Added field
-                    "item_format": "{section}: {summary}", # Added field
-                    "link_field": "url"               # Added field
+                    "title_field": "label",           
+                    "item_format": "{section}: {summary}", 
+                    "link_field": "url"               
                 },
                 "strategy_click": {
                     "display": "text",
                     "source": "text",
-                    "title_format": "{section_number}: Strategy" # Added field
+                    "title_format": "{section_number}: Strategy",
+                    "additional_panels": [
+                        {
+                            "display": "connection_list",
+                            "source": "connections",
+                            "title": "Similar Strategies",
+                            "item_format": "{node_label} - {theme_title} ({weight})",
+                            "empty_message": "No similar strategies found",
+                            "clickable": True,
+                            "link_field": "node_id"
+                        }
+                    ]
                 }
             }
         }

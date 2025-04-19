@@ -305,19 +305,34 @@ function displayNodeDetails(data) {
   }
   // Strategy nodes
   else if (data.node.type === 'strategy') {
+    // Create container for strategy content
+    const strategyContainer = document.createElement('div');
+    strategyContainer.className = 'strategy-container';
+    
+    // Show strategy section number if available
+    if (data.node.section_number) {
+      const sectionNumber = document.createElement('div');
+      sectionNumber.className = 'strategy-section-number';
+      sectionNumber.textContent = data.node.section_number;
+      strategyContainer.appendChild(sectionNumber);
+    }
+    
     // Show strategy text
     const text = document.createElement('p');
     text.textContent = data.node.text;
     text.className = 'node-description strategy-description';
-    detailsPanel.appendChild(text);
+    strategyContainer.appendChild(text);
+    
+    detailsPanel.appendChild(strategyContainer);
     
     // Show relationships
     const relationshipsContainer = document.createElement('div');
+    relationshipsContainer.className = 'strategy-relationships';
     
     // Show parent goal
     const goal = data.connections
       .find(conn => conn.node.type === 'document' && 
-                 conn.relationship === 'part_of_goal');
+                 (conn.relationship === 'part_of_goal'));
     
     if (goal) {
       const goalInfo = document.createElement('p');
@@ -356,6 +371,11 @@ function displayNodeDetails(data) {
     }
     
     detailsPanel.appendChild(relationshipsContainer);
+    
+    // Display similar strategies if available
+    if (data.node.connections && data.node.connections.length > 0) {
+      displaySimilarStrategies(data.node, detailsPanel);
+    }
   }
   // Default handling for other node types
   else {
@@ -390,6 +410,172 @@ function displayNodeDetails(data) {
     
     detailsPanel.appendChild(relationshipsContainer);
   }
+}
+
+// Function to display similar strategies panel
+function displaySimilarStrategies(strategyNode, container) {
+  // Create container for similar strategies
+  const similarStrategiesContainer = document.createElement('div');
+  similarStrategiesContainer.className = 'similar-strategies-container';
+  
+  // Create header
+  const header = document.createElement('h3');
+  header.className = 'similar-strategies-header';
+  header.textContent = 'Similar Strategies';
+  similarStrategiesContainer.appendChild(header);
+  
+  // Check if there are any similar strategies
+  if (!strategyNode.connections || strategyNode.connections.length === 0) {
+    const emptyMessage = document.createElement('p');
+    emptyMessage.className = 'empty-connections';
+    emptyMessage.textContent = 'No similar strategies found';
+    similarStrategiesContainer.appendChild(emptyMessage);
+    container.appendChild(similarStrategiesContainer);
+    return;
+  }
+  
+  // Create list of similar strategies
+  const strategiesList = document.createElement('ul');
+  strategiesList.className = 'similar-strategies-list';
+  
+  // Loop through connections and add them to the list
+  strategyNode.connections.forEach(connection => {
+    const item = document.createElement('li');
+    item.className = 'similar-strategy-item';
+    
+    // Create link to the strategy
+    const link = document.createElement('a');
+    link.className = 'similar-strategy-link';
+    
+    // Format the similarity score as a percentage
+    const similarityScore = Math.round(connection.weight * 100);
+    
+    // Use the display_label if available, otherwise use the node_label
+    link.textContent = connection.node_label;
+    link.href = '#';
+    link.dataset.nodeId = connection.node_id;
+    
+    // Add click handler to navigate to the connected strategy
+    link.onclick = (e) => {
+      e.preventDefault();
+      focusOnNode(connection.node_id);
+    };
+    
+    // Create similarity badge
+    const similarityBadge = document.createElement('span');
+    similarityBadge.className = 'similarity-badge';
+    similarityBadge.textContent = `${similarityScore}% similar`;
+    
+    // Create context info
+    const contextInfo = document.createElement('div');
+    contextInfo.className = 'similar-strategy-context';
+    
+    // Add theme info
+    if (connection.theme_title) {
+      const themeInfo = document.createElement('span');
+      themeInfo.className = 'context-theme';
+      themeInfo.textContent = connection.theme_title;
+      contextInfo.appendChild(themeInfo);
+    }
+    
+    // Add separator if both theme and goal are present
+    if (connection.theme_title && connection.goal_title) {
+      contextInfo.appendChild(document.createTextNode(' | '));
+    }
+    
+    // Add goal info
+    if (connection.goal_title) {
+      const goalInfo = document.createElement('span');
+      goalInfo.className = 'context-goal';
+      goalInfo.textContent = connection.goal_title;
+      contextInfo.appendChild(goalInfo);
+    }
+    
+    // Add everything to the item
+    item.appendChild(link);
+    item.appendChild(similarityBadge);
+    item.appendChild(contextInfo);
+    strategiesList.appendChild(item);
+  });
+  
+  similarStrategiesContainer.appendChild(strategiesList);
+  container.appendChild(similarStrategiesContainer);
+  
+  // Add some styling
+  const style = document.createElement('style');
+  style.textContent = `
+    .similar-strategies-container {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 2px solid #e6e6e6;
+    }
+    
+    .similar-strategies-header {
+      font-size: 16px;
+      margin-bottom: 12px;
+      color: #333;
+      font-weight: bold;
+    }
+    
+    .similar-strategies-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .similar-strategy-item {
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+      position: relative;
+    }
+    
+    .similar-strategy-item:last-child {
+      border-bottom: none;
+    }
+    
+    .similar-strategy-link {
+      color: #0066cc;
+      text-decoration: none;
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-right: 60px;
+    }
+    
+    .similar-strategy-link:hover {
+      text-decoration: underline;
+    }
+    
+    .similarity-badge {
+      position: absolute;
+      right: 0;
+      top: 12px;
+      background-color: #e6f2ff;
+      color: #0066cc;
+      border-radius: 12px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    
+    .similar-strategy-context {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+    
+    .context-theme, .context-goal {
+      color: #555;
+    }
+    
+    .empty-connections {
+      color: #888;
+      font-style: italic;
+      padding: 8px 0;
+    }
+  `;
+  
+  document.head.appendChild(style);
 }
 
 function focusOnNode(nodeId) {
@@ -524,14 +710,108 @@ function createKnowledgeGraph(data, container) {
   const colorScale = d3.scaleOrdinal()
     .domain(communities)
     .range(d3.schemeCategory10);
-  
+
+  // Configuration for level-specific forces
+  const levelConfig = {
+    // Main node repulsion strength by level
+    chargeStrength: {
+      primary: -100,    // Theme nodes (level 0)
+      secondary: -200,  // Goal nodes (level 1)
+      tertiary: -1000   // Strategy nodes (level 2)
+    },
+    // Additional repulsion between nodes of the same level
+    levelRepulsionStrength: {
+      primary: 0,    // Extra repulsion between theme nodes
+      secondary: 0,  // Extra repulsion between goal nodes
+      tertiary: 0    // Extra repulsion between strategy nodes
+    },
+    // Maximum distance for level-specific repulsion to apply
+    repulsionDistance: {
+      primary: 0,
+      secondary: 0,
+      tertiary: 0
+    }
+  };
+
+  // Helper function to get node level
+  function getNodeLevel(node) {
+    if (node.level) {
+      return node.level; // Use explicit level if available
+    }
+    // Fall back to depth
+    if (node.depth === 0) return 'primary';
+    if (node.depth === 1) return 'secondary';
+    if (node.depth === 2) return 'tertiary';
+    return 'other';
+  }
+
   // Define forces with community clustering
   const simulation = d3.forceSimulation(data.nodes)
     .force('link', d3.forceLink(data.links).id(d => d.id).distance(100))
-    .force('charge', d3.forceManyBody().strength(-300))
+    .force('charge', d3.forceManyBody()
+      .strength(d => {
+        // Get node level (primary, secondary, tertiary)
+        const level = getNodeLevel(d);
+        
+        // Return configured strength for this level, or default value
+        return levelConfig.chargeStrength[level] || -300;
+      })
+    )
     .force('center', d3.forceCenter(width / 2, height / 2))
     .force('collision', d3.forceCollide().radius(d => calculateNodeSize(d) + 10))
+    // Add custom repulsion for each level
+    .force('primaryRepulsion', levelRepulsion('primary'))
+    .force('secondaryRepulsion', levelRepulsion('secondary'))
+    .force('tertiaryRepulsion', levelRepulsion('tertiary'))
     .force('cluster', forceCluster());
+
+  // Custom force function to apply additional repulsion between nodes of a specific level
+  function levelRepulsion(targetLevel) {
+    let nodes;
+    
+    function force(alpha) {
+      // Skip if no strength configured for this level
+      if (!levelConfig.levelRepulsionStrength[targetLevel]) return;
+      
+      const strength = levelConfig.levelRepulsionStrength[targetLevel];
+      const maxDistance = levelConfig.repulsionDistance[targetLevel] || 150;
+      
+      // Get only the nodes of the target level
+      const levelNodes = nodes.filter(n => getNodeLevel(n) === targetLevel);
+      
+      // Apply repulsion between each pair of level nodes
+      for (let i = 0; i < levelNodes.length; i++) {
+        const nodeA = levelNodes[i];
+        
+        for (let j = i + 1; j < levelNodes.length; j++) {
+          const nodeB = levelNodes[j];
+          
+          // Calculate distance between nodes
+          const dx = nodeA.x - nodeB.x;
+          const dy = nodeA.y - nodeB.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Skip if nodes are too far apart (optimization)
+          if (distance > maxDistance) continue;
+          
+          // Calculate repulsion force
+          const force = strength * alpha / distance;
+          
+          // Apply force
+          nodeA.vx += dx * force;
+          nodeA.vy += dy * force;
+          nodeB.vx -= dx * force;
+          nodeB.vy -= dy * force;
+        }
+      }
+    }
+    
+    force.initialize = function(_nodes) {
+      nodes = _nodes;
+    };
+    
+    return force;
+  }
   
   // Draw links
   const link = g.selectAll('.link')
@@ -613,24 +893,71 @@ function createKnowledgeGraph(data, container) {
   
   // Helper functions for this visualization (scoped to this function)
   
+  // function getNodeColor(d) {
+  //   if (d.type === 'topic') {
+  //     // Color by community for topics
+  //     return d.community !== undefined ? colorScale(d.community) : '#6baed6';
+  //   }
+  //   return '#fd8d3c'; // Document nodes
+  // }
+  
+  // function getLinkColor(d) {
+  //   if (d.type === 'belongs_to' || d.type === 'part_of_theme' || d.type === 'part_of_goal') return '#bdbdbd';
+    
+  //   // For similar_content links, use a distinct color
+  //   if (d.type === 'similar_content') return '#9467bd'; // Purple for similarity links
+    
+  //   // For related_to links, blend the colors of the communities
+  //   if (d.source.community !== undefined && 
+  //       d.target.community !== undefined && 
+  //       d.source.community === d.target.community) {
+  //     return colorScale(d.source.community);
+  //   }
+    
+  //   return '#9ecae1';
+  // }
+
   function getNodeColor(d) {
-    if (d.type === 'topic') {
-      // Color by community for topics
-      return d.community !== undefined ? colorScale(d.community) : '#6baed6';
+    // All nodes should use their community color
+    if (d.community !== undefined) {
+      return colorScale(d.community);
     }
-    return '#fd8d3c'; // Document nodes
+    
+    // Fallback colors for nodes without a community
+    if (d.type === 'topic') {
+      return '#6baed6'; // Blue for themes
+    } else if (d.type === 'document') {
+      return '#fd8d3c'; // Orange for goals
+    } else if (d.type === 'strategy') {
+      return '#74c476'; // Green for strategies
+    }
+    
+    // Default for any other node types
+    return '#cccccc';
   }
   
+  // Replace the getLinkColor function with this:
   function getLinkColor(d) {
-    if (d.type === 'belongs_to') return '#bdbdbd';
+    // For hierarchical links, use the parent's community color
+    if (d.type === 'part_of_theme' || d.type === 'part_of_goal') {
+      // For links from goals to themes or strategies to goals,
+      // use the community color of the target node (parent)
+      if (d.target && d.target.community !== undefined) {
+        return colorScale(d.target.community);
+      }
+    }
     
-    // For related_to links, blend the colors of the communities
+    // For similar_content links, use a distinct color
+    if (d.type === 'similar_content') return '#9467bd'; // Purple for similarity links
+    
+    // For related_to links between nodes in the same community, use community color
     if (d.source.community !== undefined && 
         d.target.community !== undefined && 
         d.source.community === d.target.community) {
       return colorScale(d.source.community);
     }
     
+    // For links between different communities, use light blue
     return '#9ecae1';
   }
   
@@ -648,8 +975,15 @@ function createKnowledgeGraph(data, container) {
       if (d.is_central) {
         content += `<br/><em>Central topic in this cluster</em>`;
       }
+    } else if (d.type === 'strategy') {
+      // For strategy nodes, show a shortened version of the text
+      content += `${d.text ? d.text.substring(0, 100) + (d.text.length > 100 ? '...' : '') : ''}`;
+      // Add similarity connections count if available
+      if (d.connections && d.connections.length > 0) {
+        content += `<br/><em>Has ${d.connections.length} similar strategies</em>`;
+      }
     } else {
-      content += `${d.text ? d.text.substring(0, 100) + '...' : ''}`;
+      content += `${d.text ? d.text.substring(0, 100) + (d.text.length > 100 ? '...' : '') : ''}`;
     }
     
     tooltip.transition()
