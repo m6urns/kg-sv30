@@ -777,8 +777,8 @@ function createKnowledgeGraph(data, container) {
     // Radial positioning parameters - increased separation
     radialPositioning: {
       enabled: true,
-      primary: 500,      // Themes positioned further out
-      secondary: 350,    // Goals in a wider middle layer
+      primary: 650,      // Themes positioned further out
+      secondary: 400,    // Goals in a wider middle layer
       tertiary: 180      // Strategies spread out more in center
     }
   };
@@ -872,7 +872,8 @@ function createKnowledgeGraph(data, container) {
   .force('primaryRepulsion', levelRepulsion('primary'))
   .force('secondaryRepulsion', levelRepulsion('secondary'))
   .force('tertiaryRepulsion', levelRepulsion('tertiary'))
-  .force('cluster', forceCluster(0.08)); // Reduced clustering force
+  .force('cluster', forceCluster(0.05))
+  .force('interCommunityRepulsion', interCommunityRepulsion(1.5));
 
 
 // Modify the custom levelRepulsion function to use the configured strengths (around line 334)
@@ -1163,7 +1164,7 @@ function levelRepulsion(targetLevel) {
   
   // Force to cluster nodes by community
   function forceCluster() {
-    const strength = 0.8;
+    const strength = 0.6;
     let nodes;
     
     function force(alpha) {
@@ -1188,6 +1189,54 @@ function levelRepulsion(targetLevel) {
     force.initialize = function(_nodes) {
       nodes = _nodes;
     }
+    
+    return force;
+  }
+
+  function interCommunityRepulsion(strength = 1.5) {
+    let nodes;
+    
+    function force(alpha) {
+      // Loop through all pairs of nodes from different communities
+      for (let i = 0; i < nodes.length; i++) {
+        const nodeA = nodes[i];
+        // Skip if node has no community
+        if (nodeA.community === undefined) continue;
+        
+        for (let j = i + 1; j < nodes.length; j++) {
+          const nodeB = nodes[j];
+          // Skip if node has no community or is from the same community
+          if (nodeB.community === undefined || nodeA.community === nodeB.community) continue;
+          
+          // Only apply strong repulsion to primary (theme) nodes
+          let repulsionStrength = strength;
+          if (getNodeLevel(nodeA) !== 'primary' || getNodeLevel(nodeB) !== 'primary') {
+            repulsionStrength *= 0.3; // Much weaker repulsion for non-theme nodes
+          }
+          
+          // Calculate distance between nodes
+          const dx = nodeA.x - nodeB.x;
+          const dy = nodeA.y - nodeB.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          // Skip if too far apart (optimization)
+          if (distance > 800) continue;
+          
+          // Calculate repulsion force - stronger when nodes are from different communities
+          const repulsion = repulsionStrength * alpha * Math.min(1.0, 800 / (distance * distance));
+          
+          // Apply force
+          nodeA.vx += dx * repulsion;
+          nodeA.vy += dy * repulsion;
+          nodeB.vx -= dx * repulsion;
+          nodeB.vy -= dy * repulsion;
+        }
+      }
+    }
+    
+    force.initialize = function(_nodes) {
+      nodes = _nodes;
+    };
     
     return force;
   }
