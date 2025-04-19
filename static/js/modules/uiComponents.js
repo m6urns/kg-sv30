@@ -441,8 +441,8 @@ function displaySimilarStrategies(strategyNode, container) {
     const link = document.createElement('a');
     link.className = 'similar-strategy-link';
     
-    // Format the similarity score as a percentage
-    const similarityScore = Math.round(connection.weight * 100);
+    // Note: We still sort by similarity score in the backend, 
+    // but we no longer display the percentage in the UI
     
     // Use the display_label if available, otherwise use the node_label
     link.textContent = connection.node_label;
@@ -454,11 +454,6 @@ function displaySimilarStrategies(strategyNode, container) {
       e.preventDefault();
       focusOnNode(connection.node_id);
     };
-    
-    // Create similarity badge
-    const similarityBadge = document.createElement('span');
-    similarityBadge.className = 'similarity-badge';
-    similarityBadge.textContent = `${similarityScore}% similar`;
     
     // Create context info
     const contextInfo = document.createElement('div');
@@ -485,9 +480,8 @@ function displaySimilarStrategies(strategyNode, container) {
       contextInfo.appendChild(goalInfo);
     }
     
-    // Add everything to the item
+    // Add everything to the item (without similarity badge)
     item.appendChild(link);
-    item.appendChild(similarityBadge);
     item.appendChild(contextInfo);
     strategiesList.appendChild(item);
   });
