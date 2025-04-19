@@ -47,13 +47,12 @@ def check_file_structure():
     required_dirs = ['src', 'static', 'static/css', 'static/js', 'templates', 'data']
     required_files = [
         'src/app.py', 
-        'src/document_processor.py',
         'src/topic_modeling.py',
         'src/knowledge_graph.py',
         'static/css/styles.css',
         'static/js/graph.js',
         'templates/index.html',
-        'data/2030-strategic-vision.pdf'
+        'data/longbeach_2030/index.json'
     ]
     
     logger.info("Checking file structure...")

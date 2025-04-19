@@ -150,15 +150,18 @@ def process_document():
         generator = SampleGraphGenerator()
         logger.info(f"Using generator: {generator.get_name()}")
         
-        # Get absolute path to PDF file
+        # Get absolute path to JSON data
         script_dir = os.path.dirname(os.path.abspath(__file__))
         base_dir = os.path.dirname(script_dir)
-        pdf_path = os.path.join(base_dir, 'data', '2030-strategic-vision.pdf')
+        json_path = os.path.join(base_dir, 'data', 'longbeach_2030', 'index.json')
         
-        # Extract the document text (just for reference, not used for processing)
-        from document_processor import extract_text_from_pdf
-        document_text = extract_text_from_pdf(pdf_path)
-        logger.info(f"Extracted text from PDF: {len(document_text)} characters")
+        # Load the structured JSON data
+        with open(json_path, 'r') as f:
+            document_data = json.load(f)
+        
+        # Use the vision statement as a placeholder for the document text
+        document_text = document_data.get('vision_statement', '')
+        logger.info(f"Loaded data from JSON: {len(document_text)} characters")
         
         # Generate the graph with sample data generator
         logger.info("Generating knowledge graph using sample data...")
@@ -188,7 +191,19 @@ def process_document():
             logger.info("Using sample generator as fallback after processing error")
             from graph_generators import SampleGraphGenerator
             generator = SampleGraphGenerator()
-            graph_data = generator.generate_graph("")  # Empty text is fine for sample
+            
+            # Try to get the vision statement from JSON if possible
+            try:
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                base_dir = os.path.dirname(script_dir)
+                json_path = os.path.join(base_dir, 'data', 'longbeach_2030', 'index.json')
+                with open(json_path, 'r') as f:
+                    document_data = json.load(f)
+                document_text = document_data.get('vision_statement', '')
+            except:
+                document_text = ""  # Empty text is fine for sample
+                
+            graph_data = generator.generate_graph(document_text)
             
             # Save to file for persistence
             script_dir = os.path.dirname(os.path.abspath(__file__))

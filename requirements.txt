@@ -1,7 +1,6 @@
 flask>=2.0.0
 networkx>=2.8.0
 numpy>=1.20.0
-PyPDF2>=3.0.0
 matplotlib>=3.5.0
 scikit-learn>=1.0.0
 # Optional dependencies (not required for sample data)
