@@ -2,6 +2,33 @@
 let graphViz = null;
 let nodeViewHistory = []; // Added to track node navigation history
 
+// Global utility function for link colors
+function getLinkColor(d) {
+  // For hierarchical links, use the parent's community color
+  if (d.type === 'part_of_theme' || d.type === 'part_of_goal') {
+    // For links from goals to themes or strategies to goals,
+    // use the community color of the target node (parent)
+    if (d.target && d.target.community !== undefined && graphViz && graphViz.colorScale) {
+      return graphViz.colorScale(d.target.community);
+    }
+  }
+  
+  // For similar_content links, use a distinct color
+  if (d.type === 'similar_content') return '#787878'; // Purple for similarity links
+  
+  // For related_to links between nodes in the same community, use community color
+  if (d.source && d.target && 
+      d.source.community !== undefined && 
+      d.target.community !== undefined && 
+      d.source.community === d.target.community && 
+      graphViz && graphViz.colorScale) {
+    return graphViz.colorScale(d.source.community);
+  }
+  
+  // For links between different communities, use light blue
+  return '#9ecae1';
+}
+
 // DOM elements
 const sampleBtn = document.getElementById('sample-btn');
 const loadBtn = document.getElementById('load-btn');
@@ -108,8 +135,51 @@ function displaySearchResults(results) {
   results.forEach(result => {
     const li = document.createElement('li');
     li.textContent = result.label;
+    // li.addEventListener('click', async () => {
+    //   // Fetch the detailed node data from the API instead of using the search result
+    //   try {
+    //     const response = await fetch(`/api/node/${result.id}`);
+    //     const data = await response.json();
+        
+    //     if (data.node) {
+    //       // Hide search results
+    //       searchResults.style.display = 'none';
+    //       searchInput.value = '';
+          
+    //       // Display node details in the details panel
+    //       displayNodeDetails(data);
+          
+    //       // If a graph visualization exists, focus on the node in the graph
+    //       if (graphViz) {
+    //         const graphNode = graphViz.nodes.find(n => n.id === result.id);
+    //         if (graphNode) {
+    //           // Center the view on this node
+    //           const transform = d3.zoomIdentity
+    //             .translate(graphContainer.clientWidth / 2 - graphNode.x, graphContainer.clientHeight / 2 - graphNode.y);
+              
+    //           graphViz.svg.transition()
+    //             .duration(750)
+    //             .call(graphViz.zoom.transform, transform);
+              
+    //           // Highlight this node in the graph
+    //           graphViz.nodeElements
+    //             .attr('stroke-width', d => d.is_central ? 2 : 1.5)
+    //             .attr('r', d => calculateNodeSize(d));
+              
+    //           // Highlight the selected node
+    //           graphViz.nodeElements
+    //             .filter(d => d.id === result.id)
+    //             .attr('stroke-width', 3)
+    //             .attr('r', d => calculateNodeSize(d) * 1.3);
+    //         }
+    //       }
+    //     }
+    //   } catch (error) {
+    //     console.error('Error fetching node details:', error);
+    //   }
+    // });
+    // In the displaySearchResults function, update the click handler:
     li.addEventListener('click', async () => {
-      // Fetch the detailed node data from the API instead of using the search result
       try {
         const response = await fetch(`/api/node/${result.id}`);
         const data = await response.json();
@@ -119,32 +189,15 @@ function displaySearchResults(results) {
           searchResults.style.display = 'none';
           searchInput.value = '';
           
-          // Display node details in the details panel
-          displayNodeDetails(data);
-          
-          // If a graph visualization exists, focus on the node in the graph
+          // Just use our focusOnNode function which now handles all highlighting
           if (graphViz) {
             const graphNode = graphViz.nodes.find(n => n.id === result.id);
             if (graphNode) {
-              // Center the view on this node
-              const transform = d3.zoomIdentity
-                .translate(graphContainer.clientWidth / 2 - graphNode.x, graphContainer.clientHeight / 2 - graphNode.y);
-              
-              graphViz.svg.transition()
-                .duration(750)
-                .call(graphViz.zoom.transform, transform);
-              
-              // Highlight this node in the graph
-              graphViz.nodeElements
-                .attr('stroke-width', d => d.is_central ? 2 : 1.5)
-                .attr('r', d => calculateNodeSize(d));
-              
-              // Highlight the selected node
-              graphViz.nodeElements
-                .filter(d => d.id === result.id)
-                .attr('stroke-width', 3)
-                .attr('r', d => calculateNodeSize(d) * 1.3);
+              focusOnNode(result.id);
             }
+          } else {
+            // If no graph, just display node details
+            displayNodeDetails(data);
           }
         }
       } catch (error) {
@@ -622,6 +675,73 @@ function displaySimilarStrategies(strategyNode, container) {
   document.head.appendChild(style);
 }
 
+// function focusOnNode(nodeId) {
+//   if (!graphViz) return;
+  
+//   // Find the node in the visualization
+//   const node = graphViz.nodes.find(n => n.id === nodeId);
+//   if (!node) return;
+  
+//   // Highlight the node
+//   highlightNode(node);
+  
+//   // Center the view on this node
+//   const transform = d3.zoomIdentity
+//     .translate(graphContainer.clientWidth / 2 - node.x, graphContainer.clientHeight / 2 - node.y);
+  
+//   graphViz.svg.transition()
+//     .duration(750)
+//     .call(graphViz.zoom.transform, transform);
+  
+//   // Show node details
+//   showNodeDetails(node);
+// }
+
+function highlightConnections(node) {
+  // Skip if graphViz is not initialized
+  if (!graphViz) return;
+  
+  // Reset all links to their original appearance
+  graphViz.linkElements
+    .attr('stroke-opacity', 0.6)
+    .attr('stroke-width', d => Math.sqrt(d.weight || 1) * 2)
+    .attr('stroke', function(d) {
+      // Use a direct fixed color if we have any issues with the dynamic color
+      try {
+        return getLinkColor(d); 
+      } catch (e) {
+        // Fallback colors based on link type
+        if (d.type === 'similar_content') return '#787878';
+        return '#9ecae1';
+      }
+    })
+    .attr('stroke-dasharray', null); // Clear any dashed lines
+  
+  // If the node is not a strategy, we're done
+  if (node.type !== 'strategy') return;
+  
+  // Find all links connected to this strategy node
+  const connectedLinks = graphViz.linkElements.filter(d => {
+    const sourceId = d.source.id || d.source;
+    const targetId = d.target.id || d.target;
+    return (sourceId === node.id || targetId === node.id);
+  });
+  
+  // Apply more visible highlighting to connected links
+  connectedLinks
+    .attr('stroke', '#222222') // Darker gray
+    .attr('stroke-opacity', 1) // Fully opaque
+    .attr('stroke-width', d => (Math.sqrt(d.weight || 1) * 2) + 1.5); // Thicker lines
+  
+  // Find all similar_content links
+  const similarityLinks = connectedLinks.filter(d => d.type === 'similar_content');
+  
+  // Apply special highlighting to similarity links
+  similarityLinks
+    .attr('stroke', '#ff5500') // Bright orange for similarity links
+    .attr('stroke-dasharray', '5,3'); // Dashed line pattern
+}
+
 function focusOnNode(nodeId) {
   if (!graphViz) return;
   
@@ -631,6 +751,9 @@ function focusOnNode(nodeId) {
   
   // Highlight the node
   highlightNode(node);
+  
+  // Highlight connections for this node - add this line
+  highlightConnections(node);
   
   // Center the view on this node
   const transform = d3.zoomIdentity
@@ -754,6 +877,31 @@ function createKnowledgeGraph(data, container) {
   const colorScale = d3.scaleOrdinal()
     .domain(communities)
     .range(d3.schemeCategory10);
+
+  // Define the local implementation of getLinkColor function right after colorScale
+  const localGetLinkColor = function(d) {
+    // For hierarchical links, use the parent's community color
+    if (d.type === 'part_of_theme' || d.type === 'part_of_goal') {
+      // For links from goals to themes or strategies to goals,
+      // use the community color of the target node (parent)
+      if (d.target && d.target.community !== undefined) {
+        return colorScale(d.target.community);
+      }
+    }
+    
+    // For similar_content links, use a distinct color
+    if (d.type === 'similar_content') return '#787878'; // Purple for similarity links
+    
+    // For related_to links between nodes in the same community, use community color
+    if (d.source.community !== undefined && 
+        d.target.community !== undefined && 
+        d.source.community === d.target.community) {
+      return colorScale(d.source.community);
+    }
+    
+    // For links between different communities, use light blue
+    return '#9ecae1';
+  };
 
   const levelConfig = {
     // Main node repulsion strength by level
@@ -999,7 +1147,7 @@ function levelRepulsion(targetLevel) {
     .append('line')
     .attr('class', 'link')
     .attr('stroke-width', d => Math.sqrt(d.weight || 1) * 2)
-    .attr('stroke', getLinkColor);
+    .attr('stroke', localGetLinkColor);
   
   // Draw nodes
   const node = g.selectAll('.node')
@@ -1089,30 +1237,9 @@ function levelRepulsion(targetLevel) {
     return '#cccccc';
   }
   
-  // Replace the getLinkColor function with this:
-  function getLinkColor(d) {
-    // For hierarchical links, use the parent's community color
-    if (d.type === 'part_of_theme' || d.type === 'part_of_goal') {
-      // For links from goals to themes or strategies to goals,
-      // use the community color of the target node (parent)
-      if (d.target && d.target.community !== undefined) {
-        return colorScale(d.target.community);
-      }
-    }
-    
-    // For similar_content links, use a distinct color
-    if (d.type === 'similar_content') return '#787878'; // Purple for similarity links
-    
-    // For related_to links between nodes in the same community, use community color
-    if (d.source.community !== undefined && 
-        d.target.community !== undefined && 
-        d.source.community === d.target.community) {
-      return colorScale(d.source.community);
-    }
-    
-    // For links between different communities, use light blue
-    return '#9ecae1';
-  }
+  // This duplicate definition is no longer needed as we moved it above
+  // We defined it earlier in the function
+
   
   function showTooltip(event, d) {
     let content = `<strong>${d.label || d.id}</strong><br/>`;
@@ -1160,6 +1287,9 @@ function levelRepulsion(targetLevel) {
     
     // Highlight this node
     highlightNode(d);
+    
+    // Highlight connections for this node
+    highlightConnections(d);
   }
   
   // Force to cluster nodes by community
