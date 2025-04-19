@@ -755,27 +755,34 @@ function createKnowledgeGraph(data, container) {
     .domain(communities)
     .range(d3.schemeCategory10);
 
-  // Configuration for level-specific forces
   const levelConfig = {
     // Main node repulsion strength by level
     chargeStrength: {
-      primary: -100,    // Theme nodes (level 0)
-      secondary: -200,  // Goal nodes (level 1)
-      tertiary: -1000   // Strategy nodes (level 2)
+      primary: -500,     // Even stronger repulsion for theme nodes
+      secondary: -300,   // Stronger for goal nodes
+      tertiary: -100     // Increased for strategy nodes to reduce bunching
     },
     // Additional repulsion between nodes of the same level
     levelRepulsionStrength: {
-      primary: 0,    // Extra repulsion between theme nodes
-      secondary: 0,  // Extra repulsion between goal nodes
-      tertiary: 0    // Extra repulsion between strategy nodes
+      primary: 2.0,      // Much stronger theme node repulsion
+      secondary: 1.0,    // Increased goal node repulsion
+      tertiary: 0.5      // Significantly increased strategy repulsion
     },
     // Maximum distance for level-specific repulsion to apply
     repulsionDistance: {
-      primary: 0,
-      secondary: 0,
-      tertiary: 0
+      primary: 600,      // Increased theme repulsion distance
+      secondary: 400,    // Increased goal repulsion distance
+      tertiary: 200      // Significantly increased strategy repulsion distance
+    },
+    // Radial positioning parameters - increased separation
+    radialPositioning: {
+      enabled: true,
+      primary: 500,      // Themes positioned further out
+      secondary: 350,    // Goals in a wider middle layer
+      tertiary: 180      // Strategies spread out more in center
     }
   };
+  
 
   // Helper function to get node level
   function getNodeLevel(node) {
@@ -789,73 +796,200 @@ function createKnowledgeGraph(data, container) {
     return 'other';
   }
 
-  // Define forces with community clustering
   const simulation = d3.forceSimulation(data.nodes)
-    .force('link', d3.forceLink(data.links).id(d => d.id).distance(100))
-    .force('charge', d3.forceManyBody()
-      .strength(d => {
-        // Get node level (primary, secondary, tertiary)
-        const level = getNodeLevel(d);
-        
-        // Return configured strength for this level, or default value
-        return levelConfig.chargeStrength[level] || -300;
-      })
-    )
-    .force('center', d3.forceCenter(width / 2, height / 2))
-    .force('collision', d3.forceCollide().radius(d => calculateNodeSize(d) + 10))
-    // Add custom repulsion for each level
-    .force('primaryRepulsion', levelRepulsion('primary'))
-    .force('secondaryRepulsion', levelRepulsion('secondary'))
-    .force('tertiaryRepulsion', levelRepulsion('tertiary'))
-    .force('cluster', forceCluster());
+  .force('link', d3.forceLink(data.links)
+    .id(d => d.id)
+    .distance(d => {
+      // Adjust link distance based on the levels of connected nodes
+      const sourceLevel = getNodeLevel(d.source);
+      const targetLevel = getNodeLevel(d.target);
+      
+      // Hierarchical links (parent-child relationships)
+      if (d.type === 'part_of_theme' || d.type === 'part_of_goal') {
+        return 180; // Longer links for hierarchical relationships
+      }
+      
+      // Similar content links - make these weaker to prevent bunching
+      if (d.type === 'similar_content') {
+        return 120; // Medium length for similarity links
+      }
+      
+      // Links between different levels
+      if (sourceLevel !== targetLevel) {
+        return 200; // Longer links between different levels
+      }
+      
+      // Default link distance
+      return 100;
+    })
+    .strength(d => {
+      // Reduce strength of similarity links to prevent tight clustering
+      if (d.type === 'similar_content') {
+        return 0.1 * (d.weight || 0.5); // Weaker connection based on similarity weight
+      }
+      
+      // Maintain stronger hierarchical connections
+      if (d.type === 'part_of_theme' || d.type === 'part_of_goal') {
+        return 0.7; // Stronger parent-child connections
+      }
+      
+      return 0.4; // Default strength
+    })
+  )
+  .force('charge', d3.forceManyBody()
+    .strength(d => {
+      // Get node level
+      const level = getNodeLevel(d);
+      
+      // Return configured strength
+      return levelConfig.chargeStrength[level] || -100;
+    })
+    .distanceMin(10)
+    .distanceMax(500) // Increased maximum distance
+  )
+  .force('center', d3.forceCenter(width / 2, height / 2))
+  .force('collision', d3.forceCollide()
+    .radius(d => calculateNodeSize(d) + 15) // Increased collision radius
+    .strength(0.9) // Stronger collision prevention
+  )
+  // Enhanced radial positioning force
+  .force('radial', d3.forceRadial()
+    .radius(d => {
+      if (!levelConfig.radialPositioning.enabled) return null;
+      
+      const level = getNodeLevel(d);
+      
+      // Add slight randomness to break symmetry
+      const jitter = (Math.random() - 0.5) * 30;
+      
+      return (levelConfig.radialPositioning[level] || 250) + jitter;
+    })
+    .x(width / 2)
+    .y(height / 2)
+    .strength(0.5) // Increased strength
+  )
+  // Add custom repulsion for each level
+  .force('primaryRepulsion', levelRepulsion('primary'))
+  .force('secondaryRepulsion', levelRepulsion('secondary'))
+  .force('tertiaryRepulsion', levelRepulsion('tertiary'))
+  .force('cluster', forceCluster(0.08)); // Reduced clustering force
 
-  // Custom force function to apply additional repulsion between nodes of a specific level
-  function levelRepulsion(targetLevel) {
-    let nodes;
+
+// Modify the custom levelRepulsion function to use the configured strengths (around line 334)
+function levelRepulsion(targetLevel) {
+  let nodes;
+  
+  function force(alpha) {
+    // Skip if no strength configured for this level
+    if (!levelConfig.levelRepulsionStrength[targetLevel]) return;
     
-    function force(alpha) {
-      // Skip if no strength configured for this level
-      if (!levelConfig.levelRepulsionStrength[targetLevel]) return;
+    const strength = levelConfig.levelRepulsionStrength[targetLevel];
+    const maxDistance = levelConfig.repulsionDistance[targetLevel] || 150;
+    
+    // Get only the nodes of the target level
+    const levelNodes = nodes.filter(n => getNodeLevel(n) === targetLevel);
+    
+    // Apply repulsion between each pair of level nodes
+    for (let i = 0; i < levelNodes.length; i++) {
+      const nodeA = levelNodes[i];
       
-      const strength = levelConfig.levelRepulsionStrength[targetLevel];
-      const maxDistance = levelConfig.repulsionDistance[targetLevel] || 150;
-      
-      // Get only the nodes of the target level
-      const levelNodes = nodes.filter(n => getNodeLevel(n) === targetLevel);
-      
-      // Apply repulsion between each pair of level nodes
-      for (let i = 0; i < levelNodes.length; i++) {
-        const nodeA = levelNodes[i];
+      for (let j = i + 1; j < levelNodes.length; j++) {
+        const nodeB = levelNodes[j];
         
-        for (let j = i + 1; j < levelNodes.length; j++) {
-          const nodeB = levelNodes[j];
-          
-          // Calculate distance between nodes
-          const dx = nodeA.x - nodeB.x;
-          const dy = nodeA.y - nodeB.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          
-          // Skip if nodes are too far apart (optimization)
-          if (distance > maxDistance) continue;
-          
-          // Calculate repulsion force
-          const force = strength * alpha / distance;
-          
-          // Apply force
-          nodeA.vx += dx * force;
-          nodeA.vy += dy * force;
-          nodeB.vx -= dx * force;
-          nodeB.vy -= dy * force;
-        }
+        // Calculate distance between nodes
+        const dx = nodeA.x - nodeB.x;
+        const dy = nodeA.y - nodeB.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Skip if nodes are too far apart (optimization)
+        if (distance > maxDistance) continue;
+        
+        // Calculate repulsion force, stronger when closer
+        const force = strength * alpha / Math.max(distance, 1);
+        
+        // Apply force
+        nodeA.vx += dx * force;
+        nodeA.vy += dy * force;
+        nodeB.vx -= dx * force;
+        nodeB.vy -= dy * force;
       }
     }
-    
-    force.initialize = function(_nodes) {
-      nodes = _nodes;
-    };
-    
-    return force;
   }
+  
+  force.initialize = function(_nodes) {
+    nodes = _nodes;
+  };
+  
+  return force;
+}
+
+  // Define forces with community clustering
+  // const simulation = d3.forceSimulation(data.nodes)
+  //   .force('link', d3.forceLink(data.links).id(d => d.id).distance(100))
+  //   .force('charge', d3.forceManyBody()
+  //     .strength(d => {
+  //       // Get node level (primary, secondary, tertiary)
+  //       const level = getNodeLevel(d);
+        
+  //       // Return configured strength for this level, or default value
+  //       return levelConfig.chargeStrength[level] || -300;
+  //     })
+  //   )
+  //   .force('center', d3.forceCenter(width / 2, height / 2))
+  //   .force('collision', d3.forceCollide().radius(d => calculateNodeSize(d) + 10))
+  //   // Add custom repulsion for each level
+  //   .force('primaryRepulsion', levelRepulsion('primary'))
+  //   .force('secondaryRepulsion', levelRepulsion('secondary'))
+  //   .force('tertiaryRepulsion', levelRepulsion('tertiary'))
+  //   .force('cluster', forceCluster());
+
+  // // Custom force function to apply additional repulsion between nodes of a specific level
+  // function levelRepulsion(targetLevel) {
+  //   let nodes;
+    
+  //   function force(alpha) {
+  //     // Skip if no strength configured for this level
+  //     if (!levelConfig.levelRepulsionStrength[targetLevel]) return;
+      
+  //     const strength = levelConfig.levelRepulsionStrength[targetLevel];
+  //     const maxDistance = levelConfig.repulsionDistance[targetLevel] || 150;
+      
+  //     // Get only the nodes of the target level
+  //     const levelNodes = nodes.filter(n => getNodeLevel(n) === targetLevel);
+      
+  //     // Apply repulsion between each pair of level nodes
+  //     for (let i = 0; i < levelNodes.length; i++) {
+  //       const nodeA = levelNodes[i];
+        
+  //       for (let j = i + 1; j < levelNodes.length; j++) {
+  //         const nodeB = levelNodes[j];
+          
+  //         // Calculate distance between nodes
+  //         const dx = nodeA.x - nodeB.x;
+  //         const dy = nodeA.y - nodeB.y;
+  //         const distance = Math.sqrt(dx * dx + dy * dy);
+          
+  //         // Skip if nodes are too far apart (optimization)
+  //         if (distance > maxDistance) continue;
+          
+  //         // Calculate repulsion force
+  //         const force = strength * alpha / distance;
+          
+  //         // Apply force
+  //         nodeA.vx += dx * force;
+  //         nodeA.vy += dy * force;
+  //         nodeB.vx -= dx * force;
+  //         nodeB.vy -= dy * force;
+  //       }
+  //     }
+  //   }
+    
+  //   force.initialize = function(_nodes) {
+  //     nodes = _nodes;
+  //   };
+    
+  //   return force;
+  // }
   
   // Draw links
   const link = g.selectAll('.link')
@@ -1029,7 +1163,7 @@ function createKnowledgeGraph(data, container) {
   
   // Force to cluster nodes by community
   function forceCluster() {
-    const strength = 0.15;
+    const strength = 0.8;
     let nodes;
     
     function force(alpha) {
