@@ -1,0 +1,244 @@
+// Node interaction module for handling node highlighting and interactions
+import { calculateNodeSize, getLinkColor } from './utils.js';
+import { fetchNodeDetails } from './dataService.js';
+
+// Variables for tracking node interaction state
+let _graphViz = null;
+let _nodeViewHistory = [];
+let _graphContainer = null;
+let _detailsPanel = null;
+
+/**
+ * Initialize the node interaction module
+ * @param {Object} graphViz - The graph visualization object
+ * @param {HTMLElement} graphContainer - The graph container element
+ * @param {HTMLElement} detailsPanel - The details panel element
+ */
+export function initializeNodeInteraction(graphViz, graphContainer, detailsPanel) {
+  _graphViz = graphViz;
+  _graphContainer = graphContainer;
+  _detailsPanel = detailsPanel;
+  _nodeViewHistory = [];
+}
+
+/**
+ * Focus on a node by ID
+ * @param {string} nodeId - ID of the node to focus on
+ */
+export function focusOnNode(nodeId) {
+  if (!_graphViz) return;
+  
+  // Find the node in the visualization
+  const node = _graphViz.nodes.find(n => n.id === nodeId);
+  if (!node) return;
+  
+  // Highlight the node
+  highlightNode(node);
+  
+  // Highlight connections for this node
+  highlightConnections(node);
+  
+  // Center the view on this node
+  const transform = d3.zoomIdentity
+    .translate(_graphContainer.clientWidth / 2 - node.x, _graphContainer.clientHeight / 2 - node.y);
+  
+  _graphViz.svg.transition()
+    .duration(750)
+    .call(_graphViz.zoom.transform, transform);
+  
+  // Show node details
+  showNodeDetails(node);
+}
+
+/**
+ * Highlight a node in the visualization
+ * @param {Object} node - The node to highlight
+ */
+export function highlightNode(node) {
+  if (!_graphViz) return;
+  
+  // Reset all nodes
+  _graphViz.nodeElements
+    .attr('stroke-width', d => d.is_central ? 2 : 1.5)
+    .attr('r', d => calculateNodeSize(d));
+  
+  // Highlight selected node
+  _graphViz.nodeElements
+    .filter(d => d.id === node.id)
+    .attr('stroke-width', 3)
+    .attr('r', d => calculateNodeSize(d) * 1.3);
+}
+
+/**
+ * Highlight connections for a node
+ * @param {Object} node - The node whose connections to highlight
+ */
+export function highlightConnections(node) {
+  // Skip if graphViz is not initialized
+  if (!_graphViz) return;
+  
+  // Reset all links to their original appearance
+  _graphViz.linkElements
+    .attr('stroke-opacity', 0.6)
+    .attr('stroke-width', d => Math.sqrt(d.weight || 1) * 2)
+    .attr('stroke', function(d) {
+      // Use a direct fixed color if we have any issues with the dynamic color
+      try {
+        return getLinkColor(d, _graphViz.colorScale); 
+      } catch (e) {
+        // Fallback colors based on link type
+        if (d.type === 'similar_content') return '#787878';
+        return '#9ecae1';
+      }
+    })
+    .attr('stroke-dasharray', null); // Clear any dashed lines
+  
+  // If the node is not a strategy, we're done
+  if (node.type !== 'strategy') return;
+  
+  // Find all links connected to this strategy node
+  const connectedLinks = _graphViz.linkElements.filter(d => {
+    const sourceId = d.source.id || d.source;
+    const targetId = d.target.id || d.target;
+    return (sourceId === node.id || targetId === node.id);
+  });
+  
+  // Apply more visible highlighting to connected links
+  connectedLinks
+    .attr('stroke', '#222222') // Darker gray
+    .attr('stroke-opacity', 1) // Fully opaque
+    .attr('stroke-width', d => (Math.sqrt(d.weight || 1) * 2) + 1.5); // Thicker lines
+  
+  // Find all similar_content links
+  const similarityLinks = connectedLinks.filter(d => d.type === 'similar_content');
+  
+  // Apply special highlighting to similarity links
+  similarityLinks
+    .attr('stroke', '#ff5500') // Bright orange for similarity links
+    .attr('stroke-dasharray', '5,3'); // Dashed line pattern
+}
+
+/**
+ * Handle node click event
+ * @param {Event} event - The click event
+ * @param {Object} d - The clicked node data
+ */
+export function nodeClicked(event, d) {
+  // Show details panel with node information
+  showNodeDetails(d);
+  
+  // Highlight this node
+  highlightNode(d);
+  
+  // Highlight connections for this node
+  highlightConnections(d);
+}
+
+/**
+ * Navigate back in node history
+ */
+export function navigateBack() {
+  if (_nodeViewHistory.length > 1) {
+    // Remove current node
+    _nodeViewHistory.pop();
+    
+    // Get previous node
+    const previousNodeId = _nodeViewHistory[_nodeViewHistory.length - 1];
+    
+    // Remove it temporarily so it doesn't get added twice
+    _nodeViewHistory.pop();
+    
+    // Focus on the node - this will add it back to history
+    focusOnNode(previousNodeId);
+  }
+}
+
+/**
+ * Show tooltip for a node
+ * @param {Event} event - The mouseover event
+ * @param {Object} d - The node data
+ * @param {Object} tooltip - The D3 tooltip element
+ */
+export function showTooltip(event, d, tooltip) {
+  let content = `<strong>${d.label || d.id}</strong><br/>`;
+  
+  if (d.type === 'topic') {
+    content += `<strong>Keywords:</strong> ${(d.keywords || []).join(', ')}<br/>`;
+    if (d.community_label) {
+      content += `<strong>Cluster:</strong> ${d.community_label}<br/>`;
+    }
+    if (d.docs) {
+      content += `<strong>Documents:</strong> ${d.docs.length}`;
+    }
+    if (d.is_central) {
+      content += `<br/><em>Central topic in this cluster</em>`;
+    }
+  } else if (d.type === 'strategy') {
+    // For strategy nodes, show a shortened version of the text
+    content += `${d.text ? d.text.substring(0, 100) + (d.text.length > 100 ? '...' : '') : ''}`;
+    // Add similarity connections count if available
+    if (d.connections && d.connections.length > 0) {
+      content += `<br/><em>Has ${d.connections.length} similar strategies</em>`;
+    }
+  } else {
+    content += `${d.text ? d.text.substring(0, 100) + (d.text.length > 100 ? '...' : '') : ''}`;
+  }
+  
+  tooltip.transition()
+    .duration(200)
+    .style('opacity', .9);
+  
+  tooltip.html(content)
+    .style('left', (event.pageX + 10) + 'px')
+    .style('top', (event.pageY - 28) + 'px');
+}
+
+/**
+ * Hide tooltip
+ * @param {Object} tooltip - The D3 tooltip element
+ */
+export function hideTooltip(tooltip) {
+  tooltip.transition()
+    .duration(500)
+    .style('opacity', 0);
+}
+
+/**
+ * Fetch and display node details
+ * @param {Object} node - The node to show details for
+ */
+export async function showNodeDetails(node) {
+  try {
+    const data = await fetchNodeDetails(node.id);
+    
+    // Pass data to UI component for rendering
+    if (window.displayNodeDetails) {
+      window.displayNodeDetails(data, _nodeViewHistory);
+    }
+  } catch (error) {
+    console.error('Error fetching node details:', error);
+  }
+}
+
+/**
+ * Get the node view history
+ * @returns {Array} - Array of node IDs in history
+ */
+export function getNodeViewHistory() {
+  return _nodeViewHistory;
+}
+
+/**
+ * Add a node to view history
+ * @param {string} nodeId - ID of the node to add to history
+ */
+export function addToNodeViewHistory(nodeId) {
+  if (_nodeViewHistory.length === 0 || _nodeViewHistory[_nodeViewHistory.length - 1] !== nodeId) {
+    _nodeViewHistory.push(nodeId);
+    
+    // Limit history size
+    if (_nodeViewHistory.length > 50) {
+      _nodeViewHistory.shift();
+    }
+  }
+}
