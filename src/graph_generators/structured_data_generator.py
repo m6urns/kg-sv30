@@ -209,6 +209,9 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                 goal_id = goal.get('id', '')
                 goal_title = goal.get('title', f"Goal {goal_id}")
                 
+                # Include section number in the label for better clarity when displayed
+                labeled_goal_title = f"{goal_id}: {goal_title}"
+                
                 # Extract strategies for reference but handle them in the strategy generator
                 strategies = goal.get('strategies', [])
                 
@@ -219,16 +222,17 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                 goal_node = {
                     "id": node_id,
                     "type": "document",
-                    "label": goal_title,
+                    "label": labeled_goal_title,              # Now includes section number
                     "text": goal_title,
+                    "section_number": goal_id,                # Store section number separately
                     "theme_id": theme_id,
                     "theme_title": theme_title,
-                    "raw_goal_id": goal_id,          # Store the original goal ID for easier lookup later
+                    "raw_goal_id": goal_id,                   # Store the original goal ID for easier lookup later
                     "strategies_count": len(strategies),
-                    "community": community_id,       # Same community as parent theme
+                    "community": community_id,                # Same community as parent theme
                     "community_label": community_label,
-                    "level": "secondary",            # Mark as secondary node
-                    "depth": 1                       # Depth level in hierarchy
+                    "level": "secondary",                     # Mark as secondary node
+                    "depth": 1                                # Depth level in hierarchy
                 }
                 
                 goal_nodes.append(goal_node)
@@ -257,6 +261,7 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
             theme_id = goal_node["theme_id"]
             theme_title = goal_node["theme_title"]
             goal_label = goal_node["label"]
+            section_number = goal_node.get("section_number", "")
             
             # Get the community for visual consistency
             community_id = goal_node["community"]
@@ -313,23 +318,33 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                 # Create a unique strategy ID
                 strategy_id = f"strategy_{theme_id}_{raw_goal_id.replace('.', '_')}_{i}"
                 
+                # Create section number for the strategy (e.g., "1.1.1")
+                strategy_section = f"{section_number}.{i+1}"
+                
                 # Create summary label (shortened version of the strategy text)
                 summary = strategy[:60] + "..." if len(strategy) > 60 else strategy
                 
+                # Include section number in the label
+                labeled_strategy = f"{strategy_section}: {summary}"
+                
                 strategy_node = {
                     "id": strategy_id,
-                    "type": "strategy",           # Specific node type for strategies
-                    "label": f"Strategy {i+1}",   # Numbered strategy label
-                    "summary": summary,           # Short summary
-                    "text": strategy,             # Full strategy text
+                    "type": "strategy",               # Specific node type for strategies
+                    "label": f"Strategy {i+1}",       # Simple label for graph display
+                    "display_label": labeled_strategy, # Detailed label for UI display
+                    "section_number": strategy_section, # Strategy section number
+                    "summary": summary,               # Short summary
+                    "text": strategy,                 # Full strategy text
+                    "index": i+1,                     # Strategy number within goal
                     "theme_id": theme_id,
                     "theme_title": theme_title,
                     "goal_id": goal_id,
                     "goal_title": goal_label,
-                    "community": community_id,    # Same community as parent goal and theme
+                    "raw_goal_id": raw_goal_id,       # Original goal ID
+                    "community": community_id,        # Same community as parent goal and theme
                     "community_label": community_label,
-                    "level": "tertiary",          # Mark as tertiary node
-                    "depth": 2                    # Depth level in hierarchy
+                    "level": "tertiary",              # Mark as tertiary node
+                    "depth": 2                        # Depth level in hierarchy
                 }
                 
                 strategy_nodes.append(strategy_node)
@@ -419,10 +434,52 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         # Generate links between nodes
         links = self._generate_links(theme_nodes, goal_nodes, strategy_nodes)
         
+        # Add strategies to goal metadata for better UI rendering when a goal is clicked
+        # This makes it easier for the UI to display all strategies when a goal is clicked
+        goal_map = {node["id"]: node for node in goal_nodes}
+        
+        # Group strategies by goal
+        goal_strategies = {}
+        for strategy in strategy_nodes:
+            goal_id = strategy["goal_id"]
+            if goal_id not in goal_strategies:
+                goal_strategies[goal_id] = []
+            
+            # Create a simplified strategy representation for the UI
+            strategy_info = {
+                "id": strategy["id"],
+                "section": strategy["section_number"],
+                "text": strategy["text"],
+                "summary": strategy["summary"]
+            }
+            goal_strategies[goal_id].append(strategy_info)
+        
+        # Add strategies to each goal node
+        for goal_id, strategies in goal_strategies.items():
+            if goal_id in goal_map:
+                # Sort strategies by section number
+                strategies.sort(key=lambda s: s["section"])
+                goal_map[goal_id]["strategies"] = strategies
+        
         # Combine all nodes
         all_nodes = theme_nodes + goal_nodes + strategy_nodes
         
+        # Add visualization metadata for the UI
+        visualization_metadata = {
+            "node_types": {
+                "theme": {"label": "Theme", "icon": "circle", "size": "large"},
+                "goal": {"label": "Goal", "icon": "square", "size": "medium"},
+                "strategy": {"label": "Strategy", "icon": "triangle", "size": "small"}
+            },
+            "layout": {
+                "hierarchical": True,
+                "levels": 3,
+                "section_key": "section_number"
+            }
+        }
+        
         return {
             "nodes": all_nodes,
-            "links": links
+            "links": links,
+            "metadata": visualization_metadata
         }
