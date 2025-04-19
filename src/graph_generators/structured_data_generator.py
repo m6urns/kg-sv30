@@ -7,6 +7,7 @@ import os
 import random
 import sys
 from typing import Dict, List, Any
+from collections import Counter
 
 from .base_generator import BaseGraphGenerator
 
@@ -59,6 +60,61 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         # Load all themes data
         self.parser.load_all_themes()
     
+    def _extract_keywords(self, text: str, max_keywords: int = 5) -> List[str]:
+        """
+        Extract meaningful keywords from a text.
+        
+        Args:
+            text: The text to extract keywords from
+            max_keywords: Maximum number of keywords to return
+            
+        Returns:
+            List of keywords
+        """
+        if not text:
+            return []
+            
+        # Convert to lowercase and split into words
+        words = text.lower().split()
+        
+        # Remove common stopwords and short words
+        stopwords = set(['the', 'and', 'is', 'of', 'to', 'in', 'for', 'a', 'with', 'that', 'are', 'by', 'on', 'as'])
+        filtered_words = [word for word in words if word not in stopwords and len(word) > 3]
+        
+        # Count occurrences
+        word_counts = Counter(filtered_words)
+        
+        # Return most common words
+        return [word for word, _ in word_counts.most_common(max_keywords)]
+    
+    def _calculate_similarity(self, theme1: Dict, theme2: Dict) -> float:
+        """
+        Calculate thematic similarity between two themes.
+        
+        Args:
+            theme1: First theme dictionary
+            theme2: Second theme dictionary
+            
+        Returns:
+            Similarity score between 0.0 and 1.0
+        """
+        # Base similarity on keyword overlap
+        keywords1 = set(theme1.get("keywords", []))
+        keywords2 = set(theme2.get("keywords", []))
+        
+        if not keywords1 or not keywords2:
+            return 0.3  # Default mild similarity if keywords missing
+        
+        # Calculate Jaccard similarity
+        similarity = len(keywords1.intersection(keywords2)) / len(keywords1.union(keywords2))
+        
+        # Add similarity boost for themes in same section
+        if theme1.get("section_id") == theme2.get("section_id"):
+            similarity += 0.2
+            
+        # Cap similarity at 1.0
+        return min(similarity, 1.0)
+    
     def _generate_theme_nodes(self) -> List[Dict[str, Any]]:
         """
         Generate nodes for themes from the structured data.
@@ -72,6 +128,9 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         sections = self.parser.index_data.get('sections', [])
         section_map = {section['id']: section for section in sections}
         
+        # Assign each theme its own community ID - this will give each theme its own color
+        current_community_id = 0
+        
         # Process each theme
         for theme_id, theme_data in self.parser.themes.items():
             theme = theme_data.get('theme', {})
@@ -83,54 +142,40 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
             section_name = theme_data.get('section', 'Unknown')
             section_id = next((s['id'] for s in sections if s['name'] == section_name), None)
             
-            # Create keywords from title and description
-            keywords = []
-            if theme_title:
-                keywords.extend([word.lower() for word in theme_title.split() if len(word) > 3])
-            if theme_description:
-                keywords.extend([word.lower() for word in theme_description.split() if len(word) > 3])
+            # Extract meaningful keywords from title, description, and overview
+            title_keywords = self._extract_keywords(theme_title, 3)
+            desc_keywords = self._extract_keywords(theme_description, 3)
+            overview_keywords = self._extract_keywords(theme_overview, 4)
             
-            # Remove duplicates and limit to 5 keywords
-            keywords = list(set(keywords))[:5]
+            # Combine keywords, prioritizing those from title and description
+            all_keywords = title_keywords + desc_keywords + overview_keywords
+            keywords = list(dict.fromkeys(all_keywords))[:8]  # Remove duplicates and limit
             
             # Count goals as a measure of size
             goals = theme.get('goals', [])
             goal_count = len(goals)
             
-            # Assign themes to communities based on their section
-            community_id = section_id - 1 if section_id is not None else 0
-            community_label = section_name
-            
-            # Create the theme node
+            # Create the theme node with enhanced attributes
             theme_node = {
                 "id": f"theme_{theme_id}",
-                "type": "topic",  # Using "topic" to maintain compatibility with the existing graph structure
+                "type": "topic",
                 "label": theme_title,
                 "description": theme_description,
                 "overview": theme_overview,
                 "keywords": keywords,
-                "size": max(3, goal_count * 2),  # Size based on the number of goals
-                "community": community_id,
-                "community_label": community_label,
-                "is_central": False,  # Will update central themes later
-                "docs": []  # Will populate with goal IDs
+                "size": max(5, goal_count * 2),  # Size based on number of goals
+                "community": current_community_id,  # Each theme gets its own community ID
+                "community_label": theme_title,     # Use theme title as the community label
+                "section_id": section_id,           # Keep track of which section this belongs to
+                "section_name": section_name,       # Store the section name
+                "level": "primary",                 # Mark as primary node
+                "depth": 0,                         # Depth level in hierarchy
+                "is_central": True,                 # Each theme is central to its own community
+                "docs": []                          # Will be populated with goal IDs
             }
             
             theme_nodes.append(theme_node)
-        
-        # Mark central themes (one per community)
-        communities = {}
-        for node in theme_nodes:
-            community_id = node["community"]
-            if community_id not in communities:
-                communities[community_id] = []
-            communities[community_id].append(node)
-        
-        # Mark the largest theme in each community as central
-        for community_id, nodes in communities.items():
-            if nodes:
-                largest_node = max(nodes, key=lambda n: n["size"])
-                largest_node["is_central"] = True
+            current_community_id += 1  # Increment for the next theme
         
         return theme_nodes
     
@@ -155,29 +200,35 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
             theme_title = theme.get('title', f"Theme {theme_id}")
             goals = theme.get('goals', [])
             
+            # Get the theme's community for visual consistency
+            community_id = theme_map[theme_id]["community"] if theme_id in theme_map else 0
+            community_label = theme_map[theme_id]["community_label"] if theme_id in theme_map else "Unknown"
+            
             # Add each goal as a document node
             for goal in goals:
                 goal_id = goal.get('id', '')
                 goal_title = goal.get('title', f"Goal {goal_id}")
                 
-                # Combine strategies into a text representation
+                # Extract strategies for reference but handle them in the strategy generator
                 strategies = goal.get('strategies', [])
-                strategies_text = "\n• " + "\n• ".join(strategies) if strategies else ""
                 
-                goal_text = f"{goal_title}{strategies_text}"
-                
-                # Generate a unique node ID for the goal
+                # Generate a unique node ID for the goal - standardize the format
                 node_id = f"goal_{theme_id}_{goal_id.replace('.', '_')}"
                 
-                # Create the goal node
+                # Create the goal node with enhanced attributes
                 goal_node = {
                     "id": node_id,
-                    "type": "document",  # Using "document" to maintain compatibility
+                    "type": "document",
                     "label": goal_title,
-                    "text": goal_text,
+                    "text": goal_title,
                     "theme_id": theme_id,
                     "theme_title": theme_title,
-                    "strategies_count": len(strategies)
+                    "raw_goal_id": goal_id,          # Store the original goal ID for easier lookup later
+                    "strategies_count": len(strategies),
+                    "community": community_id,       # Same community as parent theme
+                    "community_label": community_label,
+                    "level": "secondary",            # Mark as secondary node
+                    "depth": 1                       # Depth level in hierarchy
                 }
                 
                 goal_nodes.append(goal_node)
@@ -207,33 +258,85 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
             theme_title = goal_node["theme_title"]
             goal_label = goal_node["label"]
             
-            # Extract the goal's unique identifier from its ID (e.g., "1_1" from "goal_1_1_1")
-            goal_identifier = goal_id.split("_", 1)[1]
+            # Get the community for visual consistency
+            community_id = goal_node["community"]
+            community_label = goal_node["community_label"]
             
-            # Find the strategies in the parser data
-            full_goal_id = goal_identifier.split("_")[-1].replace("_", ".")
-            goal_data = self.parser.get_goal_by_id(theme_id, full_goal_id)
-            
-            if goal_data:
-                strategies = goal_data.get('strategies', [])
+            # Use the raw goal ID directly if available
+            raw_goal_id = goal_node.get("raw_goal_id")
+            if not raw_goal_id:
+                # Fall back to parsing from the goal ID if raw_goal_id is not available
+                parts = goal_id.split("_")
+                theme_num = int(parts[1])  # Convert to int to match parser's key type
                 
-                # Add each strategy as a separate node
-                for i, strategy in enumerate(strategies):
-                    strategy_id = f"strategy_{theme_id}_{full_goal_id.replace('.', '_')}_{i}"
-                    
-                    strategy_node = {
-                        "id": strategy_id,
-                        "type": "strategy",  # New node type for strategies
-                        "label": f"Strategy {i+1}: {strategy[:50]}..." if len(strategy) > 50 else strategy,
-                        "text": strategy,
-                        "theme_id": theme_id,
-                        "theme_title": theme_title,
-                        "goal_id": goal_id,
-                        "goal_title": goal_label
-                    }
-                    
-                    strategy_nodes.append(strategy_node)
+                # Try to determine the goal ID format
+                if len(parts) >= 3:
+                    if parts[2].isdigit() and len(parts) >= 4 and parts[3].isdigit():
+                        # Format: goal_1_1_1 -> "1.1"
+                        raw_goal_id = f"{parts[2]}.{parts[3]}"
+                    else:
+                        # Format: goal_1_1_1_2 -> "1.1"
+                        raw_goal_id = f"{theme_num}.{parts[2]}"
+            
+            if not raw_goal_id:
+                print(f"Warning: Could not determine goal ID format for {goal_id}")
+                continue
+            
+            # Get the theme data from the parser
+            theme_data = self.parser.themes.get(theme_id, {})
+            if not theme_data:
+                print(f"Warning: Theme {theme_id} not found in parser data")
+                continue
+                
+            # Get goals for the theme
+            goals = theme_data.get('theme', {}).get('goals', [])
+            
+            # Find the matching goal
+            goal_data = None
+            for goal in goals:
+                if goal.get('id') == raw_goal_id:
+                    goal_data = goal
+                    break
+            
+            if not goal_data:
+                print(f"Warning: Goal {raw_goal_id} not found in theme {theme_id}")
+                continue
+                
+            # Get strategies for the goal
+            strategies = goal_data.get('strategies', [])
+            if not strategies:
+                print(f"Warning: No strategies found for goal {raw_goal_id}")
+                continue
+                
+            # Add each strategy as a separate node
+            for i, strategy in enumerate(strategies):
+                # Create a unique strategy ID
+                strategy_id = f"strategy_{theme_id}_{raw_goal_id.replace('.', '_')}_{i}"
+                
+                # Create summary label (shortened version of the strategy text)
+                summary = strategy[:60] + "..." if len(strategy) > 60 else strategy
+                
+                strategy_node = {
+                    "id": strategy_id,
+                    "type": "strategy",           # Specific node type for strategies
+                    "label": f"Strategy {i+1}",   # Numbered strategy label
+                    "summary": summary,           # Short summary
+                    "text": strategy,             # Full strategy text
+                    "theme_id": theme_id,
+                    "theme_title": theme_title,
+                    "goal_id": goal_id,
+                    "goal_title": goal_label,
+                    "community": community_id,    # Same community as parent goal and theme
+                    "community_label": community_label,
+                    "level": "tertiary",          # Mark as tertiary node
+                    "depth": 2                    # Depth level in hierarchy
+                }
+                
+                strategy_nodes.append(strategy_node)
+                
+            print(f"Added {len(strategies)} strategies for goal {raw_goal_id} in theme {theme_id}")
         
+        print(f"Total strategy nodes created: {len(strategy_nodes)}")
         return strategy_nodes
     
     def _generate_links(self, theme_nodes: List[Dict[str, Any]], goal_nodes: List[Dict[str, Any]], 
@@ -251,7 +354,7 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         """
         links = []
         
-        # Link goals to themes
+        # Link goals to themes (child to parent)
         for goal_node in goal_nodes:
             theme_id = goal_node["theme_id"]
             theme_node_id = f"theme_{theme_id}"
@@ -260,10 +363,10 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                 "source": goal_node["id"],
                 "target": theme_node_id,
                 "weight": 1.0,
-                "type": "belongs_to"
+                "type": "part_of_theme"  # Changed from "belongs_to" for clarity
             })
         
-        # Link strategies to goals
+        # Link strategies to goals (child to parent)
         for strategy_node in strategy_nodes:
             goal_id = strategy_node["goal_id"]
             
@@ -271,49 +374,29 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                 "source": strategy_node["id"],
                 "target": goal_id,
                 "weight": 1.0,
-                "type": "implements"
+                "type": "part_of_goal"  # Changed from "implements" for clarity
             })
         
-        # Link themes to each other within the same section/community
-        theme_by_community = {}
-        for node in theme_nodes:
-            community_id = node["community"]
-            if community_id not in theme_by_community:
-                theme_by_community[community_id] = []
-            theme_by_community[community_id].append(node)
-        
-        # Connect themes within the same community
-        for community_id, community_themes in theme_by_community.items():
-            for i, theme1 in enumerate(community_themes):
-                for theme2 in community_themes[i+1:]:
-                    # Random weight between 0.5 and 0.9 for within-community connections
-                    weight = round(random.uniform(0.5, 0.9), 2)
-                    
+        # Link themes to each other based on content similarity
+        for i, theme1 in enumerate(theme_nodes):
+            for theme2 in theme_nodes[i+1:]:
+                # Calculate similarity based on keywords and section
+                similarity = self._calculate_similarity(theme1, theme2)
+                
+                # Only create links for themes with meaningful similarity
+                if similarity > 0.2:
                     links.append({
                         "source": theme1["id"],
                         "target": theme2["id"],
-                        "weight": weight,
+                        "weight": round(similarity, 2),
                         "type": "related_to"
                     })
         
-        # Add a few cross-community connections for themes
-        communities = list(theme_by_community.keys())
-        for i, comm1 in enumerate(communities):
-            for comm2 in communities[i+1:]:
-                if theme_by_community[comm1] and theme_by_community[comm2]:
-                    # Choose a random theme from each community
-                    theme1 = random.choice(theme_by_community[comm1])
-                    theme2 = random.choice(theme_by_community[comm2])
-                    
-                    # Lower weight for cross-community connections
-                    weight = round(random.uniform(0.3, 0.5), 2)
-                    
-                    links.append({
-                        "source": theme1["id"],
-                        "target": theme2["id"],
-                        "weight": weight,
-                        "type": "related_to"
-                    })
+        # Debug information to verify we're processing strategies
+        if strategy_nodes:
+            print(f"Generated {len(strategy_nodes)} strategy nodes and {len([l for l in links if l['type'] == 'part_of_goal'])} strategy links")
+        else:
+            print("WARNING: No strategy nodes were generated!")
         
         return links
     
