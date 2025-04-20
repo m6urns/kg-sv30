@@ -7,8 +7,8 @@ import { getNodeLevel } from './utils.js';
 export const ringConfig = {
   // Define radii for each level (as percentage of container)
   levels: {
-    primary: 1.95,    // Theme nodes at 95% of container
-    secondary: 1.85,  // Goal nodes at 85% of container
+    primary: 2.0,    // Theme nodes at 95% of container
+    secondary: 1.75,  // Goal nodes at 85% of container
     tertiary: 1.50    // Strategy nodes at 50% of container
   },
   // Angular positioning spacing for nodes in the same theme
@@ -682,7 +682,8 @@ export function forceThemeSeparation(layoutData) {
  */
 export function createRingDragBehavior(simulation, layoutData) {
   function dragstarted(event) {
-    if (!event.active) simulation.alphaTarget(0.3).restart();
+    // Use a minimal alpha target to prevent graph destabilization
+    if (!event.active) simulation.alphaTarget(0.05).alphaDecay(0.1).restart();
     const node = event.subject;
     
     // Store original position for snap back
@@ -705,16 +706,32 @@ export function createRingDragBehavior(simulation, layoutData) {
     node.x = center.x + ringRadius * Math.cos(angle);
     node.y = center.y + ringRadius * Math.sin(angle);
     
-    // Reset velocity
+    // Stop all velocity
     node.vx = 0;
     node.vy = 0;
     
-    // Fix position while dragging
+    // Fix node in position while dragging
     node.fx = node.x;
     node.fy = node.y;
+    
+    // Use minimal alpha to limit movement of other nodes
+    simulation.alpha(0.01).velocityDecay(0.8);
+    
+    // Fix positions of nodes in the same theme to minimize movement
+    if (node.themeId) {
+      const themeId = node.themeId;
+      simulation.nodes().forEach(n => {
+        if (n.themeId === themeId || n.parentTheme === themeId) {
+          // Dampen velocity of theme-related nodes
+          n.vx *= 0.5;
+          n.vy *= 0.5;
+        }
+      });
+    }
   }
   
   function dragended(event) {
+    // Immediately set alpha target to 0 to stop the simulation
     if (!event.active) simulation.alphaTarget(0);
     const node = event.subject;
     
@@ -723,8 +740,13 @@ export function createRingDragBehavior(simulation, layoutData) {
     node.fx = null;
     node.fy = null;
     
-    // Trigger snap back force
-    simulation.alpha(0.5).restart();
+    // Use a minimal alpha for almost no movement after drag
+    simulation.alpha(0.02).alphaDecay(0.2).velocityDecay(0.8).restart();
+    
+    // Quickly cool down the simulation
+    setTimeout(() => {
+      simulation.alpha(0).stop();
+    }, 300);
   }
   
   return d3.drag()

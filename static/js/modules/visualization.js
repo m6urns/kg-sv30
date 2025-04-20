@@ -204,8 +204,21 @@ export function createKnowledgeGraph(data, container) {
       .attr('y', d => d.y);
   });
 
-  // Set initial alpha to a higher value for better positioning
-  simulation.alpha(1).restart();
+  // Set initial alpha to position nodes, with much faster cooldown
+  simulation.alpha(1)
+    .alphaDecay(0.03) // Much faster initial cooldown (default is 0.0228)
+    .velocityDecay(0.6) // Much higher velocity dampening (default is 0.4)
+    .restart();
+    
+  // After initial layout, cool down and stop the simulation
+  setTimeout(() => {
+    simulation.alpha(0.1).alphaDecay(0.1).restart();
+    
+    // After 2 seconds, stop the simulation entirely
+    setTimeout(() => {
+      simulation.alpha(0).stop();
+    }, 2000);
+  }, 3000);
 
   // Return graph object with all required components
   return {

@@ -132,6 +132,10 @@ export function highlightConnections(node) {
  * @param {Object} d - The clicked node data
  */
 export function nodeClicked(event, d) {
+  // Prevent default behavior to avoid any graph destabilization
+  event.preventDefault();
+  event.stopPropagation();
+  
   // Show details panel with node information
   showNodeDetails(d);
   
@@ -140,6 +144,12 @@ export function nodeClicked(event, d) {
   
   // Highlight connections for this node
   highlightConnections(d);
+  
+  // If the graph has a simulation, completely stop it to prevent reorganization
+  if (_graphViz && _graphViz.simulation) {
+    // Stop the simulation entirely when clicking a node
+    _graphViz.simulation.alpha(0).alphaTarget(0).stop();
+  }
 }
 
 /**
