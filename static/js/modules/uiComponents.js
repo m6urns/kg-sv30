@@ -159,8 +159,14 @@ export function displayNodeDetails(data, nodeViewHistory) {
   
   _detailsPanel.innerHTML = '';
   
-  // Add navigation buttons if needed
-  // Create navigation bar regardless of history to maintain consistent UI
+  // Create fixed and scrollable sections
+  const fixedSection = document.createElement('div');
+  fixedSection.className = 'fixed-details-section';
+  
+  const scrollableSection = document.createElement('div');
+  scrollableSection.className = 'scrollable-details-section';
+  
+  // Add navigation buttons to fixed section
   const navBar = document.createElement('div');
   navBar.className = 'node-navigation-bar';
   
@@ -200,44 +206,50 @@ export function displayNodeDetails(data, nodeViewHistory) {
     navBar.appendChild(forwardButton);
   }
   
-  _detailsPanel.appendChild(navBar);
+  fixedSection.appendChild(navBar);
   
-  // Create header
+  // Create header in fixed section
   const header = document.createElement('h2');
   header.textContent = data.node.label;
-  _detailsPanel.appendChild(header);
+  fixedSection.appendChild(header);
   
   // Create content based on node type
   if (data.node.type === 'topic') {
-    displayTopicDetails(data);
+    displayTopicDetails(data, fixedSection, scrollableSection);
   } else if (data.node.type === 'document' && 
             (data.node.has_strategy_links || data.node.display_type === 'strategy_list') && 
             data.node.strategy_entries) {
-    displayDocumentWithStrategies(data);
+    displayDocumentWithStrategies(data, fixedSection, scrollableSection);
   } else if (data.node.type === 'strategy') {
-    displayStrategyDetails(data);
+    displayStrategyDetails(data, fixedSection, scrollableSection);
   } else {
-    displayGenericDetails(data);
+    displayGenericDetails(data, fixedSection, scrollableSection);
   }
+  
+  // Add sections to the panel
+  _detailsPanel.appendChild(fixedSection);
+  _detailsPanel.appendChild(scrollableSection);
 }
 
 /**
  * Display details for topic nodes
  * @param {Object} data - Node data
+ * @param {HTMLElement} fixedSection - Fixed section of the details panel
+ * @param {HTMLElement} scrollableSection - Scrollable section of the details panel
  */
-function displayTopicDetails(data) {
+function displayTopicDetails(data, fixedSection, scrollableSection) {
   // Show topic keywords
   const keywords = document.createElement('p');
   keywords.innerHTML = '<strong>Keywords:</strong> ' + 
                       (data.node.keywords || []).join(', ');
-  _detailsPanel.appendChild(keywords);
+  fixedSection.appendChild(keywords);
   
   // Show overview/description if available
   if (data.node.description || data.node.overview) {
     const description = document.createElement('p');
     description.className = 'node-description theme-description';
     description.textContent = data.node.overview || data.node.description;
-    _detailsPanel.appendChild(description);
+    fixedSection.appendChild(description);
   }
   
   // Show community
@@ -245,7 +257,7 @@ function displayTopicDetails(data) {
     const community = document.createElement('p');
     community.innerHTML = '<strong>Cluster:</strong> ' + 
                         data.node.community_label;
-    _detailsPanel.appendChild(community);
+    fixedSection.appendChild(community);
   }
   
   // Show related topics
@@ -256,7 +268,7 @@ function displayTopicDetails(data) {
   if (relatedTopics.length > 0) {
     const topicsTitle = document.createElement('h3');
     topicsTitle.textContent = 'Related Topics:';
-    _detailsPanel.appendChild(topicsTitle);
+    scrollableSection.appendChild(topicsTitle);
     
     const topicsList = document.createElement('ul');
     topicsList.className = 'hierarchy-list';
@@ -277,13 +289,13 @@ function displayTopicDetails(data) {
       topicsList.appendChild(item);
     });
     
-    _detailsPanel.appendChild(topicsList);
+    scrollableSection.appendChild(topicsList);
   }
   
   // Show related documents (goals)
   const docsTitle = document.createElement('h3');
   docsTitle.textContent = 'Related Goals:';
-  _detailsPanel.appendChild(docsTitle);
+  scrollableSection.appendChild(docsTitle);
   
   const docList = document.createElement('ul');
   docList.className = 'hierarchy-list';
@@ -308,21 +320,23 @@ function displayTopicDetails(data) {
     docList.appendChild(item);
   });
   
-  _detailsPanel.appendChild(docList);
+  scrollableSection.appendChild(docList);
 }
 
 /**
  * Display details for document nodes with strategies
  * @param {Object} data - Node data
+ * @param {HTMLElement} fixedSection - Fixed section of the details panel
+ * @param {HTMLElement} scrollableSection - Scrollable section of the details panel
  */
-function displayDocumentWithStrategies(data) {
-  // Show document text/description
+function displayDocumentWithStrategies(data, fixedSection, scrollableSection) {
+  // Show document text/description in fixed section
   const text = document.createElement('p');
   text.textContent = data.node.text;
   text.className = 'node-description goal-description';
-  _detailsPanel.appendChild(text);
+  fixedSection.appendChild(text);
   
-  // Show related topic
+  // Show related topic in fixed section
   const topic = data.connections
     .find(conn => conn.node.type === 'topic' && 
                 (conn.relationship === 'belongs_to' || conn.relationship === 'part_of_theme'));
@@ -340,13 +354,13 @@ function displayDocumentWithStrategies(data) {
     };
     
     topicInfo.appendChild(link);
-    _detailsPanel.appendChild(topicInfo);
+    fixedSection.appendChild(topicInfo);
   }
   
-  // Show strategies
+  // Show strategies in scrollable section
   const strategiesTitle = document.createElement('h3');
   strategiesTitle.textContent = 'Strategies:';
-  _detailsPanel.appendChild(strategiesTitle);
+  scrollableSection.appendChild(strategiesTitle);
   
   const strategiesList = document.createElement('ul');
   strategiesList.className = 'hierarchy-list';
@@ -380,15 +394,17 @@ function displayDocumentWithStrategies(data) {
     strategiesList.appendChild(item);
   });
   
-  _detailsPanel.appendChild(strategiesList);
+  scrollableSection.appendChild(strategiesList);
 }
 
 /**
  * Display details for strategy nodes
  * @param {Object} data - Node data
+ * @param {HTMLElement} fixedSection - Fixed section of the details panel
+ * @param {HTMLElement} scrollableSection - Scrollable section of the details panel
  */
-function displayStrategyDetails(data) {
-  // Create container for strategy content
+function displayStrategyDetails(data, fixedSection, scrollableSection) {
+  // Create container for strategy content in the fixed section
   const strategyContainer = document.createElement('div');
   strategyContainer.className = 'strategy-container';
   
@@ -406,9 +422,9 @@ function displayStrategyDetails(data) {
   text.className = 'node-description strategy-description';
   strategyContainer.appendChild(text);
   
-  _detailsPanel.appendChild(strategyContainer);
+  fixedSection.appendChild(strategyContainer);
   
-  // Show relationships
+  // Show relationships in the fixed section
   const relationshipsContainer = document.createElement('div');
   relationshipsContainer.className = 'strategy-relationships';
   
@@ -453,26 +469,28 @@ function displayStrategyDetails(data) {
     relationshipsContainer.appendChild(themeInfo);
   }
   
-  _detailsPanel.appendChild(relationshipsContainer);
+  fixedSection.appendChild(relationshipsContainer);
   
-  // Display similar strategies if available
+  // Display similar strategies in the scrollable section if available
   if (data.node.connections && data.node.connections.length > 0) {
-    displaySimilarStrategies(data.node, _detailsPanel);
+    displaySimilarStrategies(data.node, scrollableSection);
   }
 }
 
 /**
  * Display details for other node types
  * @param {Object} data - Node data
+ * @param {HTMLElement} fixedSection - Fixed section of the details panel
+ * @param {HTMLElement} scrollableSection - Scrollable section of the details panel
  */
-function displayGenericDetails(data) {
-  // Show document text
+function displayGenericDetails(data, fixedSection, scrollableSection) {
+  // Show document text in fixed section
   const text = document.createElement('p');
   text.textContent = data.node.text;
   text.className = 'node-description';
-  _detailsPanel.appendChild(text);
+  fixedSection.appendChild(text);
   
-  // Show related topic and/or goal
+  // Show related topic and/or goal in fixed section
   const relationshipsContainer = document.createElement('div');
   
   const topic = data.connections
@@ -495,7 +513,40 @@ function displayGenericDetails(data) {
     relationshipsContainer.appendChild(topicInfo);
   }
   
-  _detailsPanel.appendChild(relationshipsContainer);
+  fixedSection.appendChild(relationshipsContainer);
+  
+  // Add any other connections to the scrollable section
+  const otherConnections = data.connections
+    .filter(conn => conn.node.type !== 'topic' || 
+        (conn.relationship !== 'belongs_to' && conn.relationship !== 'part_of_theme'));
+        
+  if (otherConnections.length > 0) {
+    const connectionsTitle = document.createElement('h3');
+    connectionsTitle.textContent = 'Related Items:';
+    scrollableSection.appendChild(connectionsTitle);
+    
+    const connectionsList = document.createElement('ul');
+    connectionsList.className = 'hierarchy-list';
+    
+    otherConnections.forEach(conn => {
+      const item = document.createElement('li');
+      item.className = conn.node.type === 'topic' ? 'theme-item' : 
+                     conn.node.type === 'document' ? 'goal-item' : 'strategy-item';
+      
+      const link = document.createElement('a');
+      link.textContent = conn.node.label;
+      link.href = '#';
+      link.onclick = (e) => {
+        e.preventDefault();
+        focusOnNode(conn.node.id);
+      };
+      
+      item.appendChild(link);
+      connectionsList.appendChild(item);
+    });
+    
+    scrollableSection.appendChild(connectionsList);
+  }
 }
 
 /**
