@@ -1,7 +1,7 @@
 // visualization.js
 import { getNodeColor, getNodeLevel, calculateNodeSize } from './utils.js';
 import { createDragBehavior } from './forceSimulation.js';
-import { computeConcentricLayout, forceRingConstraint, forceSnapBack, createRingDragBehavior, ringConfig } from './concentricRingLayout.js';
+import { computeConcentricLayout, forceRingConstraint, forceSnapBack, forceThemeSeparation, createRingDragBehavior, ringConfig } from './concentricRingLayout.js';
 import { nodeClicked, showTooltip, hideTooltip } from './nodeInteraction.js';
 
 /**
@@ -87,37 +87,34 @@ export function createKnowledgeGraph(data, container) {
   // Compute concentric ring layout
   const layoutData = computeConcentricLayout(data.nodes, data.links, width, height);
 
+  // Split links into hierarchical and non-hierarchical (informational) groups
+  const hierarchicalLinks = data.links.filter(link => 
+    link.type === 'part_of_theme' || link.type === 'part_of_goal'
+  );
+  
+  const informationalLinks = data.links.filter(link => 
+    link.type !== 'part_of_theme' && link.type !== 'part_of_goal'
+  );
+  
   const simulation = d3.forceSimulation(data.nodes)
-    .force('link', d3.forceLink(data.links)
+    // Use only hierarchical links for primary layout force
+    .force('hierarchicalLinks', d3.forceLink(hierarchicalLinks)
       .id(d => d.id)
-      .distance(d => {
-        // Adjusted distances for better spacing
-        if (d.type === 'part_of_theme' || d.type === 'part_of_goal') {
-          return 100; // Increased from 50
-        }
-        // Medium distance for similar content links
-        if (d.type === 'similar_content') {
-          return 200; // Increased from 150
-        }
-        return 150; // Increased from 100
-      })
-      .strength(d => {
-        // Strong hierarchical connections
-        if (d.type === 'part_of_theme' || d.type === 'part_of_goal') {
-          return 0.8;
-        }
-        // Weak similar content connections
-        if (d.type === 'similar_content') {
-          return 0.1;
-        }
-        return 0.4;
-      })
+      .distance(d => 100) // Consistent distance for tree structure
+      .strength(0.9) // Stronger tree structure forces
+    )
+    // Add informational links with zero strength for layout (they'll still be displayed)
+    .force('informationalLinks', d3.forceLink(informationalLinks)
+      .id(d => d.id)
+      .distance(200)
+      .strength(0) // No force from these links - purely visual
     )
     .force('ringConstraint', forceRingConstraint(layoutData.center.x, layoutData.center.y))
+    .force('themeSeparation', forceThemeSeparation(layoutData))
     .force('snapBack', forceSnapBack())
     .force('collision', d3.forceCollide()
-      .radius(d => calculateNodeSize(d) + 10) // Increased collision radius from 5 to 10
-      .strength(0.7)
+      .radius(d => calculateNodeSize(d) + 20) // Increased collision radius for better separation
+      .strength(0.9) // Stronger collision avoidance
     );
   
   // Draw link path function that curves for strategy links
