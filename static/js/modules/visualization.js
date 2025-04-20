@@ -44,9 +44,20 @@ export function createKnowledgeGraph(data, container) {
     .filter(d => d.community !== undefined)
     .map(d => d.community))];
   
+  // Use a wider range of colors than the default d3.schemeCategory10
+  // Combine multiple color schemes to get more distinct colors
+  const combinedColorScheme = [
+    ...d3.schemeCategory10,       // 10 colors
+    ...d3.schemePaired,           // 12 colors
+    ...d3.schemeSet2,             // 8 colors
+    ...d3.schemeSet3,             // 12 colors
+    ...d3.schemeTableau10         // 10 colors
+  ];
+  
+  // Create a color scale with the expanded color palette
   const colorScale = d3.scaleOrdinal()
     .domain(communities)
-    .range(d3.schemeCategory10);
+    .range(combinedColorScheme);
 
   // Define the local implementation of getLinkColor function right after colorScale
   const localGetLinkColor = function(d) {

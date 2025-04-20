@@ -5,6 +5,7 @@ import { fetchNodeDetails } from './dataService.js';
 // Variables for tracking node interaction state
 let _graphViz = null;
 let _nodeViewHistory = [];
+let _nodeForwardHistory = []; // For forward navigation
 let _graphContainer = null;
 let _detailsPanel = null;
 
@@ -19,18 +20,25 @@ export function initializeNodeInteraction(graphViz, graphContainer, detailsPanel
   _graphContainer = graphContainer;
   _detailsPanel = detailsPanel;
   _nodeViewHistory = [];
+  _nodeForwardHistory = [];
 }
 
 /**
  * Focus on a node by ID
  * @param {string} nodeId - ID of the node to focus on
+ * @param {boolean} fromNavigation - Whether this focus comes from navigation (back/forward)
  */
-export function focusOnNode(nodeId) {
+export function focusOnNode(nodeId, fromNavigation = false) {
   if (!_graphViz) return;
   
   // Find the node in the visualization
   const node = _graphViz.nodes.find(n => n.id === nodeId);
   if (!node) return;
+  
+  // Clear forward history if we're not navigating and focusing on a new node
+  if (!fromNavigation) {
+    _nodeForwardHistory = [];
+  }
   
   // Highlight the node
   highlightNode(node);
@@ -139,7 +147,11 @@ export function nodeClicked(event, d) {
  */
 export function navigateBack() {
   if (_nodeViewHistory.length > 1) {
-    // Remove current node
+    // Get current node and add to forward history
+    const currentNodeId = _nodeViewHistory[_nodeViewHistory.length - 1];
+    _nodeForwardHistory.push(currentNodeId);
+    
+    // Remove current node from history
     _nodeViewHistory.pop();
     
     // Get previous node
@@ -149,8 +161,29 @@ export function navigateBack() {
     _nodeViewHistory.pop();
     
     // Focus on the node - this will add it back to history
-    focusOnNode(previousNodeId);
+    focusOnNode(previousNodeId, true);
   }
+}
+
+/**
+ * Navigate forward in node history
+ */
+export function navigateForward() {
+  if (_nodeForwardHistory.length > 0) {
+    // Get node from forward history
+    const nextNodeId = _nodeForwardHistory.pop();
+    
+    // Focus on the node - this will add it to view history
+    focusOnNode(nextNodeId, true);
+  }
+}
+
+/**
+ * Check if forward navigation is possible
+ * @returns {boolean} - True if forward navigation is possible
+ */
+export function canNavigateForward() {
+  return _nodeForwardHistory.length > 0;
 }
 
 /**

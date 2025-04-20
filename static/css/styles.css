@@ -91,6 +91,7 @@ body {
   font-weight: bold;
 }
 
+
 /* Tooltip */
 .tooltip {
   position: absolute;
@@ -367,6 +368,9 @@ body {
 
 .node-navigation-bar {
   margin-bottom: 15px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .node-navigation-button {
@@ -376,8 +380,11 @@ body {
   padding: 5px 10px;
   cursor: pointer;
   font-size: 14px;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
   display: inline-block;
+  flex: 1;
+  text-align: center;
+  max-width: 100px;
 }
 
 .node-navigation-button:hover {
@@ -388,6 +395,28 @@ body {
 .node-navigation-button:active {
   background-color: #ddd;
   transform: translateY(1px);
+}
+
+.node-navigation-button.disabled {
+  background-color: #f9f9f9;
+  border-color: #eee;
+  color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.node-navigation-button.disabled:hover {
+  background-color: #f9f9f9;
+  border-color: #eee;
+  transform: none;
+}
+
+#node-back-button {
+  text-align: left;
+}
+
+#node-forward-button {
+  text-align: right;
 }
 
 /* Similar strategies styling */

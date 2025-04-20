@@ -1,5 +1,5 @@
 // UI components for the graph visualization
-import { focusOnNode, navigateBack, addToNodeViewHistory } from './nodeInteraction.js';
+import { focusOnNode, navigateBack, navigateForward, canNavigateForward, addToNodeViewHistory } from './nodeInteraction.js';
 
 // DOM element references
 let _detailsPanel = null;
@@ -159,20 +159,48 @@ export function displayNodeDetails(data, nodeViewHistory) {
   
   _detailsPanel.innerHTML = '';
   
+  // Add navigation buttons if needed
+  // Create navigation bar regardless of history to maintain consistent UI
+  const navBar = document.createElement('div');
+  navBar.className = 'node-navigation-bar';
+  
   // Add back button if there's history
   if (nodeViewHistory && nodeViewHistory.length > 1) {
-    const navBar = document.createElement('div');
-    navBar.className = 'node-navigation-bar';
-    
     const backButton = document.createElement('button');
     backButton.id = 'node-back-button';
     backButton.className = 'node-navigation-button';
     backButton.innerHTML = '&larr; Back';
     backButton.onclick = navigateBack;
-    
     navBar.appendChild(backButton);
-    _detailsPanel.appendChild(navBar);
+  } else {
+    // Add a disabled back button for consistent UI
+    const backButton = document.createElement('button');
+    backButton.id = 'node-back-button';
+    backButton.className = 'node-navigation-button disabled';
+    backButton.innerHTML = '&larr; Back';
+    backButton.disabled = true;
+    navBar.appendChild(backButton);
   }
+  
+  // Add forward button if there's forward history
+  if (canNavigateForward()) {
+    const forwardButton = document.createElement('button');
+    forwardButton.id = 'node-forward-button';
+    forwardButton.className = 'node-navigation-button';
+    forwardButton.innerHTML = 'Forward &rarr;';
+    forwardButton.onclick = navigateForward;
+    navBar.appendChild(forwardButton);
+  } else {
+    // Add a disabled forward button for consistent UI
+    const forwardButton = document.createElement('button');
+    forwardButton.id = 'node-forward-button';
+    forwardButton.className = 'node-navigation-button disabled';
+    forwardButton.innerHTML = 'Forward &rarr;';
+    forwardButton.disabled = true;
+    navBar.appendChild(forwardButton);
+  }
+  
+  _detailsPanel.appendChild(navBar);
   
   // Create header
   const header = document.createElement('h2');
