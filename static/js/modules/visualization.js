@@ -87,20 +87,19 @@ export function createKnowledgeGraph(data, container) {
   // Compute concentric ring layout
   const layoutData = computeConcentricLayout(data.nodes, data.links, width, height);
 
-  // Create the force simulation - SIMPLIFIED for ring layout
   const simulation = d3.forceSimulation(data.nodes)
     .force('link', d3.forceLink(data.links)
       .id(d => d.id)
       .distance(d => {
-        // Short distances for hierarchical links
+        // Adjusted distances for better spacing
         if (d.type === 'part_of_theme' || d.type === 'part_of_goal') {
-          return 50;
+          return 100; // Increased from 50
         }
         // Medium distance for similar content links
         if (d.type === 'similar_content') {
-          return 150;
+          return 200; // Increased from 150
         }
-        return 100;
+        return 150; // Increased from 100
       })
       .strength(d => {
         // Strong hierarchical connections
@@ -117,7 +116,7 @@ export function createKnowledgeGraph(data, container) {
     .force('ringConstraint', forceRingConstraint(layoutData.center.x, layoutData.center.y))
     .force('snapBack', forceSnapBack())
     .force('collision', d3.forceCollide()
-      .radius(d => calculateNodeSize(d) + 5)
+      .radius(d => calculateNodeSize(d) + 10) // Increased collision radius from 5 to 10
       .strength(0.7)
     );
   

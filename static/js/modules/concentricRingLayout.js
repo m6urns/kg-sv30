@@ -7,24 +7,24 @@ import { getNodeLevel } from './utils.js';
 export const ringConfig = {
   // Define radii for each level (as percentage of container)
   levels: {
-    primary: 0.9,    // Theme nodes at 90% of container
-    secondary: 0.6,  // Goal nodes at 60% of container
-    tertiary: 0.3    // Strategy nodes at 30% of container
+    primary: 0.95,    // Theme nodes at 95% of container (was 0.9)
+    secondary: 0.65,  // Goal nodes at 65% of container (was 0.6)
+    tertiary: 0.35    // Strategy nodes at 35% of container (was 0.3)
   },
   // Angular positioning spacing for nodes in the same theme
   angleSpacing: {
-    primary: 30,     // Degrees of minimum spacing between themes
-    secondary: 5,    // Degrees of minimum spacing between goals in same theme
-    tertiary: 3      // Degrees of minimum spacing between strategies in same goal
+    primary: 5,     // Degrees of minimum spacing between themes (was 30)
+    secondary: 5,   // Degrees of minimum spacing between goals in same theme (was 5)
+    tertiary: 1      // Degrees of minimum spacing between strategies in same goal (was 3)
   },
   // Snap back behavior
   snapBack: {
-    enabled: true,
-    strength: 0.8    // Increased spring force strength
+    enabled: false,
+    strength: 0.5
   },
   // Ring constraint strength
   ringConstraint: {
-    strength: 0.9    // Increased constraint strength
+    strength: 0.9
   }
 };
 
@@ -37,70 +37,77 @@ export const ringConfig = {
  * @returns {Object} - Object with layout information
  */
 export function computeConcentricLayout(nodes, links, width, height) {
-  const center = { x: width / 2, y: height / 2 };
-  const radius = Math.min(width, height) / 2 - 50; // Padding
-  
-  // Organize nodes by theme and level
-  const themes = nodes.filter(n => getNodeLevel(n) === 'primary');
-  const themeHierarchy = organizeThemeHierarchy(nodes, links);
-  
-  // Calculate angular sectors for each theme
-  const themeAngles = assignThemeAngles(themes.length);
-  
-  // Position all nodes
-  nodes.forEach(node => {
-    const level = getNodeLevel(node);
-    const ringRadius = radius * ringConfig.levels[level];
+    const center = { x: width / 2, y: height / 2 };
+    const radius = Math.min(width, height) / 2 - 20;
     
-    if (level === 'primary') {
-      // Theme nodes
-      const themeIndex = themes.findIndex(t => t.id === node.id);
-      const angle = themeAngles[themeIndex].center;
+    // Organize nodes by theme and level
+    const themes = nodes.filter(n => getNodeLevel(n) === 'primary');
+    const themeHierarchy = organizeThemeHierarchy(nodes, links);
+    
+    // Calculate angular sectors for each theme
+    const themeAngles = assignThemeAngles(themes.length);
+    
+    // Position all nodes
+    nodes.forEach(node => {
+      const level = getNodeLevel(node);
+      const ringRadius = radius * ringConfig.levels[level];
       
-      // Store target position for snap-back
-      node.targetX = center.x + ringRadius * Math.cos(angle);
-      node.targetY = center.y + ringRadius * Math.sin(angle);
-      node.angle = angle;
-      node.ringRadius = ringRadius;
-      
-      // Initialize position
-      node.x = node.targetX;
-      node.y = node.targetY;
-      
-      // Store theme information for child positioning
-      node.angleRange = themeAngles[themeIndex];
-    } else {
-      // Goal and strategy nodes
-      const { theme, position, totalSiblings, parentAngleRange } = findNodeHierarchyInfo(node, themeHierarchy, themeAngles, themes);
-      if (theme) {
-        // Distribute child nodes within the theme's angular sector
-        const angleRange = parentAngleRange.end - parentAngleRange.start;
-        const padding = (ringConfig.angleSpacing[level] * Math.PI / 180) * totalSiblings;
-        const effectiveRange = angleRange - padding;
-        const angleStep = effectiveRange / (totalSiblings || 1);
-        const nodeAngle = parentAngleRange.start + padding / 2 + angleStep * position;
+      if (level === 'primary') {
+        // Theme nodes - evenly distributed around the circle
+        const themeIndex = themes.findIndex(t => t.id === node.id);
+        const angle = themeAngles[themeIndex].center;
         
         // Store target position for snap-back
-        node.targetX = center.x + ringRadius * Math.cos(nodeAngle);
-        node.targetY = center.y + ringRadius * Math.sin(nodeAngle);
-        node.angle = nodeAngle;
+        node.targetX = center.x + ringRadius * Math.cos(angle);
+        node.targetY = center.y + ringRadius * Math.sin(angle);
+        node.angle = angle;
         node.ringRadius = ringRadius;
-        node.parentTheme = theme.id;
         
         // Initialize position
         node.x = node.targetX;
         node.y = node.targetY;
+        
+        // Store theme information for child positioning
+        node.angleRange = themeAngles[themeIndex];
+      } else {
+        // Goal and strategy nodes
+        const { theme, position, totalSiblings, parentAngleRange } = findNodeHierarchyInfo(node, themeHierarchy, themeAngles, themes);
+        if (theme) {
+          // Distribute child nodes evenly within the theme's angular sector
+          const angleRange = parentAngleRange.end - parentAngleRange.start;
+          
+          // Calculate angular position for this node
+          let nodeAngle;
+          if (totalSiblings === 1) {
+            // If only one sibling, place in the center of the sector
+            nodeAngle = (parentAngleRange.start + parentAngleRange.end) / 2;
+          } else {
+            // Distribute multiple siblings evenly within the sector
+            const step = angleRange / (totalSiblings - 1);
+            nodeAngle = parentAngleRange.start + step * position;
+          }
+          
+          // Store target position for snap-back
+          node.targetX = center.x + ringRadius * Math.cos(nodeAngle);
+          node.targetY = center.y + ringRadius * Math.sin(nodeAngle);
+          node.angle = nodeAngle;
+          node.ringRadius = ringRadius;
+          node.parentTheme = theme.id;
+          
+          // Initialize position
+          node.x = node.targetX;
+          node.y = node.targetY;
+        }
       }
-    }
-  });
-  
-  return {
-    center,
-    radius,
-    themeAngles,
-    themeHierarchy
-  };
-}
+    });
+    
+    return {
+      center,
+      radius,
+      themeAngles,
+      themeHierarchy
+    };
+  }
 
 /**
  * Organize nodes into a theme hierarchy
@@ -197,22 +204,25 @@ function findNodeHierarchyInfo(node, hierarchy, themeAngles, themes) {
  * @returns {Array} - Array of angular sectors for each theme
  */
 function assignThemeAngles(themeCount) {
-  const angles = [];
-  const fullCircle = Math.PI * 2;
-  const angleStep = fullCircle / themeCount;
-  const minGap = (ringConfig.angleSpacing.primary * Math.PI) / 180; // Convert to radians
-  
-  for (let i = 0; i < themeCount; i++) {
-    const baseAngle = i * angleStep;
-    angles.push({
-      center: baseAngle,
-      start: baseAngle - (angleStep / 2) + (minGap / 2),
-      end: baseAngle + (angleStep / 2) - (minGap / 2)
-    });
+    const angles = [];
+    const fullCircle = Math.PI * 2;
+    const angleStep = fullCircle / themeCount;  // Equal division around the circle
+    
+    for (let i = 0; i < themeCount; i++) {
+      const baseAngle = i * angleStep;
+      
+      // We don't need large gaps between themes
+      const minGap = (ringConfig.angleSpacing.primary * Math.PI) / 180;
+      
+      angles.push({
+        center: baseAngle,
+        start: baseAngle - (angleStep / 2) + minGap,
+        end: baseAngle + (angleStep / 2) - minGap
+      });
+    }
+    
+    return angles;
   }
-  
-  return angles;
-}
 
 /**
  * Create a force that keeps nodes confined to their rings
