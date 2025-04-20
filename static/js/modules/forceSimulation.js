@@ -9,7 +9,7 @@ export const levelConfig = {
   chargeStrength: {
     primary: -500,     // Even stronger repulsion for theme nodes
     secondary: -300,   // Stronger for goal nodes
-    tertiary: -100     // Increased for strategy nodes to reduce bunching
+    tertiary: -200     // Increased for strategy nodes to reduce bunching
   },
   // Additional repulsion between nodes of the same level
   levelRepulsionStrength: {
@@ -20,15 +20,15 @@ export const levelConfig = {
   // Maximum distance for level-specific repulsion to apply
   repulsionDistance: {
     primary: 600,      // Increased theme repulsion distance
-    secondary: 400,    // Increased goal repulsion distance
-    tertiary: 200      // Significantly increased strategy repulsion distance
+    secondary: 300,    // Increased goal repulsion distance
+    tertiary: 100      // Significantly increased strategy repulsion distance
   },
   // Radial positioning parameters - increased separation
   radialPositioning: {
     enabled: true,
-    primary: 650,      // Themes positioned further out
-    secondary: 400,    // Goals in a wider middle layer
-    tertiary: 180      // Strategies spread out more in center
+    primary: 750,      // Themes positioned further out
+    secondary: 600,    // Goals in a wider middle layer
+    tertiary: 400      // Strategies spread out more in center
   }
 };
 
