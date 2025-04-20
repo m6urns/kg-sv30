@@ -60,12 +60,48 @@ export async function fetchNodeDetails(nodeId) {
 /**
  * Search nodes by query
  * @param {string} query - Search query
- * @returns {Promise} - Promise for the search results
+ * @returns {Promise} - Promise for the enhanced search results with match information
  */
 export async function searchNodes(query) {
   try {
     const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-    return await response.json();
+    const results = await response.json();
+    
+    // Process results to add useful display information
+    return results.map(result => {
+      // Add a display-friendly version of match info if available
+      if (result.match_info) {
+        // Get the highest priority match for display summary
+        const priorityOrder = {
+          "high": 3,
+          "medium": 2,
+          "low": 1
+        };
+        
+        // Sort matches by priority
+        const sortedMatches = [...result.match_info.matches].sort((a, b) => {
+          return priorityOrder[b.priority] - priorityOrder[a.priority];
+        });
+        
+        // Add a summary of where the match was found
+        const matchFields = sortedMatches.map(match => match.field);
+        result.match_summary = `Found in: ${matchFields.join(', ')}`;
+        
+        // Add match score for display
+        result.match_score = result.match_info.score;
+        
+        // Add the best match for immediate display
+        if (sortedMatches.length > 0) {
+          const bestMatch = sortedMatches[0];
+          result.best_match = {
+            field: bestMatch.field,
+            text: bestMatch.text
+          };
+        }
+      }
+      
+      return result;
+    });
   } catch (error) {
     console.error('Search error:', error);
     return [];

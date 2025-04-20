@@ -70,7 +70,7 @@ def get_communities():
 
 @app.route('/api/search', methods=['GET'])
 def search():
-    """Search for nodes matching query."""
+    """Search for nodes matching query in keywords and text content."""
     global graph_data
     
     if graph_data is None:
@@ -82,10 +82,109 @@ def search():
     
     results = []
     for node in graph_data["nodes"]:
-        # Search in node label and keywords
-        if (query in node.get("label", "").lower() or 
-            any(query in kw.lower() for kw in node.get("keywords", []))):
-            results.append(node)
+        # Initialize match info
+        match_info = {
+            "score": 0,
+            "matches": []
+        }
+        
+        # Search in node label (highest priority)
+        if query in node.get("label", "").lower():
+            match_info["score"] += 10
+            match_info["matches"].append({
+                "field": "label",
+                "text": node.get("label", ""),
+                "priority": "high"
+            })
+        
+        # Search in keywords (high priority)
+        keyword_matches = [kw for kw in node.get("keywords", []) if query in kw.lower()]
+        if keyword_matches:
+            match_info["score"] += 8 * len(keyword_matches)
+            match_info["matches"].append({
+                "field": "keywords",
+                "text": ", ".join(keyword_matches),
+                "priority": "high"
+            })
+        
+        # Search in type-specific text content
+        node_type = node.get("type", "")
+        
+        # For topic/theme nodes
+        if node_type == "topic":
+            # Search in description
+            description = node.get("description", "")
+            if description and query in description.lower():
+                match_info["score"] += 5
+                match_info["matches"].append({
+                    "field": "description",
+                    "text": description,
+                    "priority": "medium"
+                })
+            
+            # Search in overview
+            overview = node.get("overview", "")
+            if overview and query in overview.lower():
+                match_info["score"] += 3
+                match_info["matches"].append({
+                    "field": "overview",
+                    "text": overview,
+                    "priority": "medium"
+                })
+        
+        # For document/goal nodes
+        elif node_type == "document":
+            # Search in text/goal title
+            goal_text = node.get("text", "")
+            if goal_text and query in goal_text.lower():
+                match_info["score"] += 6
+                match_info["matches"].append({
+                    "field": "text",
+                    "text": goal_text,
+                    "priority": "medium"
+                })
+                
+            # Search in strategies HTML (contains all strategy text)
+            strategies_html = node.get("strategies_html", "")
+            if strategies_html and query in strategies_html.lower():
+                match_info["score"] += 4
+                match_info["matches"].append({
+                    "field": "strategies",
+                    "text": "Strategy content match",
+                    "priority": "medium"
+                })
+        
+        # For strategy nodes
+        elif node_type == "strategy":
+            # Search in text/strategy content
+            strategy_text = node.get("text", "")
+            if strategy_text and query in strategy_text.lower():
+                match_info["score"] += 6
+                match_info["matches"].append({
+                    "field": "text",
+                    "text": strategy_text,
+                    "priority": "medium"
+                })
+            
+            # Search in summary
+            summary = node.get("summary", "")
+            if summary and query in summary.lower():
+                match_info["score"] += 3
+                match_info["matches"].append({
+                    "field": "summary",
+                    "text": summary,
+                    "priority": "low"
+                })
+        
+        # If any matches were found, add to results with match info
+        if match_info["score"] > 0:
+            # Create a copy of the node with match information
+            result_node = node.copy()
+            result_node["match_info"] = match_info
+            results.append(result_node)
+    
+    # Sort results by score (descending)
+    results.sort(key=lambda x: x["match_info"]["score"], reverse=True)
     
     return jsonify(results)
 
