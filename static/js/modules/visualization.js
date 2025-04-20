@@ -1,6 +1,7 @@
-// Graph visualization module
+// visualization.js
 import { getNodeColor, getNodeLevel, calculateNodeSize } from './utils.js';
-import { forceCluster, interCommunityRepulsion, levelRepulsion, createDragBehavior, levelConfig } from './forceSimulation.js';
+import { createDragBehavior } from './forceSimulation.js';
+import { computeConcentricLayout, forceRingConstraint, forceSnapBack, createRingDragBehavior, ringConfig } from './concentricRingLayout.js';
 import { nodeClicked, showTooltip, hideTooltip } from './nodeInteraction.js';
 
 /**
@@ -45,7 +46,6 @@ export function createKnowledgeGraph(data, container) {
     .map(d => d.community))];
   
   // Use a wider range of colors than the default d3.schemeCategory10
-  // Combine multiple color schemes to get more distinct colors
   const combinedColorScheme = [
     ...d3.schemeCategory10,       // 10 colors
     ...d3.schemePaired,           // 12 colors
@@ -84,94 +84,91 @@ export function createKnowledgeGraph(data, container) {
     return '#9ecae1';
   };
 
-  // Create the force simulation
+  // Compute concentric ring layout
+  const layoutData = computeConcentricLayout(data.nodes, data.links, width, height);
+
+  // Create the force simulation - SIMPLIFIED for ring layout
   const simulation = d3.forceSimulation(data.nodes)
     .force('link', d3.forceLink(data.links)
       .id(d => d.id)
       .distance(d => {
-        // Adjust link distance based on the levels of connected nodes
-        const sourceLevel = getNodeLevel(d.source);
-        const targetLevel = getNodeLevel(d.target);
-        
-        // Hierarchical links (parent-child relationships)
+        // Short distances for hierarchical links
         if (d.type === 'part_of_theme' || d.type === 'part_of_goal') {
-          return 180; // Longer links for hierarchical relationships
+          return 50;
         }
-        
-        // Similar content links - make these weaker to prevent bunching
+        // Medium distance for similar content links
         if (d.type === 'similar_content') {
-          return 120; // Medium length for similarity links
+          return 150;
         }
-        
-        // Links between different levels
-        if (sourceLevel !== targetLevel) {
-          return 200; // Longer links between different levels
-        }
-        
-        // Default link distance
         return 100;
       })
       .strength(d => {
-        // Reduce strength of similarity links to prevent tight clustering
-        if (d.type === 'similar_content') {
-          return 0.1 * (d.weight || 0.5); // Weaker connection based on similarity weight
-        }
-        
-        // Maintain stronger hierarchical connections
+        // Strong hierarchical connections
         if (d.type === 'part_of_theme' || d.type === 'part_of_goal') {
-          return 0.7; // Stronger parent-child connections
+          return 0.8;
         }
-        
-        return 0.4; // Default strength
+        // Weak similar content connections
+        if (d.type === 'similar_content') {
+          return 0.1;
+        }
+        return 0.4;
       })
     )
-    .force('charge', d3.forceManyBody()
-      .strength(d => {
-        // Get node level
-        const level = getNodeLevel(d);
-        
-        // Return configured strength
-        return levelConfig.chargeStrength[level] || -100;
-      })
-      .distanceMin(10)
-      .distanceMax(500) // Increased maximum distance
-    )
-    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('ringConstraint', forceRingConstraint(layoutData.center.x, layoutData.center.y))
+    .force('snapBack', forceSnapBack())
     .force('collision', d3.forceCollide()
-      .radius(d => calculateNodeSize(d) + 15) // Increased collision radius
-      .strength(0.9) // Stronger collision prevention
-    )
-    // Enhanced radial positioning force
-    .force('radial', d3.forceRadial()
-      .radius(d => {
-        if (!levelConfig.radialPositioning.enabled) return null;
-        
-        const level = getNodeLevel(d);
-        
-        // Add slight randomness to break symmetry
-        const jitter = (Math.random() - 0.5) * 30;
-        
-        return (levelConfig.radialPositioning[level] || 250) + jitter;
-      })
-      .x(width / 2)
-      .y(height / 2)
-      .strength(0.5) // Increased strength
-    )
-    // Add custom repulsion for each level
-    .force('primaryRepulsion', levelRepulsion('primary'))
-    .force('secondaryRepulsion', levelRepulsion('secondary'))
-    .force('tertiaryRepulsion', levelRepulsion('tertiary'))
-    .force('cluster', forceCluster(0.05))
-    .force('interCommunityRepulsion', interCommunityRepulsion(1.5));
+      .radius(d => calculateNodeSize(d) + 5)
+      .strength(0.7)
+    );
+  
+  // Draw link path function that curves for strategy links
+  function linkPath(d) {
+    const sourceLevel = getNodeLevel(d.source);
+    const targetLevel = getNodeLevel(d.target);
+    
+    // For strategy-to-strategy links, create curved paths through center
+    if (sourceLevel === 'tertiary' && targetLevel === 'tertiary' && d.type === 'similar_content') {
+      // Get control points through center
+      const sourceAngle = Math.atan2(d.source.y - layoutData.center.y, d.source.x - layoutData.center.x);
+      const targetAngle = Math.atan2(d.target.y - layoutData.center.y, d.target.x - layoutData.center.x);
+      
+      // Control point at center with offset to create curve
+      const controlRadius = layoutData.radius * 0.2; // 20% of radius
+      const controlAngle = (sourceAngle + targetAngle) / 2;
+      const controlX = layoutData.center.x + controlRadius * Math.cos(controlAngle);
+      const controlY = layoutData.center.y + controlRadius * Math.sin(controlAngle);
+      
+      // Create quadratic Bezier curve
+      return `M${d.source.x},${d.source.y}Q${controlX},${controlY} ${d.target.x},${d.target.y}`;
+    }
+    
+    // Regular straight lines for hierarchical links
+    return `M${d.source.x},${d.source.y}L${d.target.x},${d.target.y}`;
+  }
 
-  // Draw links
+  // Draw links as paths instead of lines
   const link = g.selectAll('.link')
     .data(data.links)
     .enter()
-    .append('line')
+    .append('path')
     .attr('class', 'link')
     .attr('stroke-width', d => Math.sqrt(d.weight || 1) * 2)
-    .attr('stroke', localGetLinkColor);
+    .attr('stroke', localGetLinkColor)
+    .attr('fill', 'none');
+  
+  // Draw ring guides
+  const rings = g.selectAll('.ring-guide')
+    .data(['primary', 'secondary', 'tertiary'])
+    .enter()
+    .append('circle')
+    .attr('class', 'ring-guide')
+    .attr('cx', layoutData.center.x)
+    .attr('cy', layoutData.center.y)
+    .attr('r', d => layoutData.radius * ringConfig.levels[d])
+    .attr('fill', 'none')
+    .attr('stroke', '#ddd')
+    .attr('stroke-dasharray', '5,5')
+    .attr('opacity', 0.5);
   
   // Draw nodes
   const node = g.selectAll('.node')
@@ -181,7 +178,7 @@ export function createKnowledgeGraph(data, container) {
     .attr('class', d => `node ${d.is_central ? 'central-node' : ''}`)
     .attr('r', d => calculateNodeSize(d))
     .attr('fill', d => getNodeColor(d, colorScale))
-    .call(createDragBehavior(simulation))
+    .call(createRingDragBehavior(simulation, layoutData))
     .on('mouseover', (event, d) => showTooltip(event, d, tooltip))
     .on('mouseout', () => hideTooltip(tooltip))
     .on('click', nodeClicked);
@@ -197,29 +194,10 @@ export function createKnowledgeGraph(data, container) {
     .attr('dx', 12)
     .attr('dy', 4);
   
-  // Add community labels
-  const communityLabels = g.selectAll('.community-label')
-    .data(communities)
-    .enter()
-    .append('text')
-    .attr('class', 'community-label')
-    .text(d => {
-      // Find a node in this community to get the label
-      const communityNode = data.nodes.find(node => node.community === d);
-      return communityNode ? communityNode.community_label : `Cluster ${d}`;
-    })
-    .attr('font-size', 15)
-    .attr('font-weight', 'bold')
-    .attr('fill', d => colorScale(d))
-    .attr('opacity', 0.7);
-  
   // Update positions on simulation tick
   simulation.on('tick', () => {
     link
-      .attr('x1', d => d.source.x)
-      .attr('y1', d => d.source.y)
-      .attr('x2', d => d.target.x)
-      .attr('y2', d => d.target.y);
+      .attr('d', linkPath);
     
     node
       .attr('cx', d => d.x)
@@ -228,19 +206,10 @@ export function createKnowledgeGraph(data, container) {
     label
       .attr('x', d => d.x)
       .attr('y', d => d.y);
-    
-    // Update community label positions to center of each community
-    communityLabels.each(function(communityId) {
-      const communityNodes = data.nodes.filter(n => n.community === communityId);
-      if (communityNodes.length > 0) {
-        const centerX = d3.mean(communityNodes, d => d.x);
-        const centerY = d3.mean(communityNodes, d => d.y);
-        d3.select(this)
-          .attr('x', centerX)
-          .attr('y', centerY);
-      }
-    });
   });
+
+  // Set initial alpha to a higher value for better positioning
+  simulation.alpha(1).restart();
 
   // Return graph object with all required components
   return {
@@ -254,6 +223,7 @@ export function createKnowledgeGraph(data, container) {
     linkElements: link,
     labelElements: label,
     communities: communities,
-    colorScale: colorScale
+    colorScale: colorScale,
+    layoutData: layoutData
   };
 }

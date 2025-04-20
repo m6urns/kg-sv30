@@ -1,4 +1,4 @@
-// Force simulation layout algorithms for the graph
+// forceSimulation.js
 import { getNodeLevel } from './utils.js';
 
 /**
@@ -7,28 +7,28 @@ import { getNodeLevel } from './utils.js';
 export const levelConfig = {
   // Main node repulsion strength by level
   chargeStrength: {
-    primary: -500,     // Even stronger repulsion for theme nodes
-    secondary: -300,   // Stronger for goal nodes
-    tertiary: -200     // Increased for strategy nodes to reduce bunching
+    primary: -100,     // Reduced for ring layout
+    secondary: -75,    // Reduced for ring layout
+    tertiary: -50      // Reduced for ring layout
   },
   // Additional repulsion between nodes of the same level
   levelRepulsionStrength: {
-    primary: 2.0,      // Much stronger theme node repulsion
-    secondary: 1.0,    // Increased goal node repulsion
-    tertiary: 0.5      // Significantly increased strategy repulsion
+    primary: 1.0,      // Reduced for ring layout
+    secondary: 0.8,    // Reduced for ring layout
+    tertiary: 0.5      // Reduced for ring layout
   },
   // Maximum distance for level-specific repulsion to apply
   repulsionDistance: {
-    primary: 600,      // Increased theme repulsion distance
-    secondary: 300,    // Increased goal repulsion distance
-    tertiary: 100      // Significantly increased strategy repulsion distance
+    primary: 100,      // Reduced for ring layout
+    secondary: 75,     // Reduced for ring layout
+    tertiary: 50       // Reduced for ring layout
   },
-  // Radial positioning parameters - increased separation
+  // Radial positioning parameters - not used in ring layout
   radialPositioning: {
-    enabled: true,
-    primary: 750,      // Themes positioned further out
-    secondary: 600,    // Goals in a wider middle layer
-    tertiary: 400      // Strategies spread out more in center
+    enabled: false, // Disabled for ring layout
+    primary: 0,
+    secondary: 0,
+    tertiary: 0
   }
 };
 
@@ -56,6 +56,9 @@ export function levelRepulsion(targetLevel) {
       
       for (let j = i + 1; j < levelNodes.length; j++) {
         const nodeB = levelNodes[j];
+        
+        // Only apply repulsion if nodes are on the same ring
+        if (nodeA.ringRadius !== nodeB.ringRadius) continue;
         
         // Calculate distance between nodes
         const dx = nodeA.x - nodeB.x;
@@ -90,32 +93,8 @@ export function levelRepulsion(targetLevel) {
  * @returns {Function} - Force function
  */
 export function forceCluster(strength = 0.6) {
-  let nodes;
-  
-  function force(alpha) {
-    // For each node
-    for (const node of nodes) {
-      if (node.community === undefined) continue;
-      
-      // Find other nodes in same community
-      const cluster = nodes.filter(n => n.community === node.community);
-      if (cluster.length === 0) continue;
-      
-      // Calculate cluster center
-      const clusterX = d3.mean(cluster, d => d.x);
-      const clusterY = d3.mean(cluster, d => d.y);
-      
-      // Apply force toward cluster center
-      node.vx += (clusterX - node.x) * alpha * strength;
-      node.vy += (clusterY - node.y) * alpha * strength;
-    }
-  }
-  
-  force.initialize = function(_nodes) {
-    nodes = _nodes;
-  };
-  
-  return force;
+  // Disable for ring layout
+  return function() {};
 }
 
 /**
@@ -124,51 +103,8 @@ export function forceCluster(strength = 0.6) {
  * @returns {Function} - Force function
  */
 export function interCommunityRepulsion(strength = 1.5) {
-  let nodes;
-  
-  function force(alpha) {
-    // Loop through all pairs of nodes from different communities
-    for (let i = 0; i < nodes.length; i++) {
-      const nodeA = nodes[i];
-      // Skip if node has no community
-      if (nodeA.community === undefined) continue;
-      
-      for (let j = i + 1; j < nodes.length; j++) {
-        const nodeB = nodes[j];
-        // Skip if node has no community or is from the same community
-        if (nodeB.community === undefined || nodeA.community === nodeB.community) continue;
-        
-        // Only apply strong repulsion to primary (theme) nodes
-        let repulsionStrength = strength;
-        if (getNodeLevel(nodeA) !== 'primary' || getNodeLevel(nodeB) !== 'primary') {
-          repulsionStrength *= 0.3; // Much weaker repulsion for non-theme nodes
-        }
-        
-        // Calculate distance between nodes
-        const dx = nodeA.x - nodeB.x;
-        const dy = nodeA.y - nodeB.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        // Skip if too far apart (optimization)
-        if (distance > 800) continue;
-        
-        // Calculate repulsion force - stronger when nodes are from different communities
-        const repulsion = repulsionStrength * alpha * Math.min(1.0, 800 / (distance * distance));
-        
-        // Apply force
-        nodeA.vx += dx * repulsion;
-        nodeA.vy += dy * repulsion;
-        nodeB.vx -= dx * repulsion;
-        nodeB.vy -= dy * repulsion;
-      }
-    }
-  }
-  
-  force.initialize = function(_nodes) {
-    nodes = _nodes;
-  };
-  
-  return force;
+  // Disable for ring layout
+  return function() {};
 }
 
 /**
@@ -177,6 +113,7 @@ export function interCommunityRepulsion(strength = 1.5) {
  * @returns {Object} - D3 drag behavior
  */
 export function createDragBehavior(simulation) {
+  // This will be overridden by createRingDragBehavior for ring layout
   function dragstarted(event) {
     if (!event.active) simulation.alphaTarget(0.3).restart();
     event.subject.fx = event.subject.x;
