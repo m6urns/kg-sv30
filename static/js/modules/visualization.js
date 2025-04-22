@@ -37,6 +37,16 @@ export function createKnowledgeGraph(data, container) {
   
   svg.call(zoom);
   
+  // Set initial zoom level (50% zoom out = scale of 0.5)
+  const initialScale = 0.6;
+  const initialTransform = d3.zoomIdentity
+    .translate(width/2, height/2)  // Move to center
+    .scale(initialScale)           // Apply 50% zoom out
+    .translate(-width/2, -height/2); // Move back by adjusted amount
+    
+  // Apply the initial transform
+  svg.call(zoom.transform, initialTransform);
+  
   // Create tooltip
   const tooltip = d3.select('body')
     .append('div')
