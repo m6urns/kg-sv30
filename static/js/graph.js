@@ -1,6 +1,6 @@
 // Main graph module - coordinates all other modules
 import { debounce } from './modules/utils.js';
-import { loadGraphData, fetchCommunities, searchNodes, loadSampleData, loadSavedData } from './modules/dataService.js';
+import { loadGraphData, fetchCommunities, searchNodes, loadSampleData } from './modules/dataService.js';
 import { createKnowledgeGraph } from './modules/visualization.js';
 import { initializeNodeInteraction, focusOnNode, toggleFocusMode, isFocusModeEnabled } from './modules/nodeInteraction.js';
 import { initializeUI, showStatus, displaySearchResults, setupClusterPanel } from './modules/uiComponents.js';
@@ -9,14 +9,16 @@ import { initializeUI, showStatus, displaySearchResults, setupClusterPanel } fro
 let graphViz = null;
 
 // DOM elements
-const sampleBtn = document.getElementById('sample-btn');
-const loadBtn = document.getElementById('load-btn');
 const statusMessage = document.getElementById('status-message');
 const searchInput = document.getElementById('search-input');
 const searchResults = document.getElementById('search-results');
 const clusterPanel = document.getElementById('cluster-panel');
 const detailsPanel = document.getElementById('details-panel');
 const graphContainer = document.getElementById('graph-container');
+
+// URL parameters
+const urlParams = new URLSearchParams(window.location.search);
+const forceRegen = urlParams.get('regenerate') === 'true'; // Check for ?regenerate=true parameter
 
 // Make graphViz available to modules that need it
 window.graphViz = graphViz;
@@ -25,16 +27,6 @@ window.graphViz = graphViz;
  * Initialize event listeners
  */
 function initializeEventListeners() {
-  // Sample data button
-  sampleBtn.addEventListener('click', () => {
-    loadSampleData(showStatusMessage, () => loadGraph());
-  });
-  
-  // Load button
-  loadBtn.addEventListener('click', () => {
-    loadSavedData(showStatusMessage, () => loadGraph());
-  });
-  
   // Search input
   searchInput.addEventListener('input', debounce(async (e) => {
     const query = e.target.value.trim();
@@ -46,7 +38,6 @@ function initializeEventListeners() {
     const results = await searchNodes(query);
     displaySearchResults(results);
   }, 300));
-  
 }
 
 /**
@@ -133,22 +124,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
   
-  // Try to load saved data if available
-  fetch('/api/load')
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        showStatusMessage('Loaded saved graph data', 'success');
-        loadGraph();
-      } else {
-        // If no saved data, automatically load sample data
-        showStatusMessage('No saved data found. Loading sample data...', 'loading');
-        sampleBtn.click();
-      }
-    })
-    .catch(error => {
-      // On error, automatically load sample data
-      showStatusMessage('Error loading saved data. Loading sample data...', 'loading');
-      sampleBtn.click();
-    });
+  // Load graph data - if regenerate parameter is true, use sample data to regenerate
+  if (forceRegen) {
+    showStatusMessage('Regenerating graph from sample data...', 'loading');
+    loadSampleData(showStatusMessage, () => loadGraph());
+  } else {
+    // Always use saved data by default
+    fetch('/api/load')
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showStatusMessage('Loaded saved graph data', 'success');
+          loadGraph();
+        } else {
+          // If no saved data exists yet, use sample data as a fallback
+          showStatusMessage('No saved data found. Loading sample data...', 'loading');
+          loadSampleData(showStatusMessage, () => loadGraph());
+        }
+      })
+      .catch(error => {
+        // On error, use sample data
+        showStatusMessage('Error loading saved data. Loading sample data...', 'loading');
+        loadSampleData(showStatusMessage, () => loadGraph());
+      });
+  }
 });
