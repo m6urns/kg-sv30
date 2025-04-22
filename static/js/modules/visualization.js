@@ -231,11 +231,25 @@ export function createKnowledgeGraph(data, container) {
     // Get community label from first node or use ID
     const labelText = nodes[0].community_label || `Cluster ${communityId}`;
     
-    // Add floating label - use same color as the nodes in this theme
-    // Check first node's color to ensure exact match
-    const nodeColor = nodes[0] && nodes[0].color ? 
-                    nodes[0].color : 
-                    getNodeColor({community: communityId, type: 'topic'}, colorScale);
+    // Find an actual node for this community to use exact same color
+    const primaryNode = nodes.find(n => n.type === 'topic');
+    
+    // Use the same node color determination as applied to the nodes
+    let nodeColor;
+    if (primaryNode) {
+      // Check actual node on the graph that will be rendered with this color
+      const primaryDOMNode = node.filter(d => d.id === primaryNode.id).node();
+      if (primaryDOMNode) {
+        // Get computed fill color from DOM node
+        nodeColor = d3.select(primaryDOMNode).attr('fill');
+      } else {
+        // Fall back to function that's used to color nodes
+        nodeColor = getNodeColor(primaryNode, colorScale);
+      }
+    } else {
+      // Fallback to color scale directly if no primary node
+      nodeColor = colorScale(communityId);
+    }
     
     const labelElement = g.append('text')
       .attr('class', 'community-label')
