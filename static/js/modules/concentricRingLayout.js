@@ -7,12 +7,12 @@ import { getNodeLevel } from './utils.js';
 export const ringConfig = {
   // Define radii for each level (as percentage of container)
   levels: {
-    // primary: 2.0,    // Theme nodes at 95% of container
-    // secondary: 1.75,  // Goal nodes at 85% of container
-    // tertiary: 1.25    // Strategy nodes at 50% of container
-    primary: 1.5,    // Theme nodes at 95% of container
-    secondary: 1.25,  // Goal nodes at 85% of container
-    tertiary: 1.0    // Strategy nodes at 50% of container
+    primary: 2.0,    // Theme nodes at 95% of container
+    secondary: 1.75,  // Goal nodes at 85% of container
+    tertiary: 1.25    // Strategy nodes at 50% of container
+    // primary: 1.5,    // Theme nodes at 95% of container
+    // secondary: 1.25,  // Goal nodes at 85% of container
+    // tertiary: 1.0    // Strategy nodes at 50% of container
   },
   // Angular positioning spacing for nodes in the same theme
   angleSpacing: {

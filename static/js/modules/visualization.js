@@ -38,7 +38,7 @@ export function createKnowledgeGraph(data, container) {
   svg.call(zoom);
   
   // Set initial zoom level (50% zoom out = scale of 0.5)
-  const initialScale = 0.6;
+  const initialScale = 0.5;
   const initialTransform = d3.zoomIdentity
     .translate(width/2, height/2)  // Move to center
     .scale(initialScale)           // Apply 50% zoom out
@@ -299,21 +299,38 @@ export function createKnowledgeGraph(data, container) {
     });
   });
 
-  // Set initial alpha to position nodes, with much faster cooldown
-  simulation.alpha(1)
-    .alphaDecay(0.03) // Much faster initial cooldown (default is 0.0228)
-    .velocityDecay(0.6) // Much higher velocity dampening (default is 0.4)
+  // Set initial alpha to position nodes with more balanced parameters
+  simulation.alpha(0.7)
+    .alphaDecay(0.03) // Use default cooling rate for more natural settling (was 0.03)
+    .velocityDecay(0.6) // Medium velocity dampening for smoother movement (was 0.6)
     .restart();
-    
-  // After initial layout, cool down and stop the simulation
+
   setTimeout(() => {
-    simulation.alpha(0.1).alphaDecay(0.1).restart();
+      // Very slow settling phase
+      simulation.alpha(0.05)
+        .alphaDecay(0.01)
+        .alphaTarget(0.001) // Set a small target instead of 0
+        .restart();
+  }, 1000);
     
-    // After 2 seconds, stop the simulation entirely
-    setTimeout(() => {
-      simulation.alpha(0).stop();
-    }, 2000);
-  }, 3000);
+  // After initial layout, allow a gentler cooldown phase
+  // setTimeout(() => {
+  //   // Set a lower alpha but with slower decay for refinement phase
+  //   // simulation.alpha(0.3)
+  //   //   .alphaDecay(0.02) // Slower decay in refinement phase
+  //   //   .velocityDecay(0.4) // Lower dampening for this phase
+  //   //   .restart();
+    
+  //   // Allow simulation to settle naturally rather than forcing a stop
+  //   // This avoids the "pulsing" effect at the end
+  //   setTimeout(() => {
+  //     // Very slow settling phase
+  //     simulation.alpha(0.05)
+  //       .alphaDecay(0.01)
+  //       .alphaTarget(0.001) // Set a small target instead of 0
+  //       .restart();
+  //   }, 3000);
+  // }, 2000);
 
   /**
    * Toggle focus mode which shows only selected node and its connected nodes with smarter hierarchy traversal
