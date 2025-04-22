@@ -1,5 +1,5 @@
 // UI components for the graph visualization
-import { focusOnNode, navigateBack, navigateForward, canNavigateForward, addToNodeViewHistory } from './nodeInteraction.js';
+import { focusOnNode, navigateBack, navigateForward, canNavigateForward, addToNodeViewHistory, toggleFocusMode, isFocusModeEnabled } from './nodeInteraction.js';
 
 // DOM element references
 let _detailsPanel = null;
@@ -205,6 +205,7 @@ export function displayNodeDetails(data, nodeViewHistory) {
     forwardButton.disabled = true;
     navBar.appendChild(forwardButton);
   }
+  
   
   fixedSection.appendChild(navBar);
   

@@ -2,7 +2,7 @@
 import { debounce } from './modules/utils.js';
 import { loadGraphData, fetchCommunities, searchNodes, loadSampleData, loadSavedData } from './modules/dataService.js';
 import { createKnowledgeGraph } from './modules/visualization.js';
-import { initializeNodeInteraction, focusOnNode } from './modules/nodeInteraction.js';
+import { initializeNodeInteraction, focusOnNode, toggleFocusMode, isFocusModeEnabled } from './modules/nodeInteraction.js';
 import { initializeUI, showStatus, displaySearchResults, setupClusterPanel } from './modules/uiComponents.js';
 
 // Global state
@@ -46,6 +46,7 @@ function initializeEventListeners() {
     const results = await searchNodes(query);
     displaySearchResults(results);
   }, 300));
+  
 }
 
 /**
@@ -81,6 +82,8 @@ function onGraphDataLoaded(data) {
   
   // Set up the cluster panel
   setupClusters();
+  
+  // No auto-selection of nodes at startup
 }
 
 /**

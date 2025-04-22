@@ -9,13 +9,13 @@ export const ringConfig = {
   levels: {
     primary: 2.0,    // Theme nodes at 95% of container
     secondary: 1.75,  // Goal nodes at 85% of container
-    tertiary: 1.50    // Strategy nodes at 50% of container
+    tertiary: 1.25    // Strategy nodes at 50% of container
   },
   // Angular positioning spacing for nodes in the same theme
   angleSpacing: {
     primary: 40,      // Degrees of minimum spacing between themes (increased)
-    secondary: 12,    // Degrees of minimum spacing between goals in same theme
-    tertiary: 4       // Degrees of minimum spacing between strategies in same goal
+    secondary: 8,    // Degrees of minimum spacing between goals in same theme
+    tertiary: 2       // Degrees of minimum spacing between strategies in same goal
   },
   // Snap back behavior
   snapBack: {
@@ -24,12 +24,12 @@ export const ringConfig = {
   },
   // Ring constraint strength
   ringConstraint: {
-    strength: 0.98    // Increased strength to enforce ring positioning
+    strength: 0.9    // Increased strength to enforce ring positioning
   },
   // Theme separation force
   themeSeparation: {
     enabled: true,    // Enable separation force between themes
-    strength: 0.6     // Increased strength to prevent theme mixing
+    strength: 0.5     // Increased strength to prevent theme mixing
   }
 };
 

@@ -8,6 +8,7 @@ let _nodeViewHistory = [];
 let _nodeForwardHistory = []; // For forward navigation
 let _graphContainer = null;
 let _detailsPanel = null;
+let _focusModeEnabled = true; // Focus mode enabled by default
 
 /**
  * Initialize the node interaction module
@@ -21,6 +22,32 @@ export function initializeNodeInteraction(graphViz, graphContainer, detailsPanel
   _detailsPanel = detailsPanel;
   _nodeViewHistory = [];
   _nodeForwardHistory = [];
+}
+
+/**
+ * Toggle focus mode on or off
+ * @param {boolean} enabled - Whether focus mode should be enabled
+ */
+export function toggleFocusMode(enabled) {
+  _focusModeEnabled = enabled;
+  
+  // If we have a selected node, update the focus
+  if (_graphViz && _graphViz.toggleFocusMode) {
+    const currentNodeId = _nodeViewHistory.length > 0 ? 
+      _nodeViewHistory[_nodeViewHistory.length - 1] : null;
+    
+    _graphViz.toggleFocusMode(enabled, currentNodeId);
+  }
+  
+  return _focusModeEnabled;
+}
+
+/**
+ * Get current focus mode state
+ * @returns {boolean} - True if focus mode is enabled
+ */
+export function isFocusModeEnabled() {
+  return _focusModeEnabled;
 }
 
 /**
@@ -45,6 +72,11 @@ export function focusOnNode(nodeId, fromNavigation = false) {
   
   // Highlight connections for this node
   highlightConnections(node);
+  
+  // Apply focus mode if enabled
+  if (_graphViz && _graphViz.toggleFocusMode && _focusModeEnabled) {
+    _graphViz.toggleFocusMode(true, node.id);
+  }
   
   // Center the view on this node
   const transform = d3.zoomIdentity
@@ -114,16 +146,17 @@ export function highlightConnections(node) {
   // Apply more visible highlighting to connected links
   connectedLinks
     .attr('stroke', '#222222') // Darker gray
-    .attr('stroke-opacity', 1) // Fully opaque
-    .attr('stroke-width', d => (Math.sqrt(d.weight || 1) * 2) + 1.5); // Thicker lines
+    // .attr('stroke-opacity', 1) // Fully opaque
+    // .attr('stroke-width', d => (Math.sqrt(d.weight || 1) * 2) + 1.5); // Thicker lines
   
   // Find all similar_content links
   const similarityLinks = connectedLinks.filter(d => d.type === 'similar_content');
   
   // Apply special highlighting to similarity links
   similarityLinks
-    .attr('stroke', '#ff5500') // Bright orange for similarity links
-    .attr('stroke-dasharray', '5,3'); // Dashed line pattern
+    // .attr('stroke', '#ff5500') // Bright orange for similarity links
+    // .attr('stroke-dasharray', '5,3'); // Dashed line pattern
+    .attr('stroke', '#222222') // Bright orange for similarity links
 }
 
 /**
@@ -144,6 +177,11 @@ export function nodeClicked(event, d) {
   
   // Highlight connections for this node
   highlightConnections(d);
+  
+  // Apply focus mode if enabled
+  if (_graphViz && _graphViz.toggleFocusMode && _focusModeEnabled) {
+    _graphViz.toggleFocusMode(true, d.id);
+  }
   
   // If the graph has a simulation, completely stop it to prevent reorganization
   if (_graphViz && _graphViz.simulation) {

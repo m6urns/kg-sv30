@@ -100,9 +100,10 @@ body {
 }
 
 .community-label {
-  font-size: 14px;
+  font-size: 18px;
   pointer-events: none;
   font-weight: bold;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.7);
 }
 
 
@@ -425,12 +426,27 @@ body {
   transform: none;
 }
 
+/* Focus Mode Toggle Button */
+.node-navigation-button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #0069d9;
+}
+
+.node-navigation-button.active:hover {
+  background-color: #0069d9;
+}
+
 #node-back-button {
   text-align: left;
 }
 
 #node-forward-button {
   text-align: right;
+}
+
+#focus-mode-button {
+  max-width: 120px;
 }
 
 /* Similar strategies styling */
