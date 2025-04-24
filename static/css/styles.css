@@ -27,13 +27,6 @@ body {
   position: relative;
 }
 
-.sidebar h1 {
-  font-size: 1.5rem;
-  margin-bottom: 20px;
-  color: #343a40;
-  flex-shrink: 0; /* Prevent title from shrinking */
-}
-
 /* Graph Container */
 #graph-container {
   height: 100vh;
@@ -54,8 +47,14 @@ body {
 #nav-content-wrapper {
   flex-grow: 1;
   overflow-y: auto; /* Enable scrolling */
-  padding-bottom: 80px; /* Add padding to ensure content doesn't get cut off by nav bar */
+  padding-bottom: 0; /* Removed, since we use padding in the container */
   scrollbar-width: thin; /* For Firefox */
+}
+
+/* Ensure all elements in nav content are visible */
+.nav-padding-container {
+  /* Ensure sufficient space at bottom */
+  margin-bottom: 50px;
 }
 
 /* Footer space to prevent content from being hidden behind buttons */
@@ -95,9 +94,9 @@ body {
   padding: 15px;
   display: flex;
   justify-content: space-between;
-  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
   z-index: 1000;
-  height: 65px; /* Fixed height for the buttons area */
+  height: 70px; /* Slightly increased height for buttons */
   box-sizing: border-box;
 }
 
@@ -259,13 +258,15 @@ body {
 
 /* Status container */
 .status-container {
-  margin-bottom: 20px;
+  margin-bottom: 0;
   flex-shrink: 0; /* Prevent from shrinking */
+  min-height: 0;
 }
 
 /* Search */
 .search-container {
   margin-bottom: 20px;
+  margin-top: 10px; /* Add space at top since title is removed */
   flex-shrink: 0; /* Prevent from shrinking */
 }
 
@@ -442,6 +443,7 @@ body {
 #status-message {
   padding: 5px;
   border-radius: 4px;
+  display: none; /* Hide by default */
 }
 
 .success {

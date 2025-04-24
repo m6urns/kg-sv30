@@ -46,8 +46,21 @@ export function initializeUI(searchResults, searchInput, clusterPanel) {
  */
 export function showStatus(message, type, statusElement) {
   if (!statusElement) return;
-  statusElement.textContent = message;
-  statusElement.className = type;
+  // Hide standard status messages
+  if (message && (message.includes("loaded") || message.includes("Loading"))) {
+    statusElement.textContent = "";
+    statusElement.className = "";
+    return;
+  }
+  
+  // Only show error messages
+  if (type === "error") {
+    statusElement.textContent = message;
+    statusElement.className = type;
+  } else {
+    statusElement.textContent = "";
+    statusElement.className = "";
+  }
 }
 
 /**
@@ -194,7 +207,7 @@ export function displayNodeDetails(data, nodeViewHistory) {
     contentContainer.className = 'nav-padding-container';
     contentContainer.style.padding = '20px';
     // Add extra bottom padding to ensure content isn't hidden behind buttons
-    contentContainer.style.paddingBottom = '100px';
+    contentContainer.style.paddingBottom = '300px';
     contentWrapper.appendChild(contentContainer);
   }
   
@@ -677,6 +690,12 @@ function displaySimilarStrategies(strategyNode, container) {
   });
   
   container.appendChild(strategiesList);
+  
+  // Add extra spacer div to ensure all content is visible
+  const spacer = document.createElement('div');
+  spacer.style.height = '100px';
+  spacer.style.width = '100%';
+  container.appendChild(spacer);
 }
 
 /**
@@ -701,8 +720,8 @@ export function setupClusterPanel(communities) {
   title.style.marginBottom = '20px';
   paddingContainer.appendChild(title);
   
-  // Ensure scrollable container has enough padding to show all content
-  paddingContainer.style.paddingBottom = '60px';
+  // Normal padding for the clusters column
+  paddingContainer.style.paddingBottom = '40px';
   
   communities.forEach(community => {
     const section = document.createElement('div');
