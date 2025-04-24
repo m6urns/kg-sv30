@@ -49,13 +49,12 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%; /* Ensure it takes full height */
-  padding-bottom: 65px; /* Leave space for navigation buttons */
 }
 
 #nav-content-wrapper {
   flex-grow: 1;
   overflow-y: auto; /* Enable scrolling */
-  height: calc(100% - 65px); /* Full height minus button height */
+  padding-bottom: 80px; /* Add padding to ensure content doesn't get cut off by nav bar */
   scrollbar-width: thin; /* For Firefox */
 }
 
@@ -87,10 +86,10 @@ body {
 
 /* Navigation Buttons */
 #navigation-buttons {
-  position: absolute;
+  position: fixed;
   bottom: 0;
-  left: 0;
-  right: 0;
+  left: 20px; /* Match left padding of sidebar */
+  width: calc(33.33% - 40px); /* Width of the sidebar column minus padding */
   background-color: #f8f9fa;
   border-top: 1px solid #dee2e6;
   padding: 15px;
@@ -100,7 +99,6 @@ body {
   z-index: 1000;
   height: 65px; /* Fixed height for the buttons area */
   box-sizing: border-box;
-  margin-top: auto; /* Push to bottom */
 }
 
 .nav-button {

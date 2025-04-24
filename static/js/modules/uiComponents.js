@@ -194,7 +194,7 @@ export function displayNodeDetails(data, nodeViewHistory) {
     contentContainer.className = 'nav-padding-container';
     contentContainer.style.padding = '20px';
     // Add extra bottom padding to ensure content isn't hidden behind buttons
-    contentContainer.style.paddingBottom = '85px';
+    contentContainer.style.paddingBottom = '100px';
     contentWrapper.appendChild(contentContainer);
   }
   
@@ -700,6 +700,9 @@ export function setupClusterPanel(communities) {
   title.style.marginTop = '0';
   title.style.marginBottom = '20px';
   paddingContainer.appendChild(title);
+  
+  // Ensure scrollable container has enough padding to show all content
+  paddingContainer.style.paddingBottom = '60px';
   
   communities.forEach(community => {
     const section = document.createElement('div');
