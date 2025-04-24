@@ -2,23 +2,31 @@
 import { focusOnNode, navigateBack, navigateForward, canNavigateForward, addToNodeViewHistory, toggleFocusMode, isFocusModeEnabled } from './nodeInteraction.js';
 
 // DOM element references
-let _detailsPanel = null;
 let _searchResults = null;
 let _searchInput = null;
 let _clusterPanel = null;
+let _navigationPanel = null;
+let _clustersContainer = null;
 
 /**
  * Initialize UI components
- * @param {HTMLElement} detailsPanel - The details panel element
  * @param {HTMLElement} searchResults - The search results container
  * @param {HTMLElement} searchInput - The search input element
  * @param {HTMLElement} clusterPanel - The cluster panel element
  */
-export function initializeUI(detailsPanel, searchResults, searchInput, clusterPanel) {
-  _detailsPanel = detailsPanel;
+export function initializeUI(searchResults, searchInput, clusterPanel) {
   _searchResults = searchResults;
   _searchInput = searchInput;
   _clusterPanel = clusterPanel;
+  
+  // Get navigation panel and clusters container
+  _navigationPanel = document.getElementById('navigation-panel');
+  _clustersContainer = document.getElementById('clusters-container');
+  
+  // Initially hide the navigation panel
+  if (_navigationPanel) {
+    _navigationPanel.style.display = 'none';
+  }
 
   // Expose displayNodeDetails to the global scope for nodeInteraction.js to use
   window.displayNodeDetails = displayNodeDetails;
@@ -146,111 +154,146 @@ export function displaySearchResults(results) {
 }
 
 /**
- * Display node details in the details panel
+ * Display node details in the navigation panel
  * @param {Object} data - Node data with connections
  * @param {Array} nodeViewHistory - History of viewed nodes
  */
 export function displayNodeDetails(data, nodeViewHistory) {
-  if (!_detailsPanel) return;
+  if (!_navigationPanel || !_clustersContainer) return;
   
   // Add node to history
   const nodeId = data.node.id;
   addToNodeViewHistory(nodeId);
   
-  _detailsPanel.innerHTML = '';
+  // Show navigation panel, hide clusters panel
+  _navigationPanel.style.display = 'block';
+  _clustersContainer.style.display = 'none';
   
-  // Create fixed and scrollable sections
-  const fixedSection = document.createElement('div');
-  fixedSection.className = 'fixed-details-section';
+  // Get the content wrapper and navigation buttons container
+  const contentWrapper = document.getElementById('nav-content-wrapper');
+  const navigationButtons = document.getElementById('navigation-buttons');
+  const footerSpace = document.getElementById('navigation-footer-space');
   
-  const scrollableSection = document.createElement('div');
-  scrollableSection.className = 'scrollable-details-section';
+  // Ensure the footer space is shown
+  if (footerSpace) footerSpace.style.display = 'block';
   
-  // Add navigation buttons to fixed section
-  const navBar = document.createElement('div');
-  navBar.className = 'node-navigation-bar';
+  // Clear content
+  if (contentWrapper) contentWrapper.innerHTML = '';
+  if (navigationButtons) navigationButtons.innerHTML = '';
+  
+  // Create header for the node
+  const header = document.createElement('h2');
+  header.textContent = data.node.label;
+  contentWrapper.appendChild(header);
+  
+  // Add node type indicator with appropriate styling
+  const typeLabel = document.createElement('div');
+  const nodeTypes = {
+    'topic': 'Theme',
+    'document': 'Goal',
+    'strategy': 'Strategy'
+  };
+  const typeText = nodeTypes[data.node.type] || data.node.type;
+  typeLabel.textContent = typeText;
+  
+  // Apply type-specific styling
+  if (data.node.type === 'topic') {
+    typeLabel.className = 'node-type-label node-type-theme';
+  } else if (data.node.type === 'document') {
+    typeLabel.className = 'node-type-label node-type-goal';
+  } else if (data.node.type === 'strategy') {
+    typeLabel.className = 'node-type-label node-type-strategy';
+  } else {
+    typeLabel.className = 'node-type-label';
+  }
+  
+  contentWrapper.appendChild(typeLabel);
+  
+  // Process content based on node type
+  if (data.node.type === 'topic') {
+    displayTopicDetails(data, contentWrapper);
+  } else if (data.node.type === 'document' && 
+            (data.node.has_strategy_links || data.node.display_type === 'strategy_list') && 
+            data.node.strategy_entries) {
+    displayDocumentWithStrategies(data, contentWrapper);
+  } else if (data.node.type === 'strategy') {
+    displayStrategyDetails(data, contentWrapper);
+  } else {
+    displayGenericDetails(data, contentWrapper);
+  }
+  
+  // Set up navigation buttons at the bottom
   
   // Add back button if there's history
   if (nodeViewHistory && nodeViewHistory.length > 1) {
     const backButton = document.createElement('button');
     backButton.id = 'node-back-button';
-    backButton.className = 'node-navigation-button';
+    backButton.className = 'nav-button back';
     backButton.innerHTML = '&larr; Back';
     backButton.onclick = navigateBack;
-    navBar.appendChild(backButton);
+    navigationButtons.appendChild(backButton);
   } else {
     // Add a disabled back button for consistent UI
     const backButton = document.createElement('button');
     backButton.id = 'node-back-button';
-    backButton.className = 'node-navigation-button disabled';
+    backButton.className = 'nav-button back disabled';
     backButton.innerHTML = '&larr; Back';
     backButton.disabled = true;
-    navBar.appendChild(backButton);
+    navigationButtons.appendChild(backButton);
   }
+  
+  // Add return to overview button
+  const overviewButton = document.createElement('button');
+  overviewButton.id = 'overview-button';
+  overviewButton.className = 'nav-button overview';
+  overviewButton.innerHTML = 'Overview';
+  overviewButton.onclick = () => {
+    // Hide navigation panel, show clusters panel
+    _navigationPanel.style.display = 'none';
+    _clustersContainer.style.display = 'block';
+    
+    // Reset scroll position of clusters container to the top
+    if (_clusterPanel) _clusterPanel.scrollTop = 0;
+  };
+  navigationButtons.appendChild(overviewButton);
   
   // Add forward button if there's forward history
   if (canNavigateForward()) {
     const forwardButton = document.createElement('button');
     forwardButton.id = 'node-forward-button';
-    forwardButton.className = 'node-navigation-button';
+    forwardButton.className = 'nav-button forward';
     forwardButton.innerHTML = 'Forward &rarr;';
     forwardButton.onclick = navigateForward;
-    navBar.appendChild(forwardButton);
+    navigationButtons.appendChild(forwardButton);
   } else {
     // Add a disabled forward button for consistent UI
     const forwardButton = document.createElement('button');
     forwardButton.id = 'node-forward-button';
-    forwardButton.className = 'node-navigation-button disabled';
+    forwardButton.className = 'nav-button forward disabled';
     forwardButton.innerHTML = 'Forward &rarr;';
     forwardButton.disabled = true;
-    navBar.appendChild(forwardButton);
+    navigationButtons.appendChild(forwardButton);
   }
-  
-  
-  fixedSection.appendChild(navBar);
-  
-  // Create header in fixed section
-  const header = document.createElement('h2');
-  header.textContent = data.node.label;
-  fixedSection.appendChild(header);
-  
-  // Create content based on node type
-  if (data.node.type === 'topic') {
-    displayTopicDetails(data, fixedSection, scrollableSection);
-  } else if (data.node.type === 'document' && 
-            (data.node.has_strategy_links || data.node.display_type === 'strategy_list') && 
-            data.node.strategy_entries) {
-    displayDocumentWithStrategies(data, fixedSection, scrollableSection);
-  } else if (data.node.type === 'strategy') {
-    displayStrategyDetails(data, fixedSection, scrollableSection);
-  } else {
-    displayGenericDetails(data, fixedSection, scrollableSection);
-  }
-  
-  // Add sections to the panel
-  _detailsPanel.appendChild(fixedSection);
-  _detailsPanel.appendChild(scrollableSection);
 }
 
 /**
  * Display details for topic nodes
  * @param {Object} data - Node data
- * @param {HTMLElement} fixedSection - Fixed section of the details panel
- * @param {HTMLElement} scrollableSection - Scrollable section of the details panel
+ * @param {HTMLElement} contentWrapper - The content container
  */
-function displayTopicDetails(data, fixedSection, scrollableSection) {
+function displayTopicDetails(data, contentWrapper) {
   // Show topic keywords
   const keywords = document.createElement('p');
   keywords.innerHTML = '<strong>Keywords:</strong> ' + 
                       (data.node.keywords || []).join(', ');
-  fixedSection.appendChild(keywords);
+  contentWrapper.appendChild(keywords);
   
   // Show overview/description if available
   if (data.node.description || data.node.overview) {
     const description = document.createElement('p');
     description.className = 'node-description theme-description';
     description.textContent = data.node.overview || data.node.description;
-    fixedSection.appendChild(description);
+    contentWrapper.appendChild(description);
   }
   
   // Show community
@@ -258,7 +301,7 @@ function displayTopicDetails(data, fixedSection, scrollableSection) {
     const community = document.createElement('p');
     community.innerHTML = '<strong>Cluster:</strong> ' + 
                         data.node.community_label;
-    fixedSection.appendChild(community);
+    contentWrapper.appendChild(community);
   }
   
   // Show related topics
@@ -269,7 +312,7 @@ function displayTopicDetails(data, fixedSection, scrollableSection) {
   if (relatedTopics.length > 0) {
     const topicsTitle = document.createElement('h3');
     topicsTitle.textContent = 'Related Topics:';
-    scrollableSection.appendChild(topicsTitle);
+    contentWrapper.appendChild(topicsTitle);
     
     const topicsList = document.createElement('ul');
     topicsList.className = 'hierarchy-list';
@@ -290,13 +333,13 @@ function displayTopicDetails(data, fixedSection, scrollableSection) {
       topicsList.appendChild(item);
     });
     
-    scrollableSection.appendChild(topicsList);
+    contentWrapper.appendChild(topicsList);
   }
   
   // Show related documents (goals)
   const docsTitle = document.createElement('h3');
   docsTitle.textContent = 'Related Goals:';
-  scrollableSection.appendChild(docsTitle);
+  contentWrapper.appendChild(docsTitle);
   
   const docList = document.createElement('ul');
   docList.className = 'hierarchy-list';
@@ -321,23 +364,22 @@ function displayTopicDetails(data, fixedSection, scrollableSection) {
     docList.appendChild(item);
   });
   
-  scrollableSection.appendChild(docList);
+  contentWrapper.appendChild(docList);
 }
 
 /**
  * Display details for document nodes with strategies
  * @param {Object} data - Node data
- * @param {HTMLElement} fixedSection - Fixed section of the details panel
- * @param {HTMLElement} scrollableSection - Scrollable section of the details panel
+ * @param {HTMLElement} contentWrapper - The content container
  */
-function displayDocumentWithStrategies(data, fixedSection, scrollableSection) {
-  // Show document text/description in fixed section
+function displayDocumentWithStrategies(data, contentWrapper) {
+  // Show document text/description
   const text = document.createElement('p');
   text.textContent = data.node.text;
   text.className = 'node-description goal-description';
-  fixedSection.appendChild(text);
+  contentWrapper.appendChild(text);
   
-  // Show related topic in fixed section
+  // Show related topic
   const topic = data.connections
     .find(conn => conn.node.type === 'topic' && 
                 (conn.relationship === 'belongs_to' || conn.relationship === 'part_of_theme'));
@@ -355,13 +397,13 @@ function displayDocumentWithStrategies(data, fixedSection, scrollableSection) {
     };
     
     topicInfo.appendChild(link);
-    fixedSection.appendChild(topicInfo);
+    contentWrapper.appendChild(topicInfo);
   }
   
-  // Show strategies in scrollable section
+  // Show strategies
   const strategiesTitle = document.createElement('h3');
   strategiesTitle.textContent = 'Strategies:';
-  scrollableSection.appendChild(strategiesTitle);
+  contentWrapper.appendChild(strategiesTitle);
   
   const strategiesList = document.createElement('ul');
   strategiesList.className = 'hierarchy-list';
@@ -395,37 +437,30 @@ function displayDocumentWithStrategies(data, fixedSection, scrollableSection) {
     strategiesList.appendChild(item);
   });
   
-  scrollableSection.appendChild(strategiesList);
+  contentWrapper.appendChild(strategiesList);
 }
 
 /**
  * Display details for strategy nodes
  * @param {Object} data - Node data
- * @param {HTMLElement} fixedSection - Fixed section of the details panel
- * @param {HTMLElement} scrollableSection - Scrollable section of the details panel
+ * @param {HTMLElement} contentWrapper - The content container
  */
-function displayStrategyDetails(data, fixedSection, scrollableSection) {
-  // Create container for strategy content in the fixed section
-  const strategyContainer = document.createElement('div');
-  strategyContainer.className = 'strategy-container';
-  
+function displayStrategyDetails(data, contentWrapper) {
   // Show strategy section number if available
   if (data.node.section_number) {
     const sectionNumber = document.createElement('div');
     sectionNumber.className = 'strategy-section-number';
     sectionNumber.textContent = data.node.section_number;
-    strategyContainer.appendChild(sectionNumber);
+    contentWrapper.appendChild(sectionNumber);
   }
   
   // Show strategy text
   const text = document.createElement('p');
   text.textContent = data.node.text;
   text.className = 'node-description strategy-description';
-  strategyContainer.appendChild(text);
+  contentWrapper.appendChild(text);
   
-  fixedSection.appendChild(strategyContainer);
-  
-  // Show relationships in the fixed section
+  // Show relationships container
   const relationshipsContainer = document.createElement('div');
   relationshipsContainer.className = 'strategy-relationships';
   
@@ -470,28 +505,34 @@ function displayStrategyDetails(data, fixedSection, scrollableSection) {
     relationshipsContainer.appendChild(themeInfo);
   }
   
-  fixedSection.appendChild(relationshipsContainer);
+  contentWrapper.appendChild(relationshipsContainer);
   
-  // Display similar strategies in the scrollable section if available
+  // Display similar strategies if available
   if (data.node.connections && data.node.connections.length > 0) {
-    displaySimilarStrategies(data.node, scrollableSection);
+    // First check if there are any similar strategies (strategy-to-strategy connections)
+    const similarStrategies = data.node.connections.filter(conn => 
+      conn.node_type === 'strategy' || 
+      (conn.relationship && conn.relationship.includes('similar')));
+    
+    if (similarStrategies.length > 0) {
+      displaySimilarStrategies(data.node, contentWrapper);
+    }
   }
 }
 
 /**
  * Display details for other node types
  * @param {Object} data - Node data
- * @param {HTMLElement} fixedSection - Fixed section of the details panel
- * @param {HTMLElement} scrollableSection - Scrollable section of the details panel
+ * @param {HTMLElement} contentWrapper - The content container
  */
-function displayGenericDetails(data, fixedSection, scrollableSection) {
-  // Show document text in fixed section
+function displayGenericDetails(data, contentWrapper) {
+  // Show document text
   const text = document.createElement('p');
   text.textContent = data.node.text;
   text.className = 'node-description';
-  fixedSection.appendChild(text);
+  contentWrapper.appendChild(text);
   
-  // Show related topic and/or goal in fixed section
+  // Show related topic and/or goal
   const relationshipsContainer = document.createElement('div');
   
   const topic = data.connections
@@ -514,9 +555,9 @@ function displayGenericDetails(data, fixedSection, scrollableSection) {
     relationshipsContainer.appendChild(topicInfo);
   }
   
-  fixedSection.appendChild(relationshipsContainer);
+  contentWrapper.appendChild(relationshipsContainer);
   
-  // Add any other connections to the scrollable section
+  // Add any other connections
   const otherConnections = data.connections
     .filter(conn => conn.node.type !== 'topic' || 
         (conn.relationship !== 'belongs_to' && conn.relationship !== 'part_of_theme'));
@@ -524,7 +565,7 @@ function displayGenericDetails(data, fixedSection, scrollableSection) {
   if (otherConnections.length > 0) {
     const connectionsTitle = document.createElement('h3');
     connectionsTitle.textContent = 'Related Items:';
-    scrollableSection.appendChild(connectionsTitle);
+    contentWrapper.appendChild(connectionsTitle);
     
     const connectionsList = document.createElement('ul');
     connectionsList.className = 'hierarchy-list';
@@ -546,7 +587,7 @@ function displayGenericDetails(data, fixedSection, scrollableSection) {
       connectionsList.appendChild(item);
     });
     
-    scrollableSection.appendChild(connectionsList);
+    contentWrapper.appendChild(connectionsList);
   }
 }
 
@@ -556,41 +597,31 @@ function displayGenericDetails(data, fixedSection, scrollableSection) {
  * @param {HTMLElement} container - Container to append to
  */
 function displaySimilarStrategies(strategyNode, container) {
-  // Create container for similar strategies
-  const similarStrategiesContainer = document.createElement('div');
-  similarStrategiesContainer.className = 'similar-strategies-container';
-  
   // Create header
   const header = document.createElement('h3');
-  header.className = 'similar-strategies-header';
   header.textContent = 'Similar Strategies';
-  similarStrategiesContainer.appendChild(header);
+  container.appendChild(header);
   
   // Check if there are any similar strategies
   if (!strategyNode.connections || strategyNode.connections.length === 0) {
     const emptyMessage = document.createElement('p');
     emptyMessage.className = 'empty-connections';
     emptyMessage.textContent = 'No similar strategies found';
-    similarStrategiesContainer.appendChild(emptyMessage);
-    container.appendChild(similarStrategiesContainer);
+    container.appendChild(emptyMessage);
     return;
   }
   
-  // Create list of similar strategies
+  // Create list of similar strategies using the common list styling
   const strategiesList = document.createElement('ul');
-  strategiesList.className = 'similar-strategies-list';
+  strategiesList.className = 'hierarchy-list';
   
   // Loop through connections and add them to the list
   strategyNode.connections.forEach(connection => {
     const item = document.createElement('li');
-    item.className = 'similar-strategy-item';
+    item.className = 'strategy-item';
     
     // Create link to the strategy
     const link = document.createElement('a');
-    link.className = 'similar-strategy-link';
-    
-    // Note: We still sort by similarity score in the backend, 
-    // but we no longer display the percentage in the UI
     
     // Use the display_label if available, otherwise use the node_label
     link.textContent = connection.node_label;
@@ -603,39 +634,24 @@ function displaySimilarStrategies(strategyNode, container) {
       focusOnNode(connection.node_id);
     };
     
-    // Create context info
-    const contextInfo = document.createElement('div');
-    contextInfo.className = 'similar-strategy-context';
-    
-    // Add theme info
-    if (connection.theme_title) {
-      const themeInfo = document.createElement('span');
-      themeInfo.className = 'context-theme';
-      themeInfo.textContent = connection.theme_title;
-      contextInfo.appendChild(themeInfo);
-    }
-    
-    // Add separator if both theme and goal are present
-    if (connection.theme_title && connection.goal_title) {
-      contextInfo.appendChild(document.createTextNode(' | '));
-    }
-    
-    // Add goal info
-    if (connection.goal_title) {
-      const goalInfo = document.createElement('span');
-      goalInfo.className = 'context-goal';
-      goalInfo.textContent = connection.goal_title;
-      contextInfo.appendChild(goalInfo);
-    }
-    
-    // Add everything to the item (without similarity badge)
     item.appendChild(link);
-    item.appendChild(contextInfo);
+    
+    // Add context info as subtitle if available
+    if (connection.theme_title || connection.goal_title) {
+      const contextText = [];
+      if (connection.theme_title) contextText.push(connection.theme_title);
+      if (connection.goal_title) contextText.push(connection.goal_title);
+      
+      const contextInfo = document.createElement('small');
+      contextInfo.className = 'item-context';
+      contextInfo.textContent = contextText.join(' | ');
+      item.appendChild(contextInfo);
+    }
+    
     strategiesList.appendChild(item);
   });
   
-  similarStrategiesContainer.appendChild(strategiesList);
-  container.appendChild(similarStrategiesContainer);
+  container.appendChild(strategiesList);
 }
 
 /**

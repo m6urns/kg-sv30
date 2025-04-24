@@ -7,19 +7,16 @@ let _graphViz = null;
 let _nodeViewHistory = [];
 let _nodeForwardHistory = []; // For forward navigation
 let _graphContainer = null;
-let _detailsPanel = null;
 let _focusModeEnabled = true; // Focus mode enabled by default
 
 /**
  * Initialize the node interaction module
  * @param {Object} graphViz - The graph visualization object
  * @param {HTMLElement} graphContainer - The graph container element
- * @param {HTMLElement} detailsPanel - The details panel element
  */
-export function initializeNodeInteraction(graphViz, graphContainer, detailsPanel) {
+export function initializeNodeInteraction(graphViz, graphContainer) {
   _graphViz = graphViz;
   _graphContainer = graphContainer;
-  _detailsPanel = detailsPanel;
   _nodeViewHistory = [];
   _nodeForwardHistory = [];
 }

@@ -13,7 +13,6 @@ const statusMessage = document.getElementById('status-message');
 const searchInput = document.getElementById('search-input');
 const searchResults = document.getElementById('search-results');
 const clusterPanel = document.getElementById('cluster-panel');
-const detailsPanel = document.getElementById('details-panel');
 const graphContainer = document.getElementById('graph-container');
 
 // URL parameters
@@ -69,7 +68,7 @@ function onGraphDataLoaded(data) {
   window.graphViz = graphViz;
   
   // Initialize node interaction with dependencies
-  initializeNodeInteraction(graphViz, graphContainer, detailsPanel);
+  initializeNodeInteraction(graphViz, graphContainer);
   
   // Set up the cluster panel
   setupClusters();
@@ -88,7 +87,7 @@ async function setupClusters() {
 // Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize UI components
-  initializeUI(detailsPanel, searchResults, searchInput, clusterPanel);
+  initializeUI(searchResults, searchInput, clusterPanel);
   
   // Initialize event listeners
   initializeEventListeners();

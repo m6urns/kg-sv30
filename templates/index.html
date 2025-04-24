@@ -10,8 +10,8 @@
 <body>
   <div class="container-fluid">
     <div class="row">
-      <!-- Sidebar -->
-      <div class="col-md-3 sidebar">
+      <!-- Left Sidebar -->
+      <div class="col-md-4 sidebar">
         <h1>Strategic Vision Navigator</h1>
         
         <!-- Status Messages -->
@@ -26,26 +26,32 @@
           <div id="search-results" class="mt-2"></div>
         </div>
         
-        <!-- Clusters Panel -->
-        <div class="clusters-container">
+        <!-- Navigation Panel (will swap with cluster panel when node is selected) -->
+        <div id="navigation-panel">
+          <div id="nav-content-wrapper">
+            <!-- Node details will appear here when a node is selected -->
+          </div>
+          
+          <!-- Footer space to ensure content isn't hidden behind buttons -->
+          <div id="navigation-footer-space"></div>
+          
+          <!-- Fixed Navigation Buttons -->
+          <div id="navigation-buttons">
+            <!-- Navigation buttons will appear here -->
+          </div>
+        </div>
+        
+        <!-- Clusters Panel (initial view) -->
+        <div id="clusters-container">
           <h3>Topic Clusters</h3>
           <div id="cluster-panel"></div>
         </div>
       </div>
       
       <!-- Main Content -->
-      <div class="col-md-6">
+      <div class="col-md-8">
         <!-- Graph Visualization -->
         <div id="graph-container"></div>
-      </div>
-      
-      <!-- Details Panel -->
-      <div class="col-md-3 details-panel" id="details-panel">
-        <!-- Node details will be shown here -->
-        <div class="initial-message">
-          <h3>Strategic Vision Navigator</h3>
-          <p>Select a node in the graph to view details.</p>
-        </div>
       </div>
     </div>
   </div>
