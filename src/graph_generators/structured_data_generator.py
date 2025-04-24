@@ -1,6 +1,7 @@
 """
 Structured JSON data generator for knowledge graphs.
 This module implements a graph generator that creates data from structured JSON files.
+Enhanced with semantic similarity using word embeddings.
 """
 import json
 import os
@@ -10,6 +11,21 @@ import math
 import re
 from typing import Dict, List, Any, Tuple
 from collections import Counter, defaultdict
+
+import warnings
+warnings.filterwarnings("ignore", message="numpy.dtype size changed")
+
+try:
+    import numpy as np
+    from sentence_transformers import SentenceTransformer
+    print("Successfully imported sentence-transformers")
+    EMBEDDINGS_AVAILABLE = True
+except ImportError as e:
+    print(f"Warning: Could not import sentence-transformers: {e}")
+    EMBEDDINGS_AVAILABLE = False
+except Exception as e:
+    print(f"Warning: Unexpected error importing sentence-transformers: {e}")
+    EMBEDDINGS_AVAILABLE = False
 
 from .base_generator import BaseGraphGenerator
 
@@ -61,6 +77,100 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         
         # Load all themes data
         self.parser.load_all_themes()
+        
+        # Configuration for semantic similarity
+        self.use_embeddings = EMBEDDINGS_AVAILABLE  # Use embeddings if available
+        self.min_cross_theme_connections = 2  # Minimum cross-theme connections per strategy
+        self.embedding_weight = 0.7  # Weight given to embedding similarity vs keyword-based
+        
+        # Initialize embedding model if available
+        if self.use_embeddings:
+            try:
+                # Use a small but effective model to start
+                self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+                print("Embedding model loaded successfully for semantic similarity")
+            except Exception as e:
+                print(f"Error loading embedding model: {e}")
+                self.use_embeddings = False
+                
+        # Cache for strategy embeddings to avoid recalculating
+        self.embedding_cache = {}
+    
+    def configure_semantic_similarity(self, use_embeddings=True, min_cross_theme_connections=2, embedding_weight=0.7):
+        """
+        Configure the semantic similarity parameters
+        
+        Args:
+            use_embeddings: Whether to use word embeddings for similarity
+            min_cross_theme_connections: Minimum number of cross-theme connections per strategy
+            embedding_weight: Weight given to embedding similarity (0-1) vs keyword similarity
+        """
+        # Update configuration
+        self.use_embeddings = use_embeddings and EMBEDDINGS_AVAILABLE
+        self.min_cross_theme_connections = min_cross_theme_connections
+        self.embedding_weight = max(0.0, min(1.0, embedding_weight))  # Ensure between 0-1
+        
+        # Reinitialize embedding model if needed
+        if self.use_embeddings and not hasattr(self, 'embedding_model'):
+            try:
+                self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+                print("Embedding model loaded successfully")
+            except Exception as e:
+                print(f"Error loading embedding model: {e}")
+                self.use_embeddings = False
+                
+        print(f"Semantic similarity configured: embeddings={self.use_embeddings}, "
+              f"min_cross_theme={self.min_cross_theme_connections}, embedding_weight={self.embedding_weight}")
+        
+        # Clear the embedding cache when configuration changes
+        self.embedding_cache = {}
+    
+    def _get_text_embedding(self, text):
+        """
+        Generate embedding vector for text
+        
+        Args:
+            text: The text to embed
+            
+        Returns:
+            numpy array of embedding vector or None if embeddings not available
+        """
+        if not self.use_embeddings or not text:
+            return None
+        
+        # Check cache first
+        if text in self.embedding_cache:
+            return self.embedding_cache[text]
+        
+        try:
+            # Generate embedding (normalize=True ensures vectors are unit length for cosine similarity)
+            embedding = self.embedding_model.encode(text, normalize_embeddings=True)
+            self.embedding_cache[text] = embedding
+            return embedding
+        except Exception as e:
+            print(f"Error generating embedding: {e}")
+            return None
+    
+    def _calculate_embedding_similarity(self, embedding1, embedding2):
+        """
+        Calculate cosine similarity between embeddings
+        
+        Args:
+            embedding1: First embedding vector
+            embedding2: Second embedding vector
+            
+        Returns:
+            Similarity score between 0.0 and 1.0
+        """
+        if embedding1 is None or embedding2 is None:
+            return 0.0
+        
+        try:
+            # For normalized vectors, dot product equals cosine similarity
+            return float(np.dot(embedding1, embedding2))
+        except Exception as e:
+            print(f"Error calculating embedding similarity: {e}")
+            return 0.0
     
     def _extract_keywords(self, text: str, max_keywords: int = 5) -> List[str]:
         """
@@ -155,6 +265,7 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
     def _calculate_similarity(self, node1: Dict, node2: Dict) -> float:
         """
         Calculate similarity between two nodes based on their keywords or text.
+        Enhanced with semantic similarity from word embeddings when available.
         
         Args:
             node1: First node dictionary
@@ -163,7 +274,7 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         Returns:
             Similarity score between 0.0 and 1.0
         """
-        # For theme nodes, use existing keywords
+        # For theme nodes, use existing keywords approach
         if node1.get("type") == "topic" and node2.get("type") == "topic":
             keywords1 = set(node1.get("keywords", []))
             keywords2 = set(node2.get("keywords", []))
@@ -181,25 +292,44 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
             # Cap similarity at 1.0
             return min(similarity, 1.0)
         
-        # For strategy nodes, extract keywords from text content
+        # For strategy nodes, use both keyword and embedding similarity
         elif node1.get("type") == "strategy" and node2.get("type") == "strategy":
             # Extract keywords from strategy text
             text1 = node1.get("text", "")
             text2 = node2.get("text", "")
             
             # Extract more keywords from strategies for better matching
-            keywords1 = set(self._extract_keywords(text1, max_keywords=8))
-            keywords2 = set(self._extract_keywords(text2, max_keywords=8))
+            keywords1 = set(self._extract_keywords(text1, max_keywords=12))
+            keywords2 = set(self._extract_keywords(text2, max_keywords=12))
             
+            # Calculate keyword-based similarity (Jaccard)
             if not keywords1 or not keywords2:
-                return 0.0  # No similarity if no keywords
+                keyword_sim = 0.0
+            else:
+                keyword_sim = len(keywords1.intersection(keywords2)) / len(keywords1.union(keywords2))
             
-            # Calculate Jaccard similarity
-            similarity = len(keywords1.intersection(keywords2)) / len(keywords1.union(keywords2))
+            # Calculate semantic similarity if embeddings are enabled
+            embedding_sim = 0.0
+            if self.use_embeddings:
+                embedding1 = self._get_text_embedding(text1)
+                embedding2 = self._get_text_embedding(text2)
+                embedding_sim = self._calculate_embedding_similarity(embedding1, embedding2)
+            
+            # Combine similarities (weighted average)
+            # Give more weight to semantic similarity if enabled
+            similarity = (
+                ((1 - self.embedding_weight) * keyword_sim) + (self.embedding_weight * embedding_sim) 
+                if self.use_embeddings else keyword_sim
+            )
             
             # Add similarity boost for strategies in same theme
             if node1.get("theme_id") == node2.get("theme_id"):
                 similarity += 0.1
+            
+            # Add a small boost for cross-theme connections to encourage exploration
+            elif self.use_embeddings and similarity > 0.2:
+                # Small boost to encourage cross-theme connections with decent similarity
+                similarity += 0.05
                 
             # Cap similarity at 1.0
             return min(similarity, 1.0)
@@ -477,7 +607,7 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
     def _generate_links(self, theme_nodes: List[Dict[str, Any]], goal_nodes: List[Dict[str, Any]], 
                         strategy_nodes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        Generate links between nodes.
+        Generate links between nodes with enhanced cross-theme connectivity.
         
         Args:
             theme_nodes: List of theme nodes
@@ -498,7 +628,7 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                 "source": goal_node["id"],
                 "target": theme_node_id,
                 "weight": 1.0,
-                "type": "part_of_theme"  # Changed from "belongs_to" for clarity
+                "type": "part_of_theme"
             })
         
         # Link strategies to goals (child to parent)
@@ -509,32 +639,42 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                 "source": strategy_node["id"],
                 "target": goal_id,
                 "weight": 1.0,
-                "type": "part_of_goal"  # Changed from "implements" for clarity
+                "type": "part_of_goal"
             })
         
-        # Removed the code that creates links between theme nodes (level 0)
-        # as requested
+        # Adjust thresholds based on whether we're using embeddings
+        if self.use_embeddings:
+            # Lower thresholds when using embeddings
+            SAME_THEME_THRESHOLD = 0.10        # Threshold for strategies in same theme
+            CROSS_THEME_THRESHOLD = 0.08       # Lower threshold for cross-theme connections
+        else:
+            # Original threshold
+            SAME_THEME_THRESHOLD = 0.12
+            CROSS_THEME_THRESHOLD = 0.12
         
-        # Create links between strategies based on keyword similarity
-        # Only link strategies that have sufficient similarity
-        STRATEGY_SIMILARITY_THRESHOLD = 0.12  # Minimum similarity required to create a link
-        
-        # Count how many similarity links we create
+        # Count similarity links
         similarity_link_count = 0
+        cross_theme_link_count = 0
         
-        # Compare each strategy with others
+        # Track cross-theme connections per strategy
+        cross_theme_connections = defaultdict(int)
+        
+        # First pass: Create links based on similarity thresholds
         for i, strategy1 in enumerate(strategy_nodes):
-            # Only compare with strategies that haven't been compared yet
             for strategy2 in strategy_nodes[i+1:]:
-                # Skip strategies that are in the same goal (they're already linked indirectly)
+                # Skip strategies in the same goal
                 if strategy1["goal_id"] == strategy2["goal_id"]:
                     continue
                 
-                # Calculate similarity between these strategies
+                # Calculate similarity
                 similarity = self._calculate_similarity(strategy1, strategy2)
                 
-                # Only create links if similarity is above threshold
-                if similarity >= STRATEGY_SIMILARITY_THRESHOLD:
+                # Use different thresholds for same-theme vs cross-theme
+                is_cross_theme = strategy1["theme_id"] != strategy2["theme_id"]
+                threshold = CROSS_THEME_THRESHOLD if is_cross_theme else SAME_THEME_THRESHOLD
+                
+                # Create link if similarity is above threshold
+                if similarity >= threshold:
                     links.append({
                         "source": strategy1["id"],
                         "target": strategy2["id"],
@@ -542,11 +682,70 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                         "type": "similar_content"
                     })
                     similarity_link_count += 1
+                    
+                    # Track cross-theme connections
+                    if is_cross_theme:
+                        cross_theme_connections[strategy1["id"]] += 1
+                        cross_theme_connections[strategy2["id"]] += 1
+                        cross_theme_link_count += 1
         
-        # Debug information to verify we're processing strategies
+        # Second pass: Ensure minimum cross-theme connections (if enabled)
+        if self.use_embeddings and self.min_cross_theme_connections > 0:
+            # Group strategies by theme
+            strategies_by_theme = defaultdict(list)
+            for strategy in strategy_nodes:
+                strategies_by_theme[strategy["theme_id"]].append(strategy)
+            
+            # Process strategies with insufficient cross-theme connections
+            for strategy in strategy_nodes:
+                if cross_theme_connections[strategy["id"]] < self.min_cross_theme_connections:
+                    needed = self.min_cross_theme_connections - cross_theme_connections[strategy["id"]]
+                    
+                    # Find candidate connections from other themes
+                    candidates = []
+                    for other_theme, theme_strategies in strategies_by_theme.items():
+                        if other_theme == strategy["theme_id"]:
+                            continue  # Skip same theme
+                        
+                        for other_strategy in theme_strategies:
+                            # Skip if we already have a connection
+                            connection_exists = any(
+                                (link["source"] == strategy["id"] and link["target"] == other_strategy["id"]) or
+                                (link["source"] == other_strategy["id"] and link["target"] == strategy["id"])
+                                for link in links if link["type"] == "similar_content"
+                            )
+                            
+                            if not connection_exists:
+                                similarity = self._calculate_similarity(strategy, other_strategy)
+                                if similarity > 0:  # Any non-zero similarity
+                                    candidates.append((other_strategy, similarity))
+                    
+                    # Sort by similarity (highest first)
+                    candidates.sort(key=lambda x: x[1], reverse=True)
+                    
+                    # Add top N needed connections
+                    added_connections = 0
+                    for other_strategy, similarity in candidates[:needed]:
+                        links.append({
+                            "source": strategy["id"],
+                            "target": other_strategy["id"],
+                            "weight": round(max(similarity, 0.05), 2),  # Ensure minimum weight of 0.05
+                            "type": "similar_content"
+                        })
+                        similarity_link_count += 1
+                        cross_theme_link_count += 1
+                        cross_theme_connections[strategy["id"]] += 1
+                        cross_theme_connections[other_strategy["id"]] += 1
+                        added_connections += 1
+                    
+                    if added_connections > 0:
+                        print(f"Added {added_connections} enforced cross-theme connections for strategy {strategy['id']}")
+        
+        # Debug information
         if strategy_nodes:
             print(f"Generated {len(strategy_nodes)} strategy nodes and {len([l for l in links if l['type'] == 'part_of_goal'])} strategy links")
             print(f"Created {similarity_link_count} similarity links between strategies")
+            print(f"Cross-theme similarity links: {cross_theme_link_count} ({round(cross_theme_link_count/max(1, similarity_link_count)*100, 1)}% of total)")
         else:
             print("WARNING: No strategy nodes were generated!")
         
@@ -622,6 +821,11 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         # Sort connections by weight (highest first) for each strategy node
         for node in strategy_nodes:
             node["connections"].sort(key=lambda x: x["weight"], reverse=True)
+            
+            # Add cross-theme connection count
+            cross_theme_count = sum(1 for conn in node["connections"] 
+                                  if conn["theme_id"] != node["theme_id"])
+            node["cross_theme_connections"] = cross_theme_count
     
     def generate_graph(self, document_text, **kwargs):
         """
@@ -630,10 +834,21 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         Args:
             document_text: Ignored, kept for API compatibility
             **kwargs: Additional arguments
+                use_embeddings: Whether to use word embeddings (default: True if available)
+                min_cross_theme_connections: Minimum cross-theme connections (default: 2)
+                embedding_weight: Weight for embedding vs keyword similarity (default: 0.7)
             
         Returns:
             dict: D3.js compatible graph structure
         """
+        # Configure semantic similarity from kwargs if provided
+        if 'use_embeddings' in kwargs or 'min_cross_theme_connections' in kwargs or 'embedding_weight' in kwargs:
+            self.configure_semantic_similarity(
+                use_embeddings=kwargs.get('use_embeddings', self.use_embeddings),
+                min_cross_theme_connections=kwargs.get('min_cross_theme_connections', self.min_cross_theme_connections),
+                embedding_weight=kwargs.get('embedding_weight', self.embedding_weight)
+            )
+        
         # Generate nodes for themes, goals, and strategies
         theme_nodes = self._generate_theme_nodes()
         goal_nodes = self._generate_goal_nodes(theme_nodes)
@@ -649,7 +864,6 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         self._add_connections_to_nodes(all_nodes, links)
         
         # Add strategies to goal metadata for better UI rendering when a goal is clicked
-        # This makes it easier for the UI to display all strategies when a goal is clicked
         goal_map = {node["id"]: node for node in goal_nodes}
         
         # Group strategies by goal
@@ -718,6 +932,11 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                         }
                     ]
                 }
+            },
+            "similarity_info": {
+                "method": "semantic" if self.use_embeddings else "keyword",
+                "min_cross_theme": self.min_cross_theme_connections,
+                "embedding_weight": self.embedding_weight if self.use_embeddings else 0
             }
         }
         
