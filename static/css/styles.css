@@ -416,6 +416,24 @@ body {
   margin-top: 0;
 }
 
+/* Clickable cluster header */
+.clickable-header {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.clickable-header a {
+  cursor: pointer;
+  display: inline-block;
+  position: relative;
+}
+
+.clickable-header a:hover {
+  opacity: 0.8;
+}
+
+/* Removed arrow */
+
 .community-section h4 {
   font-size: 0.95rem;
   margin-top: 10px;

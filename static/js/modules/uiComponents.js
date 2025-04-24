@@ -845,30 +845,66 @@ function extractTopKeywords(community) {
  * Extract a text excerpt that contains the keyword, highlighting the keyword
  * @param {string} text - The full text to extract from
  * @param {string} keyword - The keyword to highlight
- * @param {number} contextLength - Number of characters to include before and after the keyword
+ * @param {number} contextLength - Number of words to include before and after the keyword
  * @returns {string} HTML string with the excerpt and highlighted keyword
  */
-function extractExcerptWithKeyword(text, keyword, contextLength = 50) {
+function extractExcerptWithKeyword(text, keyword, contextWords = 8) {
   if (!text || typeof text !== 'string') return '';
   
-  // Case insensitive search
+  // Case insensitive search with word boundaries
   const lowerText = text.toLowerCase();
   const lowerKeyword = keyword.toLowerCase();
-  const keywordIndex = lowerText.indexOf(lowerKeyword);
   
-  // If keyword not found in text
-  if (keywordIndex === -1) return '';
+  // Find the keyword with word boundaries if possible
+  const wordBoundaryRegex = new RegExp(`\\b${lowerKeyword}\\b`, 'i');
+  const match = text.match(wordBoundaryRegex);
   
-  // Determine the start and end indices for the excerpt
-  const startIndex = Math.max(0, keywordIndex - contextLength);
-  const endIndex = Math.min(text.length, keywordIndex + keyword.length + contextLength);
+  // If no word boundary match, fall back to simple indexOf
+  let keywordIndex;
+  let matchedKeyword;
   
-  // Get the excerpt
-  let excerpt = text.substring(startIndex, endIndex);
+  if (match && match.index !== undefined) {
+    keywordIndex = match.index;
+    matchedKeyword = match[0]; // The actual matched text with correct case
+  } else {
+    keywordIndex = lowerText.indexOf(lowerKeyword);
+    // If still not found, give up
+    if (keywordIndex === -1) return '';
+    matchedKeyword = text.substring(keywordIndex, keywordIndex + lowerKeyword.length);
+  }
   
-  // Add ellipsis if we're not at the beginning or end of the text
-  if (startIndex > 0) excerpt = '...' + excerpt;
-  if (endIndex < text.length) excerpt = excerpt + '...';
+  // Split the text into words
+  const words = text.split(/\s+/);
+  const allText = words.join(' '); // Normalize spaces
+  
+  // Find which word contains our keyword
+  let charCount = 0;
+  let keywordWordIndex = -1;
+  
+  for (let i = 0; i < words.length; i++) {
+    const nextCharCount = charCount + words[i].length + (i > 0 ? 1 : 0); // +1 for space
+    
+    if (keywordIndex >= charCount && keywordIndex < nextCharCount) {
+      keywordWordIndex = i;
+      break;
+    }
+    
+    charCount = nextCharCount;
+  }
+  
+  if (keywordWordIndex === -1) return ''; // Couldn't find the word somehow
+  
+  // Determine start and end word indices for the excerpt
+  const startWordIndex = Math.max(0, keywordWordIndex - contextWords);
+  const endWordIndex = Math.min(words.length, keywordWordIndex + contextWords + 1);
+  
+  // Extract the relevant words
+  const excerptWords = words.slice(startWordIndex, endWordIndex);
+  
+  // Add ellipsis indicators
+  let excerpt = excerptWords.join(' ');
+  if (startWordIndex > 0) excerpt = '... ' + excerpt;
+  if (endWordIndex < words.length) excerpt = excerpt + ' ...';
   
   // Escape HTML to prevent XSS
   excerpt = excerpt
@@ -878,32 +914,44 @@ function extractExcerptWithKeyword(text, keyword, contextLength = 50) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
   
-  // Now safely highlight the keyword by wrapping it in a span
-  // First we need to find where in our escaped excerpt the keyword appears
-  const escapedText = text.substring(startIndex, keywordIndex)
+  // Find the keyword in the escaped excerpt to highlight it
+  // We need to find where it is in the excerpt, not the original text
+  const excerptLower = excerpt.toLowerCase();
+  const escapedKeywordLower = matchedKeyword.toLowerCase()
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
   
-  const keywordPosition = escapedText.length;
+  // Look for the keyword with word boundaries in the escaped excerpt
+  const excerptKeywordMatch = new RegExp(`\\b${escapedKeywordLower}\\b`, 'i');
+  const excerptMatch = excerptLower.match(excerptKeywordMatch);
   
-  // Get the exact keyword as it appears in the original text to preserve case
-  const originalKeyword = text.substring(keywordIndex, keywordIndex + keyword.length);
-  const escapedKeyword = originalKeyword
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  // If we can't find it with word boundaries, look for it without them
+  let excerptKeywordIndex;
+  if (excerptMatch && excerptMatch.index !== undefined) {
+    excerptKeywordIndex = excerptMatch.index;
+  } else {
+    excerptKeywordIndex = excerptLower.indexOf(escapedKeywordLower);
+    if (excerptKeywordIndex === -1) {
+      // If still can't find, just return the escaped excerpt without highlighting
+      return excerpt;
+    }
+  }
+  
+  // Get the original case version of the keyword from the excerpt
+  const excerptKeyword = excerpt.substring(
+    excerptKeywordIndex, 
+    excerptKeywordIndex + escapedKeywordLower.length
+  );
   
   // Insert the span tags around the keyword
-  const beforeKeyword = excerpt.substring(0, keywordPosition);
-  const afterKeyword = excerpt.substring(keywordPosition + escapedKeyword.length);
+  const beforeKeyword = excerpt.substring(0, excerptKeywordIndex);
+  const afterKeyword = excerpt.substring(excerptKeywordIndex + excerptKeyword.length);
   
   return beforeKeyword + 
-         '<span class="keyword-highlight">' + escapedKeyword + '</span>' + 
+         '<span class="keyword-highlight">' + excerptKeyword + '</span>' + 
          afterKeyword;
 }
 
@@ -1108,14 +1156,35 @@ export function setupClusterPanel(communities) {
     const section = document.createElement('div');
     section.className = 'community-section';
     
-    // Create header with community label
+    // Create header with community label as a clickable link
     const header = document.createElement('h3');
-    header.textContent = community.label;
+    header.className = 'clickable-header';
+    
+    // Wrap the text in a link
+    const headerLink = document.createElement('a');
+    headerLink.textContent = community.label;
+    headerLink.href = '#';
+    headerLink.style.textDecoration = 'none';
+    
+    // Apply color to link instead of header
     if (window.graphViz && window.graphViz.colorScale) {
-      header.style.color = window.graphViz.colorScale(community.id);
+      headerLink.style.color = window.graphViz.colorScale(community.id);
     } else {
-      header.style.color = '#000';
+      headerLink.style.color = '#000';
     }
+    
+    // Add click handler to focus on the community's main node (first central topic)
+    if (community.central_topics && community.central_topics.length > 0) {
+      headerLink.onclick = (e) => {
+        e.preventDefault();
+        focusOnNode(community.central_topics[0].id);
+      };
+      
+      // Add tooltip
+      headerLink.title = 'Click to view this topic';
+    }
+    
+    header.appendChild(headerLink);
     section.appendChild(header);
     
     // Add top keywords for this cluster if available
@@ -1124,9 +1193,7 @@ export function setupClusterPanel(communities) {
       const keywordsContainer = document.createElement('div');
       keywordsContainer.className = 'cluster-keywords';
       
-      const keywordsTitle = document.createElement('h4');
-      keywordsTitle.textContent = 'Top Keywords:';
-      keywordsContainer.appendChild(keywordsTitle);
+      // Removed "Top Keywords:" heading
       
       const keywordsList = document.createElement('div');
       keywordsList.className = 'keywords-list';
@@ -1150,27 +1217,7 @@ export function setupClusterPanel(communities) {
       section.appendChild(keywordsContainer);
     }
     
-    // Create entry points list for central topics
-    if (community.central_topics && community.central_topics.length > 0) {
-      const entriesTitle = document.createElement('h4');
-      entriesTitle.textContent = 'Key Topics:';
-      section.appendChild(entriesTitle);
-      
-      const entriesList = document.createElement('ul');
-      community.central_topics.forEach(topic => {
-        const item = document.createElement('li');
-        const link = document.createElement('a');
-        link.textContent = topic.label;
-        link.href = '#';
-        link.onclick = (e) => {
-          e.preventDefault();
-          focusOnNode(topic.id);
-        };
-        item.appendChild(link);
-        entriesList.appendChild(item);
-      });
-      section.appendChild(entriesList);
-    }
+    // We've removed the separate "Key Topics" section since we now have clickable headers
     
     paddingContainer.appendChild(section);
   });
