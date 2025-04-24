@@ -27,6 +27,12 @@ export function initializeUI(searchResults, searchInput, clusterPanel) {
   if (_navigationPanel) {
     _navigationPanel.style.display = 'none';
   }
+  
+  // Initially show clusters and set its height
+  if (_clustersContainer) {
+    _clustersContainer.style.display = 'flex';
+    _clustersContainer.style.height = '100%';
+  }
 
   // Expose displayNodeDetails to the global scope for nodeInteraction.js to use
   window.displayNodeDetails = displayNodeDetails;
@@ -166,25 +172,38 @@ export function displayNodeDetails(data, nodeViewHistory) {
   addToNodeViewHistory(nodeId);
   
   // Show navigation panel, hide clusters panel
-  _navigationPanel.style.display = 'block';
-  _clustersContainer.style.display = 'none';
+  if (_navigationPanel) {
+    _navigationPanel.style.display = 'flex';
+    _navigationPanel.style.height = '100%'; // Ensure it takes full height
+  }
+  
+  if (_clustersContainer) {
+    _clustersContainer.style.display = 'none';
+  }
   
   // Get the content wrapper and navigation buttons container
   const contentWrapper = document.getElementById('nav-content-wrapper');
   const navigationButtons = document.getElementById('navigation-buttons');
-  const footerSpace = document.getElementById('navigation-footer-space');
   
-  // Ensure the footer space is shown
-  if (footerSpace) footerSpace.style.display = 'block';
+  // Create a content container with padding
+  let contentContainer;
+  if (contentWrapper) {
+    contentWrapper.innerHTML = '';
+    // Add padding container for content
+    contentContainer = document.createElement('div');
+    contentContainer.className = 'nav-padding-container';
+    contentContainer.style.padding = '20px';
+    // Add extra bottom padding to ensure content isn't hidden behind buttons
+    contentContainer.style.paddingBottom = '85px';
+    contentWrapper.appendChild(contentContainer);
+  }
   
-  // Clear content
-  if (contentWrapper) contentWrapper.innerHTML = '';
   if (navigationButtons) navigationButtons.innerHTML = '';
   
   // Create header for the node
   const header = document.createElement('h2');
   header.textContent = data.node.label;
-  contentWrapper.appendChild(header);
+  contentContainer.appendChild(header);
   
   // Add node type indicator with appropriate styling
   const typeLabel = document.createElement('div');
@@ -207,19 +226,19 @@ export function displayNodeDetails(data, nodeViewHistory) {
     typeLabel.className = 'node-type-label';
   }
   
-  contentWrapper.appendChild(typeLabel);
+  contentContainer.appendChild(typeLabel);
   
   // Process content based on node type
   if (data.node.type === 'topic') {
-    displayTopicDetails(data, contentWrapper);
+    displayTopicDetails(data, contentContainer);
   } else if (data.node.type === 'document' && 
             (data.node.has_strategy_links || data.node.display_type === 'strategy_list') && 
             data.node.strategy_entries) {
-    displayDocumentWithStrategies(data, contentWrapper);
+    displayDocumentWithStrategies(data, contentContainer);
   } else if (data.node.type === 'strategy') {
-    displayStrategyDetails(data, contentWrapper);
+    displayStrategyDetails(data, contentContainer);
   } else {
-    displayGenericDetails(data, contentWrapper);
+    displayGenericDetails(data, contentContainer);
   }
   
   // Set up navigation buttons at the bottom
@@ -249,8 +268,14 @@ export function displayNodeDetails(data, nodeViewHistory) {
   overviewButton.innerHTML = 'Overview';
   overviewButton.onclick = () => {
     // Hide navigation panel, show clusters panel
-    _navigationPanel.style.display = 'none';
-    _clustersContainer.style.display = 'block';
+    if (_navigationPanel) {
+      _navigationPanel.style.display = 'none';
+    }
+    
+    if (_clustersContainer) {
+      _clustersContainer.style.display = 'flex';
+      _clustersContainer.style.height = '100%';
+    }
     
     // Reset scroll position of clusters container to the top
     if (_clusterPanel) _clusterPanel.scrollTop = 0;
@@ -663,6 +688,19 @@ export function setupClusterPanel(communities) {
   
   _clusterPanel.innerHTML = '';
   
+  // Create a padding container
+  const paddingContainer = document.createElement('div');
+  paddingContainer.className = 'clusters-padding-container';
+  paddingContainer.style.padding = '20px';
+  _clusterPanel.appendChild(paddingContainer);
+  
+  // Add the title
+  const title = document.createElement('h3');
+  title.textContent = 'Topic Clusters';
+  title.style.marginTop = '0';
+  title.style.marginBottom = '20px';
+  paddingContainer.appendChild(title);
+  
   communities.forEach(community => {
     const section = document.createElement('div');
     section.className = 'community-section';
@@ -699,6 +737,6 @@ export function setupClusterPanel(communities) {
       section.appendChild(entriesList);
     }
     
-    _clusterPanel.appendChild(section);
+    paddingContainer.appendChild(section);
   });
 }
