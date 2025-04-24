@@ -9,6 +9,17 @@ let _navigationPanel = null;
 let _clustersContainer = null;
 let _filteredNodesPanel = null; // Panel for displaying nodes filtered by keywords
 
+// Constants for view types to track navigation history
+const VIEW_TYPE = {
+  CLUSTERS: 'clusters',
+  NODE: 'node',
+  FILTERED: 'filtered'
+};
+
+// View history structure to unify navigation
+let _viewHistory = [];
+let _currentViewIndex = -1;
+
 /**
  * Initialize UI components
  * @param {HTMLElement} searchResults - The search results container
@@ -46,8 +57,94 @@ export function initializeUI(searchResults, searchInput, clusterPanel) {
     _clustersContainer.style.height = '100%';
   }
 
+  // Initialize view history with clusters view
+  _viewHistory = [{ type: VIEW_TYPE.CLUSTERS }];
+  _currentViewIndex = 0;
+
+  // Create universal navigation buttons
+  initializeUniversalNavigation();
+
   // Expose displayNodeDetails to the global scope for nodeInteraction.js to use
   window.displayNodeDetails = displayNodeDetails;
+}
+
+/**
+ * Initialize universal navigation buttons that will be shown across all views
+ * Exported globally for access from other modules
+ */
+function initializeUniversalNavigation() {
+  // Make this function available globally
+  window.initializeUniversalNavigation = initializeUniversalNavigation;
+  // Remove any existing navigation buttons to avoid duplicates
+  const existingNavButtons = document.getElementById('navigation-buttons');
+  if (existingNavButtons) {
+    existingNavButtons.remove();
+  }
+
+  // Create navigation buttons container
+  const navigationButtons = document.createElement('div');
+  navigationButtons.id = 'navigation-buttons';
+  
+  // Create a container for button labels for better styling
+  const backButtonContainer = document.createElement('div');
+  backButtonContainer.className = 'nav-button-container';
+  
+  // Add back button
+  const backButton = document.createElement('button');
+  backButton.id = 'universal-back-button';
+  backButton.className = 'nav-button';
+  backButton.textContent = 'Back';
+  backButton.onclick = navigateHistoryBack;
+  backButton.disabled = true; // Disabled initially
+  backButton.classList.add('disabled');
+  backButtonContainer.appendChild(backButton);
+  navigationButtons.appendChild(backButtonContainer);
+  
+  // Add home/overview button container
+  const overviewButtonContainer = document.createElement('div');
+  overviewButtonContainer.className = 'nav-button-container';
+  
+  // Add home/overview button
+  const overviewButton = document.createElement('button');
+  overviewButton.id = 'universal-overview-button';
+  overviewButton.className = 'nav-button overview';
+  
+  // Create home icon element (using Unicode home symbol)
+  const homeIcon = document.createElement('span');
+  homeIcon.className = 'overview-icon';
+  homeIcon.innerHTML = '&#8962;'; // Unicode for home symbol
+  overviewButton.appendChild(homeIcon);
+  
+  overviewButton.onclick = () => {
+    navigateToView({ type: VIEW_TYPE.CLUSTERS });
+  };
+  overviewButtonContainer.appendChild(overviewButton);
+  navigationButtons.appendChild(overviewButtonContainer);
+  
+  // Add forward button container
+  const forwardButtonContainer = document.createElement('div');
+  forwardButtonContainer.className = 'nav-button-container';
+  
+  // Add forward button
+  const forwardButton = document.createElement('button');
+  forwardButton.id = 'universal-forward-button';
+  forwardButton.className = 'nav-button';
+  forwardButton.textContent = 'Forward';
+  forwardButton.onclick = navigateHistoryForward;
+  forwardButton.disabled = true; // Disabled initially
+  forwardButton.classList.add('disabled');
+  forwardButtonContainer.appendChild(forwardButton);
+  navigationButtons.appendChild(forwardButtonContainer);
+  
+  // Make buttons always visible
+  navigationButtons.style.display = 'flex';
+  
+  // Important: Add to body instead of sidebar to ensure it's always visible
+  // This prevents it from being hidden when switching between views
+  document.body.appendChild(navigationButtons);
+  
+  // Update button state immediately
+  updateNavigationButtonsState();
 }
 
 /**
@@ -171,6 +268,7 @@ export function displaySearchResults(results) {
         _searchInput.value = '';
         
         // Focus on the node in the graph
+        // This will trigger displayNodeDetails which adds to our unified navigation
         focusOnNode(result.id);
       } catch (error) {
         console.error('Error fetching node details:', error);
@@ -185,35 +283,257 @@ export function displaySearchResults(results) {
 }
 
 /**
+ * Navigate to a specific view in the UI
+ * @param {Object} viewData - Data describing the view to navigate to
+ * @param {string} viewData.type - Type of view (from VIEW_TYPE constants)
+ * @param {Object} [viewData.data] - Additional data needed for the view
+ * @param {boolean} [fromHistory=false] - Whether this navigation is from history navigation
+ * @param {boolean} [replaceCurrentView=false] - Whether to replace the current view instead of adding a new one
+ */
+function navigateToView(viewData, fromHistory = false, replaceCurrentView = false) {
+  if (!viewData || !viewData.type) return;
+  
+  // If not navigating from history, add to history
+  if (!fromHistory) {
+    // Special handling for node views to avoid duplicates in history
+    if (viewData.type === VIEW_TYPE.NODE && viewData.data && viewData.data.nodeId) {
+      // Check if we're already on a node view
+      const currentView = _currentViewIndex >= 0 ? _viewHistory[_currentViewIndex] : null;
+      
+      if (currentView && currentView.type === VIEW_TYPE.NODE && 
+          currentView.data && currentView.data.nodeId === viewData.data.nodeId) {
+        // If we're clicking the same node again, don't add to history
+        replaceCurrentView = true;
+      }
+      
+      // Check if this node is already in the next position in history
+      if (_currentViewIndex < _viewHistory.length - 1) {
+        const nextView = _viewHistory[_currentViewIndex + 1];
+        if (nextView && nextView.type === VIEW_TYPE.NODE && 
+            nextView.data && nextView.data.nodeId === viewData.data.nodeId) {
+          // If the next view in history is this node, just navigate forward to it
+          _currentViewIndex++;
+          fromHistory = true;
+        }
+      }
+    }
+    
+    if (!fromHistory) {
+      if (replaceCurrentView && _currentViewIndex >= 0) {
+        // Replace the current view
+        _viewHistory[_currentViewIndex] = viewData;
+      } else {
+        // If navigating forward (not backward through history)
+        // Add the new view to history at the current position
+        if (_currentViewIndex < _viewHistory.length - 1) {
+          // We're in the middle of history, append after the current position
+          _viewHistory.splice(_currentViewIndex + 1, 0, viewData);
+          _currentViewIndex++;
+        } else {
+          // We're at the end of history, just append
+          _viewHistory.push(viewData);
+          _currentViewIndex = _viewHistory.length - 1;
+        }
+      }
+    }
+  }
+  
+  // Hide all panels first
+  if (_navigationPanel) _navigationPanel.style.display = 'none';
+  if (_clustersContainer) _clustersContainer.style.display = 'none';
+  if (_filteredNodesPanel) _filteredNodesPanel.style.display = 'none';
+  
+  // Show the appropriate panel based on view type
+  switch (viewData.type) {
+    case VIEW_TYPE.CLUSTERS:
+      if (_clustersContainer) {
+        _clustersContainer.style.display = 'flex';
+        _clustersContainer.style.height = '100%';
+        // Reset scroll position to the top
+        if (_clusterPanel) _clusterPanel.scrollTop = 0;
+      }
+      break;
+      
+    case VIEW_TYPE.NODE:
+      if (_navigationPanel) {
+        _navigationPanel.style.display = 'flex';
+        _navigationPanel.style.height = '100%';
+        
+        // If we have node data, we might need to refresh the content
+        if (viewData.data && viewData.data.nodeId) {
+          if (!fromHistory) {
+            // This will be handled by focusOnNode which calls displayNodeDetails
+          } else if (window.focusOnNode) {
+            // When navigating from history, we need to explicitly focus the node
+            // to ensure the graph visualization is updated
+            window.focusOnNode(viewData.data.nodeId, true);
+          }
+        } else if (viewData.data && viewData.data.nodeData) {
+          // We already have the node data, just display it
+          renderNodeDetails(viewData.data.nodeData);
+        }
+      }
+      break;
+      
+    case VIEW_TYPE.FILTERED:
+      if (_filteredNodesPanel) {
+        _filteredNodesPanel.style.display = 'flex';
+        _filteredNodesPanel.style.height = '100%';
+        
+        // If we have filter data and this isn't from history navigation,
+        // we need to re-run the filter
+        if (viewData.data && viewData.data.keyword && viewData.data.communityId) {
+          renderFilteredNodesView(viewData.data.keyword, viewData.data.communityId);
+        }
+      }
+      break;
+  }
+  
+  // Update navigation buttons state
+  updateNavigationButtonsState();
+  
+  // Ensure the navigation buttons exist and are visible
+  const navigationButtons = document.getElementById('navigation-buttons');
+  if (!navigationButtons) {
+    // If navigation buttons don't exist, reinitialize them
+    initializeUniversalNavigation();
+  } else {
+    // Make sure they're visible and have proper styles
+    navigationButtons.style.display = 'flex';
+    navigationButtons.style.zIndex = '9999';
+    navigationButtons.style.position = 'fixed';
+  }
+}
+
+/**
+ * Update the state of navigation buttons based on current history position
+ */
+function updateNavigationButtonsState() {
+  const backButton = document.getElementById('universal-back-button');
+  const forwardButton = document.getElementById('universal-forward-button');
+  
+  if (!backButton || !forwardButton) return;
+  
+  // Update back button
+  if (_currentViewIndex > 0) {
+    backButton.disabled = false;
+    backButton.classList.remove('disabled');
+  } else {
+    backButton.disabled = true;
+    backButton.classList.add('disabled');
+  }
+  
+  // Update forward button
+  if (_currentViewIndex < _viewHistory.length - 1) {
+    forwardButton.disabled = false;
+    forwardButton.classList.remove('disabled');
+  } else {
+    forwardButton.disabled = true;
+    forwardButton.classList.add('disabled');
+  }
+}
+
+/**
+ * Navigate backward in the view history
+ */
+function navigateHistoryBack() {
+  if (_currentViewIndex > 0) {
+    _currentViewIndex--;
+    const previousView = _viewHistory[_currentViewIndex];
+    
+    // For node views, we also need to update the node-specific navigation 
+    // to keep the two navigation systems in sync
+    if (previousView.type === VIEW_TYPE.NODE && previousView.data && previousView.data.nodeId) {
+      // Import navigateBack function if available
+      if (typeof window.graphNodesNavigation === 'undefined') {
+        // Store node navigation functions for future reference
+        window.graphNodesNavigation = {
+          nodeViewHistory: [],
+          currentNodeId: null,
+          navigateToNode: function(nodeId) {
+            // Find the node in graph viz
+            if (window.graphViz && window.graphViz.nodes) {
+              const node = window.graphViz.nodes.find(n => n.id === nodeId);
+              if (node) {
+                // Import focusOnNode from nodeInteraction
+                const focusOnNode = window.focusOnNode || 
+                  (window.nodeInteraction && window.nodeInteraction.focusOnNode);
+                
+                if (typeof focusOnNode === 'function') {
+                  focusOnNode(nodeId, true); // true = from navigation
+                }
+              }
+            }
+          }
+        };
+      }
+      
+      // We're navigating to a node view, so we need to ensure the node is highlighted
+      // and properly focused in the graph visualization
+      if (window.focusOnNode) {
+        window.focusOnNode(previousView.data.nodeId, true); // true = from navigation
+      }
+    }
+    
+    // Continue with normal view navigation
+    navigateToView(previousView, true);
+  }
+}
+
+/**
+ * Navigate forward in the view history
+ */
+function navigateHistoryForward() {
+  if (_currentViewIndex < _viewHistory.length - 1) {
+    _currentViewIndex++;
+    const nextView = _viewHistory[_currentViewIndex];
+    
+    // For node views, we also need to update the node-specific visualization
+    if (nextView.type === VIEW_TYPE.NODE && nextView.data && nextView.data.nodeId) {
+      // We're navigating to a node view, so we need to ensure the node is highlighted
+      // and properly focused in the graph visualization
+      if (window.focusOnNode) {
+        window.focusOnNode(nextView.data.nodeId, true); // true = from navigation
+      }
+    }
+    
+    // Continue with normal view navigation
+    navigateToView(nextView, true);
+  }
+}
+
+/**
  * Display node details in the navigation panel
  * @param {Object} data - Node data with connections
- * @param {Array} nodeViewHistory - History of viewed nodes
+ * @param {Array} nodeViewHistory - History of viewed nodes (deprecated, kept for compatibility)
  */
 export function displayNodeDetails(data, nodeViewHistory) {
   if (!_navigationPanel || !_clustersContainer) return;
   
-  // Add node to history
+  // Add node to view history for unified navigation
+  navigateToView({
+    type: VIEW_TYPE.NODE,
+    data: {
+      nodeId: data.node.id,
+      nodeData: data
+    }
+  });
+  
+  // Legacy node history for compatibility with nodeInteraction.js
   const nodeId = data.node.id;
   addToNodeViewHistory(nodeId);
   
-  // Show navigation panel, hide clusters panel and filtered nodes panel
-  if (_navigationPanel) {
-    _navigationPanel.style.display = 'flex';
-    _navigationPanel.style.height = '100%'; // Ensure it takes full height
-  }
-  
-  if (_clustersContainer) {
-    _clustersContainer.style.display = 'none';
-  }
-  
-  // Also hide the filtered nodes panel if coming from there
-  if (_filteredNodesPanel) {
-    _filteredNodesPanel.style.display = 'none';
-  }
-  
-  // Get the content wrapper and navigation buttons container
+  // Render the node details content
+  renderNodeDetails(data);
+}
+
+/**
+ * Render node details in the navigation panel
+ * @param {Object} data - Node data with connections
+ */
+function renderNodeDetails(data) {
+  // Get the content wrapper
   const contentWrapper = document.getElementById('nav-content-wrapper');
-  const navigationButtons = document.getElementById('navigation-buttons');
   
   // Create a content container with padding
   let contentContainer;
@@ -227,8 +547,6 @@ export function displayNodeDetails(data, nodeViewHistory) {
     contentContainer.style.paddingBottom = '150px';
     contentWrapper.appendChild(contentContainer);
   }
-  
-  if (navigationButtons) navigationButtons.innerHTML = '';
   
   // Create header for the node
   const header = document.createElement('h2');
@@ -269,78 +587,6 @@ export function displayNodeDetails(data, nodeViewHistory) {
     displayStrategyDetails(data, contentContainer);
   } else {
     displayGenericDetails(data, contentContainer);
-  }
-  
-  // Set up navigation buttons at the bottom
-  
-  // Add back button if there's history
-  if (nodeViewHistory && nodeViewHistory.length > 1) {
-    const backButton = document.createElement('button');
-    backButton.id = 'node-back-button';
-    backButton.className = 'nav-button';
-    backButton.textContent = 'Back';
-    backButton.onclick = navigateBack;
-    navigationButtons.appendChild(backButton);
-  } else {
-    // Add a disabled back button for consistent UI
-    const backButton = document.createElement('button');
-    backButton.id = 'node-back-button';
-    backButton.className = 'nav-button disabled';
-    backButton.textContent = 'Back';
-    backButton.disabled = true;
-    navigationButtons.appendChild(backButton);
-  }
-  
-  // Add return to overview button with home icon
-  const overviewButton = document.createElement('button');
-  overviewButton.id = 'overview-button';
-  overviewButton.className = 'nav-button overview';
-  
-  // Create home icon element (using Unicode home symbol)
-  const homeIcon = document.createElement('span');
-  homeIcon.className = 'overview-icon';
-  homeIcon.innerHTML = '&#8962;'; // Unicode for home symbol
-  
-  // Only add the home icon to the button (no text)
-  overviewButton.appendChild(homeIcon);
-  
-  overviewButton.onclick = () => {
-    // Hide navigation panel and filtered nodes panel, show clusters panel
-    if (_navigationPanel) {
-      _navigationPanel.style.display = 'none';
-    }
-    
-    // Also hide the filtered nodes panel if it exists
-    if (_filteredNodesPanel) {
-      _filteredNodesPanel.style.display = 'none';
-    }
-    
-    if (_clustersContainer) {
-      _clustersContainer.style.display = 'flex';
-      _clustersContainer.style.height = '100%';
-    }
-    
-    // Reset scroll position of clusters container to the top
-    if (_clusterPanel) _clusterPanel.scrollTop = 0;
-  };
-  navigationButtons.appendChild(overviewButton);
-  
-  // Add forward button if there's forward history
-  if (canNavigateForward()) {
-    const forwardButton = document.createElement('button');
-    forwardButton.id = 'node-forward-button';
-    forwardButton.className = 'nav-button';
-    forwardButton.textContent = 'Forward';
-    forwardButton.onclick = navigateForward;
-    navigationButtons.appendChild(forwardButton);
-  } else {
-    // Add a disabled forward button for consistent UI
-    const forwardButton = document.createElement('button');
-    forwardButton.id = 'node-forward-button';
-    forwardButton.className = 'nav-button disabled';
-    forwardButton.textContent = 'Forward';
-    forwardButton.disabled = true;
-    navigationButtons.appendChild(forwardButton);
   }
 }
 
@@ -963,13 +1209,26 @@ function extractExcerptWithKeyword(text, keyword, contextWords = 8) {
 function filterNodesByKeyword(keyword, communityId) {
   if (!_filteredNodesPanel || !window.graphViz || !window.graphViz.nodes) return;
   
-  // Hide both navigation panel and clusters container
-  if (_navigationPanel) _navigationPanel.style.display = 'none';
-  if (_clustersContainer) _clustersContainer.style.display = 'none';
+  // Add to view history
+  navigateToView({
+    type: VIEW_TYPE.FILTERED,
+    data: {
+      keyword: keyword,
+      communityId: communityId
+    }
+  });
   
-  // Show filtered nodes panel
-  _filteredNodesPanel.style.display = 'flex';
-  _filteredNodesPanel.style.height = '100%';
+  // Render the filtered nodes view
+  renderFilteredNodesView(keyword, communityId);
+}
+
+/**
+ * Render the filtered nodes view without changing navigation history
+ * @param {string} keyword - The keyword to filter by
+ * @param {string|number} communityId - The ID of the community the keyword is from
+ */
+function renderFilteredNodesView(keyword, communityId) {
+  if (!_filteredNodesPanel || !window.graphViz || !window.graphViz.nodes) return;
   
   // Clear previous content
   _filteredNodesPanel.innerHTML = '';
@@ -984,26 +1243,6 @@ function filterNodesByKeyword(keyword, communityId) {
   // Create header with filter information
   const header = document.createElement('div');
   header.className = 'filtered-header';
-  
-  // Create back button to return to clusters view
-  const backButton = document.createElement('button');
-  backButton.className = 'keyword-back-button';
-  backButton.innerHTML = '&larr; Back to Clusters';
-  backButton.addEventListener('click', () => {
-    // Hide filtered panel and navigation panel, show clusters
-    _filteredNodesPanel.style.display = 'none';
-    
-    if (_navigationPanel) {
-      _navigationPanel.style.display = 'none';
-    }
-    
-    _clustersContainer.style.display = 'flex';
-    _clustersContainer.style.height = '100%';
-    
-    // Reset scroll position to the top
-    if (_clusterPanel) _clusterPanel.scrollTop = 0;
-  });
-  header.appendChild(backButton);
   
   // Create title showing what we're filtering by
   const title = document.createElement('h3');
@@ -1086,6 +1325,7 @@ function filterNodesByKeyword(keyword, communityId) {
         link.href = '#';
         link.onclick = (e) => {
           e.preventDefault();
+          // The focusOnNode will trigger displayNodeDetails which will add to our unified navigation
           focusOnNode(node.id);
         };
         
@@ -1129,6 +1369,21 @@ function filterNodesByKeyword(keyword, communityId) {
     summary.textContent = `Found ${filteredNodes.length} nodes containing "${keyword}"`;
     contentContainer.insertBefore(summary, contentContainer.children[1]);
   }
+}
+
+// Make the navigation view functions available externally
+export function navigateToClusterView() {
+  navigateToView({ type: VIEW_TYPE.CLUSTERS });
+}
+
+export function navigateToFilteredView(keyword, communityId) {
+  navigateToView({
+    type: VIEW_TYPE.FILTERED,
+    data: {
+      keyword: keyword,
+      communityId: communityId
+    }
+  });
 }
 
 export function setupClusterPanel(communities) {

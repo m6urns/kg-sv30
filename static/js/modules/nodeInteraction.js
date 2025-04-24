@@ -19,6 +19,18 @@ export function initializeNodeInteraction(graphViz, graphContainer) {
   _graphContainer = graphContainer;
   _nodeViewHistory = [];
   _nodeForwardHistory = [];
+  
+  // Make the focusOnNode function accessible globally for the unified navigation
+  window.focusOnNode = focusOnNode;
+  
+  // Store node interaction module for potential reference
+  window.nodeInteraction = {
+    focusOnNode: focusOnNode,
+    navigateBack: navigateBack,
+    navigateForward: navigateForward,
+    highlightNode: highlightNode,
+    highlightConnections: highlightConnections
+  };
 }
 
 /**
@@ -59,10 +71,8 @@ export function focusOnNode(nodeId, fromNavigation = false) {
   const node = _graphViz.nodes.find(n => n.id === nodeId);
   if (!node) return;
   
-  // Clear forward history if we're not navigating and focusing on a new node
-  if (!fromNavigation) {
-    _nodeForwardHistory = [];
-  }
+  // Remove the clearing of forward history to preserve it for universal navigation
+  // Previously: if (!fromNavigation) { _nodeForwardHistory = []; }
   
   // Highlight the node
   highlightNode(node);
@@ -167,6 +177,7 @@ export function nodeClicked(event, d) {
   event.stopPropagation();
   
   // Show details panel with node information
+  // This will update the unified navigation history through displayNodeDetails
   showNodeDetails(d);
   
   // Highlight this node
@@ -188,9 +199,12 @@ export function nodeClicked(event, d) {
 }
 
 /**
- * Navigate back in node history
+ * Navigate back in node history (legacy function - should be handled by unified navigation)
+ * Kept for backwards compatibility
  */
 export function navigateBack() {
+  // The new implementation will be handled by the universal navigation bar
+  // but we keep this for compatibility with existing code
   if (_nodeViewHistory.length > 1) {
     // Get current node and add to forward history
     const currentNodeId = _nodeViewHistory[_nodeViewHistory.length - 1];
@@ -211,9 +225,12 @@ export function navigateBack() {
 }
 
 /**
- * Navigate forward in node history
+ * Navigate forward in node history (legacy function - should be handled by unified navigation)
+ * Kept for backwards compatibility
  */
 export function navigateForward() {
+  // The new implementation will be handled by the universal navigation bar
+  // but we keep this for compatibility with existing code
   if (_nodeForwardHistory.length > 0) {
     // Get node from forward history
     const nextNodeId = _nodeForwardHistory.pop();
@@ -319,4 +336,8 @@ export function addToNodeViewHistory(nodeId) {
       _nodeViewHistory.shift();
     }
   }
+  
+  // Note: We're no longer clearing forward history to maintain consistency with
+  // the unified navigation system. If someone clicks back and then clicks a new node,
+  // they should still be able to navigate forward to where they were originally.
 }

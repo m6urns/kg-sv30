@@ -18,7 +18,7 @@ body {
 /* Sidebar */
 .sidebar {
   background-color: #f8f9fa;
-  padding: 20px 20px 0 20px; /* Remove bottom padding */
+  padding: 20px 20px 70px 20px; /* Add bottom padding to account for nav bar */
   height: 100vh; /* Use viewport height for full height */
   overflow: hidden; /* Prevent sidebar itself from scrolling */
   border-right: 1px solid #dee2e6;
@@ -53,8 +53,14 @@ body {
 
 /* Ensure all elements in nav content are visible */
 .nav-padding-container {
-  /* Ensure sufficient space at bottom */
-  margin-bottom: 50px;
+  /* Ensure sufficient space at bottom so content isn't hidden behind navigation buttons */
+  margin-bottom: 100px;
+  padding-bottom: 20px;
+}
+
+/* Apply padding to all scrollable content areas to ensure visibility above navigation */
+#nav-content-wrapper, #clusters-container, #filtered-nodes-panel {
+  padding-bottom: 90px;
 }
 
 /* Footer space to prevent content from being hidden behind buttons */
@@ -87,17 +93,26 @@ body {
 #navigation-buttons {
   position: fixed;
   bottom: 0;
-  left: 20px; /* Match left padding of sidebar */
-  width: calc(33.33% - 40px); /* Width of the sidebar column minus padding */
+  left: 0; /* Align with left edge of window */
+  width: 33.33%; /* Full width of the sidebar column */
   background-color: #f8f9fa;
   border-top: 1px solid #dee2e6;
-  padding: 15px;
-  display: flex;
+  padding: 15px 20px; /* Maintain horizontal padding inside */
+  display: flex !important; /* Force display at all times */
   justify-content: space-between;
   box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
-  z-index: 1000;
+  z-index: 9999; /* Ensure it's above all other elements */
   height: 70px; /* Slightly increased height for buttons */
   box-sizing: border-box;
+  /* Make sure the buttons are visible against all backgrounds */
+  background-color: rgba(248, 249, 250, 0.98);
+  pointer-events: auto; /* Ensure clicks are captured */
+}
+
+.nav-button-container {
+  flex: 1;
+  padding: 0 5px; /* Space between buttons */
+  display: flex;
 }
 
 .nav-button {
@@ -108,8 +123,7 @@ body {
   padding: 8px 8px;
   font-size: 14px;
   cursor: pointer;
-  flex: 1;
-  margin: 0 5px;
+  flex: 1; /* Take up full width of container */
   transition: all 0.2s ease;
   text-align: center;
   display: flex;

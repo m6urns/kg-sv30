@@ -98,6 +98,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initialize event listeners
   initializeEventListeners();
   
+  // Ensure navigation buttons are created and visible at startup
+  setTimeout(() => {
+    const navButtons = document.getElementById('navigation-buttons');
+    if (!navButtons || navButtons.style.display !== 'flex') {
+      // If navigation buttons don't exist or aren't visible, reinitialize
+      if (typeof window.initializeUniversalNavigation === 'function') {
+        window.initializeUniversalNavigation();
+      } else if (typeof initializeUniversalNavigation === 'function') {
+        initializeUniversalNavigation();
+      }
+    }
+  }, 500); // Short delay to ensure DOM is fully loaded
+  
   // HTTPS specific fallbacks for utils
   if (window.location.protocol === 'https:') {
     console.log('Running over HTTPS protocol');
