@@ -80,8 +80,8 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         
         # Configuration for semantic similarity
         self.use_embeddings = EMBEDDINGS_AVAILABLE  # Use embeddings if available
-        self.min_cross_theme_connections = 2  # Minimum cross-theme connections per strategy
-        self.embedding_weight = 0.7  # Weight given to embedding similarity vs keyword-based
+        self.min_cross_theme_connections = 0  # Minimum cross-theme connections per strategy
+        self.embedding_weight = 0.6  # Weight given to embedding similarity vs keyword-based
         
         # Initialize embedding model if available
         if self.use_embeddings:
@@ -645,8 +645,8 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         # Adjust thresholds based on whether we're using embeddings
         if self.use_embeddings:
             # Lower thresholds when using embeddings
-            SAME_THEME_THRESHOLD = 0.10        # Threshold for strategies in same theme
-            CROSS_THEME_THRESHOLD = 0.08       # Lower threshold for cross-theme connections
+            SAME_THEME_THRESHOLD = 0.45       # Threshold for strategies in same theme
+            CROSS_THEME_THRESHOLD = 0.38       # Lower threshold for cross-theme connections
         else:
             # Original threshold
             SAME_THEME_THRESHOLD = 0.12
