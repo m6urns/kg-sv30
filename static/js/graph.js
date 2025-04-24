@@ -81,6 +81,12 @@ function onGraphDataLoaded(data) {
  */
 async function setupClusters() {
   const communities = await fetchCommunities();
+  
+  // Store communities in the global graphViz object for access by keyword filtering
+  if (window.graphViz) {
+    window.graphViz.communities = communities;
+  }
+  
   setupClusterPanel(communities);
 }
 

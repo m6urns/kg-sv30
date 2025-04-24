@@ -7,6 +7,7 @@ let _searchInput = null;
 let _clusterPanel = null;
 let _navigationPanel = null;
 let _clustersContainer = null;
+let _filteredNodesPanel = null; // Panel for displaying nodes filtered by keywords
 
 /**
  * Initialize UI components
@@ -22,6 +23,17 @@ export function initializeUI(searchResults, searchInput, clusterPanel) {
   // Get navigation panel and clusters container
   _navigationPanel = document.getElementById('navigation-panel');
   _clustersContainer = document.getElementById('clusters-container');
+  
+  // Create filtered nodes panel - will be inserted in the same container as navigation panel
+  _filteredNodesPanel = document.createElement('div');
+  _filteredNodesPanel.id = 'filtered-nodes-panel';
+  _filteredNodesPanel.style.display = 'none';
+  _filteredNodesPanel.className = 'filtered-nodes-panel';
+  
+  // Insert filtered nodes panel after navigation panel
+  if (_navigationPanel) {
+    _navigationPanel.parentNode.insertBefore(_filteredNodesPanel, _navigationPanel.nextSibling);
+  }
   
   // Initially hide the navigation panel
   if (_navigationPanel) {
@@ -184,7 +196,7 @@ export function displayNodeDetails(data, nodeViewHistory) {
   const nodeId = data.node.id;
   addToNodeViewHistory(nodeId);
   
-  // Show navigation panel, hide clusters panel
+  // Show navigation panel, hide clusters panel and filtered nodes panel
   if (_navigationPanel) {
     _navigationPanel.style.display = 'flex';
     _navigationPanel.style.height = '100%'; // Ensure it takes full height
@@ -192,6 +204,11 @@ export function displayNodeDetails(data, nodeViewHistory) {
   
   if (_clustersContainer) {
     _clustersContainer.style.display = 'none';
+  }
+  
+  // Also hide the filtered nodes panel if coming from there
+  if (_filteredNodesPanel) {
+    _filteredNodesPanel.style.display = 'none';
   }
   
   // Get the content wrapper and navigation buttons container
@@ -207,7 +224,7 @@ export function displayNodeDetails(data, nodeViewHistory) {
     contentContainer.className = 'nav-padding-container';
     contentContainer.style.padding = '20px';
     // Add extra bottom padding to ensure content isn't hidden behind buttons
-    contentContainer.style.paddingBottom = '300px';
+    contentContainer.style.paddingBottom = '150px';
     contentWrapper.appendChild(contentContainer);
   }
   
@@ -288,9 +305,14 @@ export function displayNodeDetails(data, nodeViewHistory) {
   overviewButton.appendChild(homeIcon);
   
   overviewButton.onclick = () => {
-    // Hide navigation panel, show clusters panel
+    // Hide navigation panel and filtered nodes panel, show clusters panel
     if (_navigationPanel) {
       _navigationPanel.style.display = 'none';
+    }
+    
+    // Also hide the filtered nodes panel if it exists
+    if (_filteredNodesPanel) {
+      _filteredNodesPanel.style.display = 'none';
     }
     
     if (_clustersContainer) {
@@ -328,37 +350,56 @@ export function displayNodeDetails(data, nodeViewHistory) {
  * @param {HTMLElement} contentWrapper - The content container
  */
 function displayTopicDetails(data, contentWrapper) {
-  // Show topic keywords
-  const keywords = document.createElement('p');
-  keywords.innerHTML = '<strong>Keywords:</strong> ' + 
-                      (data.node.keywords || []).join(', ');
-  contentWrapper.appendChild(keywords);
+  // Create overview section
+  const overviewSection = document.createElement('div');
+  overviewSection.className = 'node-info-section';
   
-  // Show overview/description if available
+  // Create metadata container
+  const metaContainer = document.createElement('div');
+  metaContainer.className = 'node-meta';
+  
+  // Add keywords if available - only if theme is not part of a community (not collected)
+  if (data.node.keywords && data.node.keywords.length > 0 && !data.node.community_label) {
+    const keywords = document.createElement('div');
+    keywords.className = 'node-meta-item';
+    keywords.innerHTML = '<strong>Keywords:</strong> ' + 
+                        data.node.keywords.join(', ');
+    metaContainer.appendChild(keywords);
+  }
+  
+  // Add community/cluster if available
+  if (data.node.community_label) {
+    const community = document.createElement('div');
+    community.className = 'node-meta-item';
+    community.innerHTML = '<strong>Cluster:</strong> ' + 
+                      data.node.community_label;
+    metaContainer.appendChild(community);
+  }
+  
+  overviewSection.appendChild(metaContainer);
+  
+  // Add description if available
   if (data.node.description || data.node.overview) {
     const description = document.createElement('p');
     description.className = 'node-description theme-description';
     description.textContent = data.node.overview || data.node.description;
-    contentWrapper.appendChild(description);
+    overviewSection.appendChild(description);
   }
   
-  // Show community
-  if (data.node.community_label) {
-    const community = document.createElement('p');
-    community.innerHTML = '<strong>Cluster:</strong> ' + 
-                        data.node.community_label;
-    contentWrapper.appendChild(community);
-  }
+  contentWrapper.appendChild(overviewSection);
   
-  // Show related topics
+  // Create related topics section if there are any
   const relatedTopics = data.connections
     .filter(conn => conn.node.type === 'topic')
     .map(conn => conn.node);
   
   if (relatedTopics.length > 0) {
+    const topicsSection = document.createElement('div');
+    topicsSection.className = 'node-info-section';
+    
     const topicsTitle = document.createElement('h3');
-    topicsTitle.textContent = 'Related Topics:';
-    contentWrapper.appendChild(topicsTitle);
+    topicsTitle.textContent = 'Related Themes';
+    topicsSection.appendChild(topicsTitle);
     
     const topicsList = document.createElement('ul');
     topicsList.className = 'hierarchy-list';
@@ -379,38 +420,52 @@ function displayTopicDetails(data, contentWrapper) {
       topicsList.appendChild(item);
     });
     
-    contentWrapper.appendChild(topicsList);
+    topicsSection.appendChild(topicsList);
+    contentWrapper.appendChild(topicsSection);
   }
   
-  // Show related documents (goals)
-  const docsTitle = document.createElement('h3');
-  docsTitle.textContent = 'Related Goals:';
-  contentWrapper.appendChild(docsTitle);
+  // Create related goals section
+  const goalsSection = document.createElement('div');
+  goalsSection.className = 'node-info-section';
   
-  const docList = document.createElement('ul');
-  docList.className = 'hierarchy-list';
+  const docsTitle = document.createElement('h3');
+  docsTitle.textContent = 'Related Goals';
+  goalsSection.appendChild(docsTitle);
   
   const relatedDocs = data.connections
     .filter(conn => conn.node.type === 'document')
     .map(conn => conn.node);
   
-  relatedDocs.forEach(doc => {
-    const item = document.createElement('li');
-    item.className = 'goal-item';
+  if (relatedDocs.length > 0) {
+    const docList = document.createElement('ul');
+    docList.className = 'hierarchy-list';
     
-    const link = document.createElement('a');
-    link.textContent = doc.label;
-    link.href = '#';
-    link.onclick = (e) => {
-      e.preventDefault();
-      focusOnNode(doc.id);
-    };
+    relatedDocs.forEach(doc => {
+      const item = document.createElement('li');
+      item.className = 'goal-item';
+      
+      const link = document.createElement('a');
+      link.textContent = doc.label;
+      link.href = '#';
+      link.onclick = (e) => {
+        e.preventDefault();
+        focusOnNode(doc.id);
+      };
+      
+      item.appendChild(link);
+      docList.appendChild(item);
+    });
     
-    item.appendChild(link);
-    docList.appendChild(item);
-  });
+    goalsSection.appendChild(docList);
+  } else {
+    // Show message if no goals
+    const noGoals = document.createElement('p');
+    noGoals.className = 'empty-connections';
+    noGoals.textContent = 'No goals associated with this theme';
+    goalsSection.appendChild(noGoals);
+  }
   
-  contentWrapper.appendChild(docList);
+  contentWrapper.appendChild(goalsSection);
 }
 
 /**
@@ -419,19 +474,23 @@ function displayTopicDetails(data, contentWrapper) {
  * @param {HTMLElement} contentWrapper - The content container
  */
 function displayDocumentWithStrategies(data, contentWrapper) {
-  // Show document text/description
-  const text = document.createElement('p');
-  text.textContent = data.node.text;
-  text.className = 'node-description goal-description';
-  contentWrapper.appendChild(text);
+  // Create overview section
+  const overviewSection = document.createElement('div');
+  overviewSection.className = 'node-info-section';
   
-  // Show related topic
+  // Note: We don't show the goal text since it's already in the title
+  // Instead, show some metadata like theme
+  const metaContainer = document.createElement('div');
+  metaContainer.className = 'node-meta';
+  
+  // Find related topic/theme
   const topic = data.connections
     .find(conn => conn.node.type === 'topic' && 
                 (conn.relationship === 'belongs_to' || conn.relationship === 'part_of_theme'));
   
   if (topic) {
-    const topicInfo = document.createElement('p');
+    const topicInfo = document.createElement('div');
+    topicInfo.className = 'node-meta-item';
     topicInfo.innerHTML = '<strong>Theme:</strong> ';
     
     const link = document.createElement('a');
@@ -443,47 +502,74 @@ function displayDocumentWithStrategies(data, contentWrapper) {
     };
     
     topicInfo.appendChild(link);
-    contentWrapper.appendChild(topicInfo);
+    metaContainer.appendChild(topicInfo);
   }
   
-  // Show strategies
-  const strategiesTitle = document.createElement('h3');
-  strategiesTitle.textContent = 'Strategies:';
-  contentWrapper.appendChild(strategiesTitle);
+  // Add metadata to the overview section
+  overviewSection.appendChild(metaContainer);
   
+  // Add goal description if different from label
+  if (data.node.text && data.node.text !== data.node.label) {
+    const text = document.createElement('p');
+    text.textContent = data.node.text;
+    text.className = 'node-description goal-description';
+    overviewSection.appendChild(text);
+  }
+  
+  contentWrapper.appendChild(overviewSection);
+  
+  // Create strategies section
+  const strategiesSection = document.createElement('div');
+  strategiesSection.className = 'node-info-section';
+  
+  // Add strategies header
+  const strategiesTitle = document.createElement('h3');
+  strategiesTitle.textContent = 'Strategies';
+  strategiesSection.appendChild(strategiesTitle);
+  
+  // Create strategies list
   const strategiesList = document.createElement('ul');
   strategiesList.className = 'hierarchy-list';
   
-  data.node.strategy_entries.forEach(strategy => {
-    const item = document.createElement('li');
-    item.className = 'strategy-item';
-    
-    const link = document.createElement('a');
-    // Format according to the item_format if specified, otherwise use default format
-    const displayText = strategy.section + ': ' + strategy.summary;
-    link.textContent = displayText;
-    link.href = strategy.url || '#';
-    
-    // Extract strategy ID from the URL if it exists
-    let strategyId = strategy.id;
-    if (!strategyId && strategy.url) {
-      // If there's a URL like "#/strategy/strategy_id", extract the ID
-      const match = strategy.url.match(/#\/strategy\/(.+)$/);
-      if (match) strategyId = match[1];
-    }
-    
-    if (strategyId) {
-      link.onclick = (e) => {
-        e.preventDefault();
-        focusOnNode(strategyId);
-      };
-    }
-    
-    item.appendChild(link);
-    strategiesList.appendChild(item);
-  });
+  if (data.node.strategy_entries && data.node.strategy_entries.length > 0) {
+    data.node.strategy_entries.forEach(strategy => {
+      const item = document.createElement('li');
+      item.className = 'strategy-item';
+      
+      const link = document.createElement('a');
+      // Format according to the item_format if specified, otherwise use default format
+      const displayText = strategy.section + ': ' + strategy.summary;
+      link.textContent = displayText;
+      link.href = strategy.url || '#';
+      
+      // Extract strategy ID from the URL if it exists
+      let strategyId = strategy.id;
+      if (!strategyId && strategy.url) {
+        // If there's a URL like "#/strategy/strategy_id", extract the ID
+        const match = strategy.url.match(/#\/strategy\/(.+)$/);
+        if (match) strategyId = match[1];
+      }
+      
+      if (strategyId) {
+        link.onclick = (e) => {
+          e.preventDefault();
+          focusOnNode(strategyId);
+        };
+      }
+      
+      item.appendChild(link);
+      strategiesList.appendChild(item);
+    });
+  } else {
+    // Show message if no strategies
+    const noStrategies = document.createElement('p');
+    noStrategies.className = 'empty-connections';
+    noStrategies.textContent = 'No strategies found for this goal';
+    strategiesSection.appendChild(noStrategies);
+  }
   
-  contentWrapper.appendChild(strategiesList);
+  strategiesSection.appendChild(strategiesList);
+  contentWrapper.appendChild(strategiesSection);
 }
 
 /**
@@ -492,31 +578,30 @@ function displayDocumentWithStrategies(data, contentWrapper) {
  * @param {HTMLElement} contentWrapper - The content container
  */
 function displayStrategyDetails(data, contentWrapper) {
-  // Show strategy section number if available
+  // Create overview section
+  const overviewSection = document.createElement('div');
+  overviewSection.className = 'node-info-section';
+  
+  // Create metadata container
+  const metaContainer = document.createElement('div');
+  metaContainer.className = 'node-meta';
+  
+  // Show section number if available
   if (data.node.section_number) {
-    const sectionNumber = document.createElement('div');
-    sectionNumber.className = 'strategy-section-number';
-    sectionNumber.textContent = data.node.section_number;
-    contentWrapper.appendChild(sectionNumber);
+    const sectionInfo = document.createElement('div');
+    sectionInfo.className = 'node-meta-item';
+    sectionInfo.innerHTML = '<strong>Section:</strong> ' + data.node.section_number;
+    metaContainer.appendChild(sectionInfo);
   }
   
-  // Show strategy text
-  const text = document.createElement('p');
-  text.textContent = data.node.text;
-  text.className = 'node-description strategy-description';
-  contentWrapper.appendChild(text);
-  
-  // Show relationships container
-  const relationshipsContainer = document.createElement('div');
-  relationshipsContainer.className = 'strategy-relationships';
-  
-  // Show parent goal
+  // Show parent goal if available
   const goal = data.connections
     .find(conn => conn.node.type === 'document' && 
                 (conn.relationship === 'part_of_goal'));
   
   if (goal) {
-    const goalInfo = document.createElement('p');
+    const goalInfo = document.createElement('div');
+    goalInfo.className = 'node-meta-item';
     goalInfo.innerHTML = '<strong>Goal:</strong> ';
     
     const link = document.createElement('a');
@@ -528,15 +613,16 @@ function displayStrategyDetails(data, contentWrapper) {
     };
     
     goalInfo.appendChild(link);
-    relationshipsContainer.appendChild(goalInfo);
+    metaContainer.appendChild(goalInfo);
   }
   
-  // Show theme (if available through connections)
+  // Show theme if available
   const theme = data.connections
     .find(conn => conn.node.type === 'topic');
   
   if (theme) {
-    const themeInfo = document.createElement('p');
+    const themeInfo = document.createElement('div');
+    themeInfo.className = 'node-meta-item';
     themeInfo.innerHTML = '<strong>Theme:</strong> ';
     
     const link = document.createElement('a');
@@ -548,20 +634,34 @@ function displayStrategyDetails(data, contentWrapper) {
     };
     
     themeInfo.appendChild(link);
-    relationshipsContainer.appendChild(themeInfo);
+    metaContainer.appendChild(themeInfo);
   }
   
-  contentWrapper.appendChild(relationshipsContainer);
+  overviewSection.appendChild(metaContainer);
   
-  // Display similar strategies if available
+  // Show strategy text
+  const text = document.createElement('p');
+  text.textContent = data.node.text;
+  text.className = 'node-description strategy-description';
+  overviewSection.appendChild(text);
+  
+  contentWrapper.appendChild(overviewSection);
+  
+  // Display similar strategies section if available
   if (data.node.connections && data.node.connections.length > 0) {
-    // First check if there are any similar strategies (strategy-to-strategy connections)
+    // Check if there are any similar strategies
     const similarStrategies = data.node.connections.filter(conn => 
       conn.node_type === 'strategy' || 
       (conn.relationship && conn.relationship.includes('similar')));
     
     if (similarStrategies.length > 0) {
-      displaySimilarStrategies(data.node, contentWrapper);
+      const similarSection = document.createElement('div');
+      similarSection.className = 'node-info-section';
+      
+      // We'll append the similar strategies to this section
+      displaySimilarStrategies(data.node, similarSection);
+      
+      contentWrapper.appendChild(similarSection);
     }
   }
 }
@@ -688,10 +788,12 @@ function displaySimilarStrategies(strategyNode, container) {
       if (connection.theme_title) contextText.push(connection.theme_title);
       if (connection.goal_title) contextText.push(connection.goal_title);
       
-      const contextInfo = document.createElement('small');
-      contextInfo.className = 'item-context';
-      contextInfo.textContent = contextText.join(' | ');
-      item.appendChild(contextInfo);
+      if (contextText.length > 0) {
+        const contextInfo = document.createElement('small');
+        contextInfo.className = 'item-context';
+        contextInfo.textContent = contextText.join(' | ');
+        item.appendChild(contextInfo);
+      }
     }
     
     strategiesList.appendChild(item);
@@ -701,15 +803,202 @@ function displaySimilarStrategies(strategyNode, container) {
   
   // Add extra spacer div to ensure all content is visible
   const spacer = document.createElement('div');
-  spacer.style.height = '100px';
+  spacer.style.height = '50px';
   spacer.style.width = '100%';
   container.appendChild(spacer);
 }
 
 /**
- * Set up the cluster panel showing communities and topics
- * @param {Array} communities - Communities data
+ * Extract the top 10 keywords from a community by aggregating all topic keywords
+ * @param {Object} community - Community data with topics
+ * @returns {Array} - Array of [keyword, count] pairs for top 10 keywords
  */
+function extractTopKeywords(community) {
+  if (!community.topics || community.topics.length === 0) {
+    return [];
+  }
+  
+  // Collect all keywords from all topics in this community
+  const keywordCounts = {};
+  
+  // Count occurrences of each keyword
+  community.topics.forEach(topic => {
+    if (topic.keywords && topic.keywords.length > 0) {
+      topic.keywords.forEach(keyword => {
+        if (!keywordCounts[keyword]) {
+          keywordCounts[keyword] = 0;
+        }
+        keywordCounts[keyword]++;
+      });
+    }
+  });
+  
+  // Convert to array of [keyword, count] pairs and sort
+  const keywordPairs = Object.entries(keywordCounts);
+  keywordPairs.sort((a, b) => b[1] - a[1]); // Sort by count descending
+  
+  // Return top 10 keywords with their counts (or all if less than 10)
+  return keywordPairs.slice(0, 10);
+}
+
+/**
+ * Filter nodes by a specific keyword and display them in the left-hand panel
+ * @param {string} keyword - The keyword to filter by
+ * @param {string|number} communityId - The ID of the community the keyword is from
+ */
+function filterNodesByKeyword(keyword, communityId) {
+  if (!_filteredNodesPanel || !window.graphViz || !window.graphViz.nodes) return;
+  
+  // Hide both navigation panel and clusters container
+  if (_navigationPanel) _navigationPanel.style.display = 'none';
+  if (_clustersContainer) _clustersContainer.style.display = 'none';
+  
+  // Show filtered nodes panel
+  _filteredNodesPanel.style.display = 'flex';
+  _filteredNodesPanel.style.height = '100%';
+  
+  // Clear previous content
+  _filteredNodesPanel.innerHTML = '';
+  
+  // Create content container with padding
+  const contentContainer = document.createElement('div');
+  contentContainer.className = 'nav-padding-container';
+  contentContainer.style.padding = '20px';
+  contentContainer.style.paddingBottom = '150px';
+  _filteredNodesPanel.appendChild(contentContainer);
+  
+  // Create header with filter information
+  const header = document.createElement('div');
+  header.className = 'filtered-header';
+  
+  // Create back button to return to clusters view
+  const backButton = document.createElement('button');
+  backButton.className = 'keyword-back-button';
+  backButton.innerHTML = '&larr; Back to Clusters';
+  backButton.addEventListener('click', () => {
+    // Hide filtered panel and navigation panel, show clusters
+    _filteredNodesPanel.style.display = 'none';
+    
+    if (_navigationPanel) {
+      _navigationPanel.style.display = 'none';
+    }
+    
+    _clustersContainer.style.display = 'flex';
+    _clustersContainer.style.height = '100%';
+    
+    // Reset scroll position to the top
+    if (_clusterPanel) _clusterPanel.scrollTop = 0;
+  });
+  header.appendChild(backButton);
+  
+  // Create title showing what we're filtering by
+  const title = document.createElement('h3');
+  title.textContent = `Nodes containing "${keyword}"`;
+  title.style.marginTop = '10px';
+  header.appendChild(title);
+  
+  // Add subtitle showing the community
+  const community = window.graphViz.communities.find(c => c.id === communityId);
+  if (community) {
+    const subtitle = document.createElement('p');
+    subtitle.className = 'filter-subtitle';
+    subtitle.textContent = `From cluster: ${community.label || communityId}`;
+    if (window.graphViz.colorScale) {
+      subtitle.style.color = window.graphViz.colorScale(communityId);
+    }
+    header.appendChild(subtitle);
+  }
+  
+  contentContainer.appendChild(header);
+  
+  // Filter the nodes to find those with the keyword
+  const filteredNodes = window.graphViz.nodes.filter(node => {
+    // Check if node has keywords and if our target keyword is in there
+    if (node.keywords && Array.isArray(node.keywords)) {
+      return node.keywords.includes(keyword);
+    }
+    // Also check in content/text fields for the keyword
+    if (node.text && typeof node.text === 'string') {
+      return node.text.toLowerCase().includes(keyword.toLowerCase());
+    }
+    if (node.content && typeof node.content === 'string') {
+      return node.content.toLowerCase().includes(keyword.toLowerCase());
+    }
+    return false;
+  });
+  
+  // Group the filtered nodes by type (theme, goal, strategy)
+  const groupedNodes = {
+    topic: [], // Themes
+    document: [], // Goals
+    strategy: [] // Strategies
+  };
+  
+  filteredNodes.forEach(node => {
+    if (groupedNodes[node.type]) {
+      groupedNodes[node.type].push(node);
+    }
+  });
+  
+  // Create sections for each node type
+  const types = [
+    { key: 'topic', label: 'Themes', className: 'theme-item' },
+    { key: 'document', label: 'Goals', className: 'goal-item' },
+    { key: 'strategy', label: 'Strategies', className: 'strategy-item' }
+  ];
+  
+  types.forEach(type => {
+    const nodes = groupedNodes[type.key];
+    
+    if (nodes.length > 0) {
+      // Create section for this node type
+      const section = document.createElement('div');
+      section.className = 'node-info-section';
+      
+      const sectionTitle = document.createElement('h3');
+      sectionTitle.textContent = type.label;
+      section.appendChild(sectionTitle);
+      
+      // Create list of nodes
+      const nodesList = document.createElement('ul');
+      nodesList.className = 'hierarchy-list';
+      
+      nodes.forEach(node => {
+        const item = document.createElement('li');
+        item.className = type.className;
+        
+        const link = document.createElement('a');
+        link.textContent = node.label;
+        link.href = '#';
+        link.onclick = (e) => {
+          e.preventDefault();
+          focusOnNode(node.id);
+        };
+        
+        item.appendChild(link);
+        nodesList.appendChild(item);
+      });
+      
+      section.appendChild(nodesList);
+      contentContainer.appendChild(section);
+    }
+  });
+  
+  // If no nodes were found, show a message
+  if (filteredNodes.length === 0) {
+    const emptyMessage = document.createElement('p');
+    emptyMessage.className = 'empty-connections';
+    emptyMessage.textContent = `No nodes found containing "${keyword}"`;
+    contentContainer.appendChild(emptyMessage);
+  } else {
+    // Add summary text
+    const summary = document.createElement('p');
+    summary.className = 'filter-summary';
+    summary.textContent = `Found ${filteredNodes.length} nodes containing "${keyword}"`;
+    contentContainer.insertBefore(summary, contentContainer.children[1]);
+  }
+}
+
 export function setupClusterPanel(communities) {
   if (!_clusterPanel) return;
   
@@ -744,6 +1033,38 @@ export function setupClusterPanel(communities) {
       header.style.color = '#000';
     }
     section.appendChild(header);
+    
+    // Add top keywords for this cluster if available
+    const topKeywords = extractTopKeywords(community);
+    if (topKeywords && topKeywords.length > 0) {
+      const keywordsContainer = document.createElement('div');
+      keywordsContainer.className = 'cluster-keywords';
+      
+      const keywordsTitle = document.createElement('h4');
+      keywordsTitle.textContent = 'Top Keywords:';
+      keywordsContainer.appendChild(keywordsTitle);
+      
+      const keywordsList = document.createElement('div');
+      keywordsList.className = 'keywords-list';
+      
+      topKeywords.forEach(pair => {
+        const [keyword, count] = pair;
+        const keywordTag = document.createElement('button');
+        keywordTag.className = 'keyword-tag';
+        keywordTag.textContent = `${keyword} (${count})`;
+        keywordTag.title = `Click to show nodes containing "${keyword}"`;
+        
+        // Add click event to filter nodes by this keyword
+        keywordTag.addEventListener('click', () => {
+          filterNodesByKeyword(keyword, community.id);
+        });
+        
+        keywordsList.appendChild(keywordTag);
+      });
+      
+      keywordsContainer.appendChild(keywordsList);
+      section.appendChild(keywordsContainer);
+    }
     
     // Create entry points list for central topics
     if (community.central_topics && community.central_topics.length > 0) {
