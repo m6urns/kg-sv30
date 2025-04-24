@@ -6,8 +6,10 @@ import json
 import os
 import random
 import sys
-from typing import Dict, List, Any
-from collections import Counter
+import math
+import re
+from typing import Dict, List, Any, Tuple
+from collections import Counter, defaultdict
 
 from .base_generator import BaseGraphGenerator
 
@@ -74,20 +76,81 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         if not text:
             return []
             
-        # Convert to lowercase and split into words
-        words = text.lower().split()
+        # Convert to lowercase
+        text = text.lower()
+        
+        # Remove punctuation and replace with spaces
+        text = re.sub(r'[^\w\s]', ' ', text)
+        
+        # Split into words
+        words = text.split()
+        
+        # Clean each word (strip any remaining punctuation)
+        words = [re.sub(r'[^\w]', '', word) for word in words]
         
         # Remove common stopwords and short words
+        # Added city-specific stopwords like "long", "beach", "city", etc.
         stopwords = set(['the', 'and', 'is', 'of', 'to', 'in', 'for', 'a', 'with', 'that', 'are', 'by', 'on', 'as',
                          'be', 'all', 'an', 'at', 'but', 'by', 'can', 'from', 'have', 'he', 'i', 'more', 'not', 
-                         'or', 'such', 'they', 'this', 'through', 'we', 'was', 'will', 'our', 'their', 'these'])
+                         'or', 'such', 'they', 'this', 'through', 'we', 'was', 'will', 'our', 'their', 'these',
+                         'long', 'beach', 'city', 'community', 'communities', 'plan', 'plans', 'vision', 'visions',
+                         'strategic', 'strategy', 'strategies', 'goal', 'goals', 'theme', 'themes'])
         filtered_words = [word for word in words if word not in stopwords and len(word) > 3]
         
-        # Count occurrences
+        # Count occurrences in this text
         word_counts = Counter(filtered_words)
         
-        # Return most common words
-        return [word for word, _ in word_counts.most_common(max_keywords)]
+        # TF-IDF approach: This is a simplified version since we don't have a corpus
+        # We'll use the document terms frequency to determine importance
+        # Instead of just counting occurrences, we'll calculate a score
+        # that prioritizes distinctive words
+        
+        # Get the total corpus frequency if already calculated
+        if not hasattr(self, '_corpus_word_counts'):
+            # Initialize an empty corpus counter the first time
+            self._corpus_word_counts = Counter()
+            self._document_count = 0
+            
+        # Get document term frequencies
+        tf_scores = {}
+        total_words = sum(word_counts.values())
+        
+        if total_words == 0:
+            return []
+            
+        # Calculate TF score for each word (term frequency in this document)
+        for word, count in word_counts.items():
+            tf_scores[word] = count / total_words
+        
+        # For the first call, we don't have IDF information yet, so we'll just use TF
+        if self._document_count == 0:
+            # Update corpus statistics for future calls
+            self._corpus_word_counts.update(word_counts)
+            self._document_count += 1
+            
+            # Return words sorted by term frequency
+            return [word for word, _ in sorted(tf_scores.items(), key=lambda x: x[1], reverse=True)[:max_keywords]]
+        
+        # For subsequent calls, we can use TF-IDF
+        tfidf_scores = {}
+        
+        # Calculate TF-IDF score for each word
+        for word, tf in tf_scores.items():
+            # Number of documents containing this word
+            doc_count = 1  # Add 1 to avoid division by zero
+            if word in self._corpus_word_counts:
+                doc_count += self._corpus_word_counts[word]
+                
+            # IDF = log(total_docs / docs_with_term)
+            idf = math.log(self._document_count / doc_count + 1)
+            tfidf_scores[word] = tf * idf
+            
+        # Update corpus statistics for future calls
+        self._corpus_word_counts.update(word_counts)
+        self._document_count += 1
+        
+        # Return words with highest TF-IDF scores
+        return [word for word, _ in sorted(tfidf_scores.items(), key=lambda x: x[1], reverse=True)[:max_keywords]]
     
     def _calculate_similarity(self, node1: Dict, node2: Dict) -> float:
         """
