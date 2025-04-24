@@ -842,6 +842,72 @@ function extractTopKeywords(community) {
 }
 
 /**
+ * Extract a text excerpt that contains the keyword, highlighting the keyword
+ * @param {string} text - The full text to extract from
+ * @param {string} keyword - The keyword to highlight
+ * @param {number} contextLength - Number of characters to include before and after the keyword
+ * @returns {string} HTML string with the excerpt and highlighted keyword
+ */
+function extractExcerptWithKeyword(text, keyword, contextLength = 50) {
+  if (!text || typeof text !== 'string') return '';
+  
+  // Case insensitive search
+  const lowerText = text.toLowerCase();
+  const lowerKeyword = keyword.toLowerCase();
+  const keywordIndex = lowerText.indexOf(lowerKeyword);
+  
+  // If keyword not found in text
+  if (keywordIndex === -1) return '';
+  
+  // Determine the start and end indices for the excerpt
+  const startIndex = Math.max(0, keywordIndex - contextLength);
+  const endIndex = Math.min(text.length, keywordIndex + keyword.length + contextLength);
+  
+  // Get the excerpt
+  let excerpt = text.substring(startIndex, endIndex);
+  
+  // Add ellipsis if we're not at the beginning or end of the text
+  if (startIndex > 0) excerpt = '...' + excerpt;
+  if (endIndex < text.length) excerpt = excerpt + '...';
+  
+  // Escape HTML to prevent XSS
+  excerpt = excerpt
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+  
+  // Now safely highlight the keyword by wrapping it in a span
+  // First we need to find where in our escaped excerpt the keyword appears
+  const escapedText = text.substring(startIndex, keywordIndex)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+  
+  const keywordPosition = escapedText.length;
+  
+  // Get the exact keyword as it appears in the original text to preserve case
+  const originalKeyword = text.substring(keywordIndex, keywordIndex + keyword.length);
+  const escapedKeyword = originalKeyword
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+  
+  // Insert the span tags around the keyword
+  const beforeKeyword = excerpt.substring(0, keywordPosition);
+  const afterKeyword = excerpt.substring(keywordPosition + escapedKeyword.length);
+  
+  return beforeKeyword + 
+         '<span class="keyword-highlight">' + escapedKeyword + '</span>' + 
+         afterKeyword;
+}
+
+/**
  * Filter nodes by a specific keyword and display them in the left-hand panel
  * @param {string} keyword - The keyword to filter by
  * @param {string|number} communityId - The ID of the community the keyword is from
@@ -976,6 +1042,24 @@ function filterNodesByKeyword(keyword, communityId) {
         };
         
         item.appendChild(link);
+        
+        // Add text excerpt showing the keyword in context
+        let excerptText = '';
+        if (node.text) {
+          excerptText = extractExcerptWithKeyword(node.text, keyword);
+        } else if (node.content) {
+          excerptText = extractExcerptWithKeyword(node.content, keyword);
+        } else if (node.description || node.overview) {
+          excerptText = extractExcerptWithKeyword(node.description || node.overview, keyword);
+        }
+        
+        if (excerptText) {
+          const excerpt = document.createElement('div');
+          excerpt.className = 'keyword-excerpt';
+          excerpt.innerHTML = excerptText;
+          item.appendChild(excerpt);
+        }
+        
         nodesList.appendChild(item);
       });
       
@@ -1051,7 +1135,7 @@ export function setupClusterPanel(communities) {
         const [keyword, count] = pair;
         const keywordTag = document.createElement('button');
         keywordTag.className = 'keyword-tag';
-        keywordTag.textContent = `${keyword} (${count})`;
+        keywordTag.textContent = keyword; // Remove count display
         keywordTag.title = `Click to show nodes containing "${keyword}"`;
         
         // Add click event to filter nodes by this keyword
