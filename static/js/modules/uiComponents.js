@@ -260,25 +260,33 @@ export function displayNodeDetails(data, nodeViewHistory) {
   if (nodeViewHistory && nodeViewHistory.length > 1) {
     const backButton = document.createElement('button');
     backButton.id = 'node-back-button';
-    backButton.className = 'nav-button back';
-    backButton.innerHTML = '&larr; Back';
+    backButton.className = 'nav-button';
+    backButton.textContent = 'Back';
     backButton.onclick = navigateBack;
     navigationButtons.appendChild(backButton);
   } else {
     // Add a disabled back button for consistent UI
     const backButton = document.createElement('button');
     backButton.id = 'node-back-button';
-    backButton.className = 'nav-button back disabled';
-    backButton.innerHTML = '&larr; Back';
+    backButton.className = 'nav-button disabled';
+    backButton.textContent = 'Back';
     backButton.disabled = true;
     navigationButtons.appendChild(backButton);
   }
   
-  // Add return to overview button
+  // Add return to overview button with home icon
   const overviewButton = document.createElement('button');
   overviewButton.id = 'overview-button';
   overviewButton.className = 'nav-button overview';
-  overviewButton.innerHTML = 'Overview';
+  
+  // Create home icon element (using Unicode home symbol)
+  const homeIcon = document.createElement('span');
+  homeIcon.className = 'overview-icon';
+  homeIcon.innerHTML = '&#8962;'; // Unicode for home symbol
+  
+  // Only add the home icon to the button (no text)
+  overviewButton.appendChild(homeIcon);
+  
   overviewButton.onclick = () => {
     // Hide navigation panel, show clusters panel
     if (_navigationPanel) {
@@ -299,16 +307,16 @@ export function displayNodeDetails(data, nodeViewHistory) {
   if (canNavigateForward()) {
     const forwardButton = document.createElement('button');
     forwardButton.id = 'node-forward-button';
-    forwardButton.className = 'nav-button forward';
-    forwardButton.innerHTML = 'Forward &rarr;';
+    forwardButton.className = 'nav-button';
+    forwardButton.textContent = 'Forward';
     forwardButton.onclick = navigateForward;
     navigationButtons.appendChild(forwardButton);
   } else {
     // Add a disabled forward button for consistent UI
     const forwardButton = document.createElement('button');
     forwardButton.id = 'node-forward-button';
-    forwardButton.className = 'nav-button forward disabled';
-    forwardButton.innerHTML = 'Forward &rarr;';
+    forwardButton.className = 'nav-button disabled';
+    forwardButton.textContent = 'Forward';
     forwardButton.disabled = true;
     navigationButtons.appendChild(forwardButton);
   }
