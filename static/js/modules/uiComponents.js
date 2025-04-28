@@ -1,5 +1,6 @@
 // UI components for the graph visualization
 import { focusOnNode, navigateBack, navigateForward, canNavigateForward, addToNodeViewHistory, toggleFocusMode, isFocusModeEnabled } from './nodeInteraction.js';
+import { fetchNodeDetails } from './dataService.js';
 
 // DOM element references
 let _searchResults = null;
@@ -502,25 +503,6 @@ function navigateHistoryForward() {
  * @param {Object} data - Node data with connections
  * @param {Array} nodeViewHistory - History of viewed nodes (deprecated, kept for compatibility)
  */
-// export function displayNodeDetails(data, nodeViewHistory) {
-//   if (!_navigationPanel || !_clustersContainer) return;
-  
-//   // Add node to view history for unified navigation
-//   navigateToView({
-//     type: VIEW_TYPE.NODE,
-//     data: {
-//       nodeId: data.node.id,
-//       nodeData: data
-//     }
-//   });
-  
-//   // Legacy node history for compatibility with nodeInteraction.js
-//   const nodeId = data.node.id;
-//   addToNodeViewHistory(nodeId);
-  
-//   // Render the node details content
-//   renderNodeDetails(data);
-// }
 function displayNodeDetails(data, nodeViewHistory) {
   if (!_navigationPanel || !_clustersContainer) return;
   
@@ -584,98 +566,6 @@ function renderNodeDetails(data) {
   }
 }
 
-// function renderNodeDetails(data) {
-//   // Get the content wrapper
-//   const contentWrapper = document.getElementById('nav-content-wrapper');
-  
-//   // Create a content container with padding
-//   let contentContainer;
-//   if (contentWrapper) {
-//     contentWrapper.innerHTML = '';
-//     // Add padding container for content
-//     contentContainer = document.createElement('div');
-//     contentContainer.className = 'nav-padding-container';
-//     contentContainer.style.padding = '20px';
-//     // Add extra bottom padding to ensure content isn't hidden behind buttons
-//     contentContainer.style.paddingBottom = '150px';
-//     contentWrapper.appendChild(contentContainer);
-//   }
-  
-//   // // Create header for the node
-//   // const header = document.createElement('h2');
-//   // header.textContent = data.node.label;
-//   // contentContainer.appendChild(header);
-  
-//   // // Add node type indicator with appropriate styling
-//   // const typeLabel = document.createElement('div');
-//   // const nodeTypes = {
-//   //   'topic': 'Theme',
-//   //   'document': 'Goal',
-//   //   'strategy': 'Strategy'
-//   // };
-//   // const typeText = nodeTypes[data.node.type] || data.node.type;
-//   // typeLabel.textContent = typeText;
-  
-//   // // Apply type-specific styling
-//   // if (data.node.type === 'topic') {
-//   //   typeLabel.className = 'node-type-label node-type-theme';
-//   // } else if (data.node.type === 'document') {
-//   //   typeLabel.className = 'node-type-label node-type-goal';
-//   // } else if (data.node.type === 'strategy') {
-//   //   typeLabel.className = 'node-type-label node-type-strategy';
-//   // } else {
-//   //   typeLabel.className = 'node-type-label';
-//   // }
-  
-//   // contentContainer.appendChild(typeLabel);
-
-//   // Create a container for the header and type label
-// const headerContainer = document.createElement('div');
-// headerContainer.className = 'header-container';
-// contentContainer.appendChild(headerContainer);
-
-// // Create header for the node
-// const header = document.createElement('h2');
-// header.textContent = data.node.label;
-// headerContainer.appendChild(header); // Append to headerContainer instead
-
-// // Add node type indicator with appropriate styling
-// const typeLabel = document.createElement('div');
-// const nodeTypes = {
-//   'topic': 'Theme',
-//   'document': 'Goal',
-//   'strategy': 'Strategy'
-// };
-// const typeText = nodeTypes[data.node.type] || data.node.type;
-// typeLabel.textContent = typeText;
-
-// // Apply type-specific styling
-// if (data.node.type === 'topic') {
-//   typeLabel.className = 'node-type-label node-type-theme';
-// } else if (data.node.type === 'document') {
-//   typeLabel.className = 'node-type-label node-type-goal';
-// } else if (data.node.type === 'strategy') {
-//   typeLabel.className = 'node-type-label node-type-strategy';
-// } else {
-//   typeLabel.className = 'node-type-label';
-// }
-
-// headerContainer.appendChild(typeLabel);
-  
-//   // Process content based on node type
-//   if (data.node.type === 'topic') {
-//     displayTopicDetails(data, contentContainer);
-//   } else if (data.node.type === 'document' && 
-//             (data.node.has_strategy_links || data.node.display_type === 'strategy_list') && 
-//             data.node.strategy_entries) {
-//     displayDocumentWithStrategies(data, contentContainer);
-//   } else if (data.node.type === 'strategy') {
-//     displayStrategyDetails(data, contentContainer);
-//   } else {
-//     displayGenericDetails(data, contentContainer);
-//   }
-// }
-
 /**
  * Display details for topic nodes
  * @param {Object} data - Node data
@@ -697,15 +587,6 @@ function displayTopicDetails(data, contentWrapper) {
     keywords.innerHTML = '<strong>Keywords:</strong> ' + 
                         data.node.keywords.join(', ');
     metaContainer.appendChild(keywords);
-  }
-  
-  // Add community/cluster if available
-  if (data.node.community_label) {
-    const community = document.createElement('div');
-    community.className = 'node-meta-item';
-    community.innerHTML = '<strong>Cluster:</strong> ' + 
-                      data.node.community_label;
-    metaContainer.appendChild(community);
   }
   
   overviewSection.appendChild(metaContainer);
@@ -816,26 +697,26 @@ function displayDocumentWithStrategies(data, contentWrapper) {
   metaContainer.className = 'node-meta';
   
   // Find related topic/theme
-  const topic = data.connections
-    .find(conn => conn.node.type === 'topic' && 
-                (conn.relationship === 'belongs_to' || conn.relationship === 'part_of_theme'));
+  // const topic = data.connections
+  //   .find(conn => conn.node.type === 'topic' && 
+  //               (conn.relationship === 'belongs_to' || conn.relationship === 'part_of_theme'));
   
-  if (topic) {
-    const topicInfo = document.createElement('div');
-    topicInfo.className = 'node-meta-item';
-    topicInfo.innerHTML = '<strong>Theme:</strong> ';
+  // if (topic) {
+  //   const topicInfo = document.createElement('div');
+  //   topicInfo.className = 'node-meta-item';
+  //   topicInfo.innerHTML = '<strong>Theme:</strong> ';
     
-    const link = document.createElement('a');
-    link.textContent = topic.node.label;
-    link.href = '#';
-    link.onclick = (e) => {
-      e.preventDefault();
-      focusOnNode(topic.node.id);
-    };
+  //   const link = document.createElement('a');
+  //   link.textContent = topic.node.label;
+  //   link.href = '#';
+  //   link.onclick = (e) => {
+  //     e.preventDefault();
+  //     focusOnNode(topic.node.id);
+  //   };
     
-    topicInfo.appendChild(link);
-    metaContainer.appendChild(topicInfo);
-  }
+  //   topicInfo.appendChild(link);
+  //   metaContainer.appendChild(topicInfo);
+  // }
   
   // Add metadata to the overview section
   overviewSection.appendChild(metaContainer);
@@ -1578,19 +1459,38 @@ function createHierarchicalTags(data, container) {
   let parentGoal = null;
   let parentTheme = null;
   
-  // Find parent relationships
+  // Find direct parent relationships
   if (nodeType === 'strategy' || nodeType === 'document') {
-    // For strategies and goals, find the parent theme
+    // For strategies and goals, first try to find direct theme connection
     parentTheme = data.connections.find(conn => 
       conn.node.type === 'topic' && 
       (conn.relationship === 'belongs_to' || conn.relationship === 'part_of_theme'));
   }
   
+  // Find parent goal for strategies
   if (nodeType === 'strategy') {
-    // For strategies, also find the parent goal
     parentGoal = data.connections.find(conn => 
       conn.node.type === 'document' && 
       (conn.relationship === 'part_of_goal'));
+    
+    // We need to fetch the theme for this strategy
+    if (!parentTheme && parentGoal) {
+      // Store goal info to access in the theme tag even if we don't have theme data yet
+      const goalId = parentGoal.node.id;
+      
+      // Create a slightly different theme tag for strategies
+      // This will create a theme tag that says "Parent Theme" if we don't know the name yet
+      parentTheme = {
+        node: {
+          id: `theme_${goalId.split('_')[1]}`, // Construct a likely theme ID based on goal ID
+          // Structure: goal_12_12_1 → theme_12
+          label: "Parent Theme",
+          type: 'topic'
+        },
+        needsFetch: true,
+        goalId: goalId
+      };
+    }
   }
   
   // Create theme tag if applicable
@@ -1606,10 +1506,45 @@ function createHierarchicalTags(data, container) {
       // Parent theme tag is clickable
       themeTag.textContent = 'Theme: ' + parentTheme.node.label;
       themeTag.classList.add('clickable-tag');
-      themeTag.onclick = () => focusOnNode(parentTheme.node.id);
+      
+      // Set up the click handler
+      if (parentTheme && parentTheme.needsFetch && parentTheme.goalId) {
+        // If we need to fetch the theme, click will go to the parent goal first
+        themeTag.onclick = () => focusOnNode(parentTheme.goalId);
+      } else if (parentTheme && parentTheme.node) {
+        // Otherwise, direct link to theme
+        themeTag.onclick = () => focusOnNode(parentTheme.node.id);
+      }
     }
     
     tagContainer.appendChild(themeTag);
+    
+    // If we need to fetch theme data, do that now and update the tag when ready
+    if (parentTheme && parentTheme.needsFetch && parentTheme.goalId) {
+      // Use window.fetchNodeDetails as a fallback if the import doesn't work
+      const fetchFunc = typeof fetchNodeDetails === 'function' ? 
+        fetchNodeDetails : (window.fetchNodeDetails || null);
+        
+      if (fetchFunc) {
+        fetchFunc(parentTheme.goalId).then(goalData => {
+          if (goalData) {
+            const themeConn = goalData.connections.find(conn => 
+              conn.node.type === 'topic' && 
+              (conn.relationship === 'belongs_to' || conn.relationship === 'part_of_theme'));
+            
+            if (themeConn) {
+              // Update the theme tag with correct information
+              themeTag.textContent = 'Theme: ' + themeConn.node.label;
+              
+              // Update the click handler to go directly to the theme
+              themeTag.onclick = () => focusOnNode(themeConn.node.id);
+            }
+          }
+        }).catch(err => {
+          console.error('Error fetching theme data:', err);
+        });
+      }
+    }
   }
   
   // Create goal tag if applicable
