@@ -1,0 +1,17 @@
+# Files to be ignored by Claude
+# Add patterns similar to .gitignore
+
+# Example: ignore specific files
+# sensitive_config.json
+# credentials.txt
+
+# Example: ignore file types
+# *.log
+# *.env
+
+# Example: ignore directories
+# secret_data/
+# tmp/
+
+data/
+static/graph_data.json
