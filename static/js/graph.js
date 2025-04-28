@@ -3,7 +3,13 @@ import { debounce } from './modules/utils.js';
 import { loadGraphData, fetchCommunities, searchNodes, loadSampleData } from './modules/dataService.js';
 import { createKnowledgeGraph } from './modules/visualization.js';
 import { initializeNodeInteraction, focusOnNode, toggleFocusMode, isFocusModeEnabled } from './modules/nodeInteraction.js';
-import { initializeUI, showStatus, displaySearchResults, setupClusterPanel } from './modules/uiComponents.js';
+import { 
+  initializeUI, 
+  showStatus, 
+  displaySearchResults, 
+  setupClusterPanel,
+  initializeUniversalNavigation
+} from './modules/uiComponents/index.js';
 
 // Global state
 let graphViz = null;
