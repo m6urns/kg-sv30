@@ -917,3 +917,69 @@ body {
 .header-container .node-type-label {
   margin-bottom: 0; /* Remove bottom margin from the label */
 }
+
+/* Hierarchical tags container */
+.hierarchical-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+/* Common tag styling */
+.node-type-label {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Tag hover effect for clickable tags only */
+.clickable-tag {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  padding-right: 25px; /* Space for arrow icon */
+}
+
+.clickable-tag:hover {
+  filter: brightness(0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Add arrow icon to indicate clickable tags */
+.clickable-tag::after {
+  content: '→';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+/* Current node tag styling */
+.current-node-tag {
+  opacity: 0.8; /* Slightly dimmed to indicate it's the current node */
+}
+
+/* Modify existing tag colors to work better in a row */
+.node-type-theme {
+  background-color: #e8f5e9;
+  color: #1b7e2b;
+  border: 1px solid #c8e6c9;
+}
+
+.node-type-goal {
+  background-color: #e6f2ff;
+  color: #0055aa;
+  border: 1px solid #bbdefb;
+}
+
+.node-type-strategy {
+  background-color: #fff3e6;
+  color: #e65100;
+  border: 1px solid #ffe0b2;
+}

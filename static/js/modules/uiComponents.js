@@ -502,7 +502,26 @@ function navigateHistoryForward() {
  * @param {Object} data - Node data with connections
  * @param {Array} nodeViewHistory - History of viewed nodes (deprecated, kept for compatibility)
  */
-export function displayNodeDetails(data, nodeViewHistory) {
+// export function displayNodeDetails(data, nodeViewHistory) {
+//   if (!_navigationPanel || !_clustersContainer) return;
+  
+//   // Add node to view history for unified navigation
+//   navigateToView({
+//     type: VIEW_TYPE.NODE,
+//     data: {
+//       nodeId: data.node.id,
+//       nodeData: data
+//     }
+//   });
+  
+//   // Legacy node history for compatibility with nodeInteraction.js
+//   const nodeId = data.node.id;
+//   addToNodeViewHistory(nodeId);
+  
+//   // Render the node details content
+//   renderNodeDetails(data);
+// }
+function displayNodeDetails(data, nodeViewHistory) {
   if (!_navigationPanel || !_clustersContainer) return;
   
   // Add node to view history for unified navigation
@@ -543,66 +562,13 @@ function renderNodeDetails(data) {
     contentWrapper.appendChild(contentContainer);
   }
   
-  // // Create header for the node
-  // const header = document.createElement('h2');
-  // header.textContent = data.node.label;
-  // contentContainer.appendChild(header);
+  // Create header for the node
+  const header = document.createElement('h2');
+  header.textContent = data.node.label;
+  contentContainer.appendChild(header);
   
-  // // Add node type indicator with appropriate styling
-  // const typeLabel = document.createElement('div');
-  // const nodeTypes = {
-  //   'topic': 'Theme',
-  //   'document': 'Goal',
-  //   'strategy': 'Strategy'
-  // };
-  // const typeText = nodeTypes[data.node.type] || data.node.type;
-  // typeLabel.textContent = typeText;
-  
-  // // Apply type-specific styling
-  // if (data.node.type === 'topic') {
-  //   typeLabel.className = 'node-type-label node-type-theme';
-  // } else if (data.node.type === 'document') {
-  //   typeLabel.className = 'node-type-label node-type-goal';
-  // } else if (data.node.type === 'strategy') {
-  //   typeLabel.className = 'node-type-label node-type-strategy';
-  // } else {
-  //   typeLabel.className = 'node-type-label';
-  // }
-  
-  // contentContainer.appendChild(typeLabel);
-
-  // Create a container for the header and type label
-const headerContainer = document.createElement('div');
-headerContainer.className = 'header-container';
-contentContainer.appendChild(headerContainer);
-
-// Create header for the node
-const header = document.createElement('h2');
-header.textContent = data.node.label;
-headerContainer.appendChild(header); // Append to headerContainer instead
-
-// Add node type indicator with appropriate styling
-const typeLabel = document.createElement('div');
-const nodeTypes = {
-  'topic': 'Theme',
-  'document': 'Goal',
-  'strategy': 'Strategy'
-};
-const typeText = nodeTypes[data.node.type] || data.node.type;
-typeLabel.textContent = typeText;
-
-// Apply type-specific styling
-if (data.node.type === 'topic') {
-  typeLabel.className = 'node-type-label node-type-theme';
-} else if (data.node.type === 'document') {
-  typeLabel.className = 'node-type-label node-type-goal';
-} else if (data.node.type === 'strategy') {
-  typeLabel.className = 'node-type-label node-type-strategy';
-} else {
-  typeLabel.className = 'node-type-label';
-}
-
-headerContainer.appendChild(typeLabel);
+  // Create hierarchical tags
+  createHierarchicalTags(data, contentContainer);
   
   // Process content based on node type
   if (data.node.type === 'topic') {
@@ -617,6 +583,98 @@ headerContainer.appendChild(typeLabel);
     displayGenericDetails(data, contentContainer);
   }
 }
+
+// function renderNodeDetails(data) {
+//   // Get the content wrapper
+//   const contentWrapper = document.getElementById('nav-content-wrapper');
+  
+//   // Create a content container with padding
+//   let contentContainer;
+//   if (contentWrapper) {
+//     contentWrapper.innerHTML = '';
+//     // Add padding container for content
+//     contentContainer = document.createElement('div');
+//     contentContainer.className = 'nav-padding-container';
+//     contentContainer.style.padding = '20px';
+//     // Add extra bottom padding to ensure content isn't hidden behind buttons
+//     contentContainer.style.paddingBottom = '150px';
+//     contentWrapper.appendChild(contentContainer);
+//   }
+  
+//   // // Create header for the node
+//   // const header = document.createElement('h2');
+//   // header.textContent = data.node.label;
+//   // contentContainer.appendChild(header);
+  
+//   // // Add node type indicator with appropriate styling
+//   // const typeLabel = document.createElement('div');
+//   // const nodeTypes = {
+//   //   'topic': 'Theme',
+//   //   'document': 'Goal',
+//   //   'strategy': 'Strategy'
+//   // };
+//   // const typeText = nodeTypes[data.node.type] || data.node.type;
+//   // typeLabel.textContent = typeText;
+  
+//   // // Apply type-specific styling
+//   // if (data.node.type === 'topic') {
+//   //   typeLabel.className = 'node-type-label node-type-theme';
+//   // } else if (data.node.type === 'document') {
+//   //   typeLabel.className = 'node-type-label node-type-goal';
+//   // } else if (data.node.type === 'strategy') {
+//   //   typeLabel.className = 'node-type-label node-type-strategy';
+//   // } else {
+//   //   typeLabel.className = 'node-type-label';
+//   // }
+  
+//   // contentContainer.appendChild(typeLabel);
+
+//   // Create a container for the header and type label
+// const headerContainer = document.createElement('div');
+// headerContainer.className = 'header-container';
+// contentContainer.appendChild(headerContainer);
+
+// // Create header for the node
+// const header = document.createElement('h2');
+// header.textContent = data.node.label;
+// headerContainer.appendChild(header); // Append to headerContainer instead
+
+// // Add node type indicator with appropriate styling
+// const typeLabel = document.createElement('div');
+// const nodeTypes = {
+//   'topic': 'Theme',
+//   'document': 'Goal',
+//   'strategy': 'Strategy'
+// };
+// const typeText = nodeTypes[data.node.type] || data.node.type;
+// typeLabel.textContent = typeText;
+
+// // Apply type-specific styling
+// if (data.node.type === 'topic') {
+//   typeLabel.className = 'node-type-label node-type-theme';
+// } else if (data.node.type === 'document') {
+//   typeLabel.className = 'node-type-label node-type-goal';
+// } else if (data.node.type === 'strategy') {
+//   typeLabel.className = 'node-type-label node-type-strategy';
+// } else {
+//   typeLabel.className = 'node-type-label';
+// }
+
+// headerContainer.appendChild(typeLabel);
+  
+//   // Process content based on node type
+//   if (data.node.type === 'topic') {
+//     displayTopicDetails(data, contentContainer);
+//   } else if (data.node.type === 'document' && 
+//             (data.node.has_strategy_links || data.node.display_type === 'strategy_list') && 
+//             data.node.strategy_entries) {
+//     displayDocumentWithStrategies(data, contentContainer);
+//   } else if (data.node.type === 'strategy') {
+//     displayStrategyDetails(data, contentContainer);
+//   } else {
+//     displayGenericDetails(data, contentContainer);
+//   }
+// }
 
 /**
  * Display details for topic nodes
@@ -869,49 +927,49 @@ function displayStrategyDetails(data, contentWrapper) {
   // }
   
   // Show parent goal if available
-  const goal = data.connections
-    .find(conn => conn.node.type === 'document' && 
-                (conn.relationship === 'part_of_goal'));
+  // const goal = data.connections
+  //   .find(conn => conn.node.type === 'document' && 
+  //               (conn.relationship === 'part_of_goal'));
   
-  if (goal) {
-    const goalInfo = document.createElement('div');
-    goalInfo.className = 'node-meta-item';
-    goalInfo.innerHTML = '<strong>Goal:</strong> ';
+  // if (goal) {
+  //   const goalInfo = document.createElement('div');
+  //   goalInfo.className = 'node-meta-item';
+  //   goalInfo.innerHTML = '<strong>Goal:</strong> ';
     
-    const link = document.createElement('a');
-    link.textContent = goal.node.label;
-    link.href = '#';
-    link.onclick = (e) => {
-      e.preventDefault();
-      focusOnNode(goal.node.id);
-    };
+  //   const link = document.createElement('a');
+  //   link.textContent = goal.node.label;
+  //   link.href = '#';
+  //   link.onclick = (e) => {
+  //     e.preventDefault();
+  //     focusOnNode(goal.node.id);
+  //   };
     
-    goalInfo.appendChild(link);
-    metaContainer.appendChild(goalInfo);
-  }
+  //   goalInfo.appendChild(link);
+  //   metaContainer.appendChild(goalInfo);
+  // }
   
-  // Show theme if available
-  const theme = data.connections
-    .find(conn => conn.node.type === 'topic');
+  // // Show theme if available
+  // const theme = data.connections
+  //   .find(conn => conn.node.type === 'topic');
   
-  if (theme) {
-    const themeInfo = document.createElement('div');
-    themeInfo.className = 'node-meta-item';
-    themeInfo.innerHTML = '<strong>Theme:</strong> ';
+  // if (theme) {
+  //   const themeInfo = document.createElement('div');
+  //   themeInfo.className = 'node-meta-item';
+  //   themeInfo.innerHTML = '<strong>Theme:</strong> ';
     
-    const link = document.createElement('a');
-    link.textContent = theme.node.label;
-    link.href = '#';
-    link.onclick = (e) => {
-      e.preventDefault();
-      focusOnNode(theme.node.id);
-    };
+  //   const link = document.createElement('a');
+  //   link.textContent = theme.node.label;
+  //   link.href = '#';
+  //   link.onclick = (e) => {
+  //     e.preventDefault();
+  //     focusOnNode(theme.node.id);
+  //   };
     
-    themeInfo.appendChild(link);
-    metaContainer.appendChild(themeInfo);
-  }
+  //   themeInfo.appendChild(link);
+  //   metaContainer.appendChild(themeInfo);
+  // }
   
-  overviewSection.appendChild(metaContainer);
+  // overviewSection.appendChild(metaContainer);
   
   // Show strategy text
   const text = document.createElement('p');
@@ -1504,4 +1562,82 @@ export function setupClusterPanel(communities) {
     
     paddingContainer.appendChild(section);
   });
+}
+
+/**
+ * Creates hierarchical navigation tags based on node type and connections
+ * @param {Object} data - Node data with connections
+ * @param {HTMLElement} container - Container to append tags to
+ */
+function createHierarchicalTags(data, container) {
+  const tagContainer = document.createElement('div');
+  tagContainer.className = 'hierarchical-tags';
+  
+  const node = data.node;
+  const nodeType = node.type;
+  let parentGoal = null;
+  let parentTheme = null;
+  
+  // Find parent relationships
+  if (nodeType === 'strategy' || nodeType === 'document') {
+    // For strategies and goals, find the parent theme
+    parentTheme = data.connections.find(conn => 
+      conn.node.type === 'topic' && 
+      (conn.relationship === 'belongs_to' || conn.relationship === 'part_of_theme'));
+  }
+  
+  if (nodeType === 'strategy') {
+    // For strategies, also find the parent goal
+    parentGoal = data.connections.find(conn => 
+      conn.node.type === 'document' && 
+      (conn.relationship === 'part_of_goal'));
+  }
+  
+  // Create theme tag if applicable
+  if (nodeType === 'topic' || parentTheme) {
+    const themeTag = document.createElement('div');
+    themeTag.className = 'node-type-label node-type-theme';
+    
+    if (nodeType === 'topic') {
+      // Current node is a theme
+      themeTag.textContent = 'Theme';
+      themeTag.classList.add('current-node-tag');
+    } else {
+      // Parent theme tag is clickable
+      themeTag.textContent = 'Theme: ' + parentTheme.node.label;
+      themeTag.classList.add('clickable-tag');
+      themeTag.onclick = () => focusOnNode(parentTheme.node.id);
+    }
+    
+    tagContainer.appendChild(themeTag);
+  }
+  
+  // Create goal tag if applicable
+  if (nodeType === 'document' || parentGoal) {
+    const goalTag = document.createElement('div');
+    goalTag.className = 'node-type-label node-type-goal';
+    
+    if (nodeType === 'document') {
+      // Current node is a goal
+      goalTag.textContent = 'Goal';
+      goalTag.classList.add('current-node-tag');
+    } else {
+      // Parent goal tag is clickable
+      goalTag.textContent = 'Goal: ' + parentGoal.node.label;
+      goalTag.classList.add('clickable-tag');
+      goalTag.onclick = () => focusOnNode(parentGoal.node.id);
+    }
+    
+    tagContainer.appendChild(goalTag);
+  }
+  
+  // Create strategy tag if applicable
+  if (nodeType === 'strategy') {
+    const strategyTag = document.createElement('div');
+    strategyTag.textContent = 'Strategy';
+    strategyTag.className = 'node-type-label node-type-strategy current-node-tag';
+    tagContainer.appendChild(strategyTag);
+  }
+  
+  container.appendChild(tagContainer);
 }
