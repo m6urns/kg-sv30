@@ -108,12 +108,7 @@ function initializeUniversalNavigation() {
   const overviewButton = document.createElement('button');
   overviewButton.id = 'universal-overview-button';
   overviewButton.className = 'nav-button overview';
-  
-  // Create home icon element (using Unicode home symbol)
-  const homeIcon = document.createElement('span');
-  homeIcon.className = 'overview-icon';
-  homeIcon.innerHTML = '&#8962;'; // Unicode for home symbol
-  overviewButton.appendChild(homeIcon);
+  overviewButton.textContent = 'Overview';
   
   overviewButton.onclick = () => {
     navigateToView({ type: VIEW_TYPE.CLUSTERS });

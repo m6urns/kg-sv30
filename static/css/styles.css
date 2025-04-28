@@ -143,7 +143,7 @@ body {
 
 .nav-button.overview {
   background-color: #28a745;
-  flex: 0.4; /* Make it much smaller than the other buttons */
+  flex: 1.0;
   display: flex;
   align-items: center;
   justify-content: center;
