@@ -543,33 +543,66 @@ function renderNodeDetails(data) {
     contentWrapper.appendChild(contentContainer);
   }
   
-  // Create header for the node
-  const header = document.createElement('h2');
-  header.textContent = data.node.label;
-  contentContainer.appendChild(header);
+  // // Create header for the node
+  // const header = document.createElement('h2');
+  // header.textContent = data.node.label;
+  // contentContainer.appendChild(header);
   
-  // Add node type indicator with appropriate styling
-  const typeLabel = document.createElement('div');
-  const nodeTypes = {
-    'topic': 'Theme',
-    'document': 'Goal',
-    'strategy': 'Strategy'
-  };
-  const typeText = nodeTypes[data.node.type] || data.node.type;
-  typeLabel.textContent = typeText;
+  // // Add node type indicator with appropriate styling
+  // const typeLabel = document.createElement('div');
+  // const nodeTypes = {
+  //   'topic': 'Theme',
+  //   'document': 'Goal',
+  //   'strategy': 'Strategy'
+  // };
+  // const typeText = nodeTypes[data.node.type] || data.node.type;
+  // typeLabel.textContent = typeText;
   
-  // Apply type-specific styling
-  if (data.node.type === 'topic') {
-    typeLabel.className = 'node-type-label node-type-theme';
-  } else if (data.node.type === 'document') {
-    typeLabel.className = 'node-type-label node-type-goal';
-  } else if (data.node.type === 'strategy') {
-    typeLabel.className = 'node-type-label node-type-strategy';
-  } else {
-    typeLabel.className = 'node-type-label';
-  }
+  // // Apply type-specific styling
+  // if (data.node.type === 'topic') {
+  //   typeLabel.className = 'node-type-label node-type-theme';
+  // } else if (data.node.type === 'document') {
+  //   typeLabel.className = 'node-type-label node-type-goal';
+  // } else if (data.node.type === 'strategy') {
+  //   typeLabel.className = 'node-type-label node-type-strategy';
+  // } else {
+  //   typeLabel.className = 'node-type-label';
+  // }
   
-  contentContainer.appendChild(typeLabel);
+  // contentContainer.appendChild(typeLabel);
+
+  // Create a container for the header and type label
+const headerContainer = document.createElement('div');
+headerContainer.className = 'header-container';
+contentContainer.appendChild(headerContainer);
+
+// Create header for the node
+const header = document.createElement('h2');
+header.textContent = data.node.label;
+headerContainer.appendChild(header); // Append to headerContainer instead
+
+// Add node type indicator with appropriate styling
+const typeLabel = document.createElement('div');
+const nodeTypes = {
+  'topic': 'Theme',
+  'document': 'Goal',
+  'strategy': 'Strategy'
+};
+const typeText = nodeTypes[data.node.type] || data.node.type;
+typeLabel.textContent = typeText;
+
+// Apply type-specific styling
+if (data.node.type === 'topic') {
+  typeLabel.className = 'node-type-label node-type-theme';
+} else if (data.node.type === 'document') {
+  typeLabel.className = 'node-type-label node-type-goal';
+} else if (data.node.type === 'strategy') {
+  typeLabel.className = 'node-type-label node-type-strategy';
+} else {
+  typeLabel.className = 'node-type-label';
+}
+
+headerContainer.appendChild(typeLabel);
   
   // Process content based on node type
   if (data.node.type === 'topic') {
@@ -828,12 +861,12 @@ function displayStrategyDetails(data, contentWrapper) {
   metaContainer.className = 'node-meta';
   
   // Show section number if available
-  if (data.node.section_number) {
-    const sectionInfo = document.createElement('div');
-    sectionInfo.className = 'node-meta-item';
-    sectionInfo.innerHTML = '<strong>Section:</strong> ' + data.node.section_number;
-    metaContainer.appendChild(sectionInfo);
-  }
+  // if (data.node.section_number) {
+  //   const sectionInfo = document.createElement('div');
+  //   sectionInfo.className = 'node-meta-item';
+  //   sectionInfo.innerHTML = '<strong>Section:</strong> ' + data.node.section_number;
+  //   metaContainer.appendChild(sectionInfo);
+  // }
   
   // Show parent goal if available
   const goal = data.connections
