@@ -41,6 +41,12 @@ jobs:
             echo "Static graph_data.json file found. Size: $(du -h static/graph_data.json | cut -f1)"
           fi
       
+      # Run the simple build script
+      - name: Run build script
+        run: |
+          chmod +x ./build.sh
+          ./build.sh
+      
       # Deploy to Azure Static Web Apps
       - name: Build and Deploy
         id: builddeploy
@@ -50,9 +56,8 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           app_location: "/" # App source code path
           api_location: "api" # API location
-          output_location: "static" # Built app content directory
-          app_build_command: "" # No build needed for static content
-          skip_app_build: true
+          output_location: "static" # Static content is in the static directory
+          skip_app_build: true # Skip default build since we're running our own
           
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'

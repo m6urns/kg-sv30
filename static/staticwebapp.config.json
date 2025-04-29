@@ -1,0 +1,37 @@
+{
+  "routes": [
+    {
+      "route": "/api/search",
+      "allowedRoles": ["anonymous"],
+      "methods": ["GET"]
+    },
+    {
+      "route": "/static/*",
+      "headers": {
+        "cache-control": "public, max-age=86400"
+      }
+    },
+    {
+      "route": "/*",
+      "serve": "/index.html",
+      "statusCode": 200
+    }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/static/*", "/*.{css,js,ico,png,json}"]
+  },
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/index.html",
+      "statusCode": 200
+    }
+  },
+  "globalHeaders": {
+    "Content-Security-Policy": "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; connect-src 'self' https://*.azurestaticapps.net; img-src 'self' data: https:; font-src 'self' https://cdn.jsdelivr.net;",
+    "X-Content-Type-Options": "nosniff"
+  },
+  "mimeTypes": {
+    ".json": "application/json"
+  }
+}
