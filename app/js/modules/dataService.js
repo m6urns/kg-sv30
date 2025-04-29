@@ -9,7 +9,7 @@
 export async function loadGraphData(onSuccess, showStatus) {
   try {
     // Load directly from static file instead of API
-    const response = await fetch('/graph_data.json');
+    const response = await fetch('/static/graph_data.json');
     const data = await response.json();
     
     if (onSuccess) {
@@ -31,7 +31,7 @@ export async function loadGraphData(onSuccess, showStatus) {
 export async function fetchCommunities() {
   try {
     // Load graph data directly and extract communities
-    const response = await fetch('/graph_data.json');
+    const response = await fetch('/static/graph_data.json');
     const graphData = await response.json();
     
     // Extract communities from the graph data
@@ -79,7 +79,7 @@ export async function fetchCommunities() {
 export async function fetchNodeDetails(nodeId) {
   try {
     // Load graph data directly and find the specific node
-    const response = await fetch('/graph_data.json');
+    const response = await fetch('/static/graph_data.json');
     const graphData = await response.json();
     
     // Find the node
@@ -153,7 +153,7 @@ export async function loadSampleData(showStatus, onSuccess) {
   showStatus('Loading static data...', 'loading');
   try {
     // Simply load the static file instead of using an API to regenerate
-    const response = await fetch('/graph_data.json');
+    const response = await fetch('/static/graph_data.json');
     await response.json(); // Just to validate the JSON is valid
     
     showStatus('Data loaded successfully!', 'success');

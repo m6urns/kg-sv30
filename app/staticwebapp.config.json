@@ -6,15 +6,10 @@
       "methods": ["GET"]
     },
     {
-      "route": "/*.{css,js,ico,png,json}",
+      "route": "/static/*",
       "headers": {
         "cache-control": "public, max-age=86400"
       }
-    },
-    {
-      "route": "/",
-      "serve": "/index.html",
-      "statusCode": 200
     },
     {
       "route": "/*",
@@ -24,7 +19,7 @@
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/*.{css,js,ico,png,json}"]
+    "exclude": ["/static/*", "/*.{css,js,ico,png,json}"]
   },
   "responseOverrides": {
     "404": {
@@ -33,7 +28,7 @@
     }
   },
   "globalHeaders": {
-    "Content-Security-Policy": "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://d3js.org; connect-src 'self' https://*.azurestaticapps.net; img-src 'self' data: https:; font-src 'self' https://cdn.jsdelivr.net;",
+    "Content-Security-Policy": "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; connect-src 'self' https://*.azurestaticapps.net; img-src 'self' data: https:; font-src 'self' https://cdn.jsdelivr.net;",
     "X-Content-Type-Options": "nosniff"
   },
   "mimeTypes": {

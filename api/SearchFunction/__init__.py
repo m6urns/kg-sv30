@@ -2,6 +2,7 @@ import azure.functions as func
 import json
 import logging
 import os
+import urllib.request
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a search request.')
@@ -15,27 +16,37 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         )
     
     try:
-        # In production, the static files would be available at a known location
-        # For Azure Static Web Apps with Functions, we need to determine the correct path
+        # Instead of trying to find the file locally, let's fetch it from the same domain
+        # This ensures we're always using the same data that's deployed
         try:
-            # First try the path structure in Azure Static Web Apps
-            static_dir = os.path.join(os.environ.get('StaticWebAppsContentLocation', ''), 'static')
-            graph_path = os.path.join(static_dir, 'graph_data.json')
+            # First try to get the base URL from the request
+            host = req.headers.get('host', 'localhost')
+            # For localhost testing vs production
+            if 'localhost' in host:
+                base_url = f"http://{host}"
+            else:
+                base_url = f"https://{host}"
             
-            # Check if file exists at this path
-            if not os.path.exists(graph_path):
-                # Try alternative path - going up from current directory
-                script_dir = os.path.dirname(os.path.realpath(__file__))
-                # Go up directories to find the static folder
-                static_dir = os.path.join(script_dir, '..', '..', 'static')
+            # Fetch the graph data from the deployed static assets
+            with urllib.request.urlopen(f"{base_url}/graph_data.json") as response:
+                graph_data = json.loads(response.read())
+        except Exception as url_error:
+            logging.warning(f"Error fetching graph data from URL: {str(url_error)}")
+            # Fallback to looking for the file locally
+            try:
+                # Azure Static Web Apps places static files in a known location
+                static_dir = os.path.join(os.environ.get('AzureWebJobsScriptRoot', ''), '..', 'app')
                 graph_path = os.path.join(static_dir, 'graph_data.json')
-        except Exception as path_error:
-            logging.warning(f"Error determining file path: {str(path_error)}")
-            # Final fallback - try direct relative path that might work in production
-            graph_path = "static/graph_data.json"
-        
-        with open(graph_path, 'r') as f:
-            graph_data = json.load(f)
+                
+                with open(graph_path, 'r') as f:
+                    graph_data = json.load(f)
+            except Exception as file_error:
+                logging.error(f"Error reading local graph data: {str(file_error)}")
+                return func.HttpResponse(
+                    body=json.dumps({"error": "Unable to load graph data"}),
+                    mimetype="application/json",
+                    status_code=500
+                )
         
         results = []
         for node in graph_data["nodes"]:
