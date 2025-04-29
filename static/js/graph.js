@@ -148,28 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
   
-  // Load graph data - if regenerate parameter is true, use sample data to regenerate
-  if (forceRegen) {
-    showStatusMessage('Regenerating graph from sample data...', 'loading');
-    loadSampleData(showStatusMessage, () => loadGraph());
-  } else {
-    // Always use saved data by default
-    fetch('/api/load')
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          showStatusMessage('Loaded saved graph data', 'success');
-          loadGraph();
-        } else {
-          // If no saved data exists yet, use sample data as a fallback
-          showStatusMessage('No saved data found. Loading sample data...', 'loading');
-          loadSampleData(showStatusMessage, () => loadGraph());
-        }
-      })
-      .catch(error => {
-        // On error, use sample data
-        showStatusMessage('Error loading saved data. Loading sample data...', 'loading');
-        loadSampleData(showStatusMessage, () => loadGraph());
-      });
-  }
+  // Simplified loading approach for static deployment - just load the graph directly
+  showStatusMessage('Loading graph data...', 'loading');
+  loadGraph();
 });

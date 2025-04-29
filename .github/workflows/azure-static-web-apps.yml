@@ -1,0 +1,67 @@
+name: Azure Static Web Apps CI/CD
+
+on:
+  push:
+    branches:
+      - production
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - production
+
+jobs:
+  build_and_deploy_job:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    name: Build and Deploy
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      
+      # Set up Python for the search function only
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      # Install minimal dependencies for search function
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install azure-functions
+      
+      # Verify the static data exists
+      - name: Verify static data
+        run: |
+          if [ ! -f "static/graph_data.json" ]; then
+            echo "ERROR: static/graph_data.json file is missing. The application requires this file to function correctly."
+            exit 1
+          else
+            echo "Static graph_data.json file found. Size: $(du -h static/graph_data.json | cut -f1)"
+          fi
+      
+      # Deploy to Azure Static Web Apps
+      - name: Build and Deploy
+        id: builddeploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          app_location: "/" # App source code path
+          api_location: "api" # API location
+          output_location: "static" # Built app content directory
+          app_build_command: "" # No build needed for static content
+          skip_app_build: true
+          
+  close_pull_request_job:
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    name: Close Pull Request Job
+    steps:
+      - name: Close Pull Request
+        id: closepullrequest
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: "close"

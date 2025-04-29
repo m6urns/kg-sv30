@@ -1,4 +1,4 @@
-// Data service for fetching graph data - optimized for static deployment
+// Simplified data service that uses static files directly when possible
 
 /**
  * Load graph data directly from static file
