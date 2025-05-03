@@ -1,6 +1,7 @@
 // Search UI functionality
 import { focusOnNode } from '../nodeInteraction.js';
 import { getDOMReference } from './common.js';
+import { sanitizeString } from '../utils.js';
 
 /**
  * Show a status message
@@ -38,10 +39,18 @@ export function displaySearchResults(results) {
   
   if (!searchResults || !searchInput) return;
   
-  searchResults.innerHTML = '';
+  // Safely clear the search results
+  while (searchResults.firstChild) {
+    searchResults.removeChild(searchResults.firstChild);
+  }
   
   if (results.length === 0) {
-    searchResults.innerHTML = '<p class="p-2">No results found</p>';
+    // Use DOM manipulation instead of innerHTML
+    searchResults.textContent = ''; // Clear safely
+    const noResultsP = document.createElement('p');
+    noResultsP.className = 'p-2';
+    noResultsP.textContent = 'No results found';
+    searchResults.appendChild(noResultsP);
     searchResults.style.display = 'block';
     return;
   }

@@ -7,6 +7,7 @@ human-created knowledge graphs.
 """
 from .base_generator import BaseGraphGenerator
 from .sample_generator import SampleGraphGenerator
+from .structured_data_generator import StructuredDataGraphGenerator
 
 
 def get_available_generators():
@@ -16,8 +17,8 @@ def get_available_generators():
     Returns:
         list: List of generator classes
     """
-    # We're simplifying to just use the sample generator
-    return [SampleGraphGenerator]
+    # Include both sample and structured data generators
+    return [SampleGraphGenerator, StructuredDataGraphGenerator]
 
 
 def create_generator(generator_name, **kwargs):
@@ -37,9 +38,10 @@ def create_generator(generator_name, **kwargs):
     Raises:
         ValueError: If the generator name is not recognized
     """
-    # We're simplifying to just use the sample generator
+    # Update generators dictionary to include the structured data generator
     generators = {
-        'sample': SampleGraphGenerator
+        'sample': SampleGraphGenerator,
+        'structured': StructuredDataGraphGenerator
     }
     
     if generator_name.lower() not in generators:

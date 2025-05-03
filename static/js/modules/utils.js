@@ -110,3 +110,21 @@ export function getNodeLevel(node) {
   if (node.depth === 2) return 'tertiary';
   return 'other';
 }
+
+/**
+ * Sanitize a string to prevent XSS attacks
+ * @param {string} str - The string to sanitize
+ * @returns {string} - Sanitized string
+ */
+export function sanitizeString(str) {
+  if (!str) return '';
+  
+  // Create a temporary div element
+  const temp = document.createElement('div');
+  
+  // Set the div's text content which automatically escapes HTML
+  temp.textContent = str;
+  
+  // Return the escaped string
+  return temp.innerHTML;
+}

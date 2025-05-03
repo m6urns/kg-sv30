@@ -1,4 +1,5 @@
 // Data service for fetching graph data
+import { sanitizeString } from './utils.js';
 
 /**
  * Load graph data from the API
@@ -69,6 +70,11 @@ export async function searchNodes(query) {
     
     // Process results to add useful display information
     return results.map(result => {
+      // Extra client-side sanitization for critical display fields
+      if (result.label) {
+        result.label = sanitizeString(result.label);
+      }
+      
       // Add a display-friendly version of match info if available
       if (result.match_info) {
         // Get the highest priority match for display summary
@@ -83,8 +89,15 @@ export async function searchNodes(query) {
           return priorityOrder[b.priority] - priorityOrder[a.priority];
         });
         
+        // Sanitize each match text
+        sortedMatches.forEach(match => {
+          if (match.text) {
+            match.text = sanitizeString(match.text);
+          }
+        });
+        
         // Add a summary of where the match was found
-        const matchFields = sortedMatches.map(match => match.field);
+        const matchFields = sortedMatches.map(match => sanitizeString(match.field));
         result.match_summary = `Found in: ${matchFields.join(', ')}`;
         
         // Add match score for display
@@ -94,8 +107,8 @@ export async function searchNodes(query) {
         if (sortedMatches.length > 0) {
           const bestMatch = sortedMatches[0];
           result.best_match = {
-            field: bestMatch.field,
-            text: bestMatch.text
+            field: sanitizeString(bestMatch.field),
+            text: sanitizeString(bestMatch.text)
           };
         }
       }

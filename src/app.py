@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, render_template, send_from_directory
 import os
 import json
 import logging
+import html
 from flask_cors import CORS
 
 # Set up logging
@@ -13,7 +14,21 @@ app = Flask(__name__,
             static_folder='../static',
             template_folder='../templates')
 
-CORS(app)
+# Configure CORS with secure defaults
+CORS(app, resources={r"/api/*": {"origins": "*", "supports_credentials": False}})
+
+# Security headers middleware
+@app.after_request
+def add_security_headers(response):
+    # Content Security Policy to prevent XSS
+    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://d3js.org https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data:; font-src 'self' https://cdn.jsdelivr.net;"
+    # Prevent MIME type sniffing
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    # Prevents the browser from rendering the page if it detects a reflected XSS attack
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    # Prevents page from being displayed in an iframe
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    return response
 
 # Global variable to store the processed graph data
 graph_data = None
@@ -93,12 +108,12 @@ def search():
             match_info["score"] += 10
             match_info["matches"].append({
                 "field": "label",
-                "text": node.get("label", ""),
+                "text": html.escape(node.get("label", "")),
                 "priority": "high"
             })
         
         # Search in keywords (high priority)
-        keyword_matches = [kw for kw in node.get("keywords", []) if query in kw.lower()]
+        keyword_matches = [html.escape(kw) for kw in node.get("keywords", []) if query in kw.lower()]
         if keyword_matches:
             match_info["score"] += 8 * len(keyword_matches)
             match_info["matches"].append({
@@ -118,7 +133,7 @@ def search():
                 match_info["score"] += 5
                 match_info["matches"].append({
                     "field": "description",
-                    "text": description,
+                    "text": html.escape(description),
                     "priority": "medium"
                 })
             
@@ -128,7 +143,7 @@ def search():
                 match_info["score"] += 3
                 match_info["matches"].append({
                     "field": "overview",
-                    "text": overview,
+                    "text": html.escape(overview),
                     "priority": "medium"
                 })
         
@@ -140,7 +155,7 @@ def search():
                 match_info["score"] += 6
                 match_info["matches"].append({
                     "field": "text",
-                    "text": goal_text,
+                    "text": html.escape(goal_text),
                     "priority": "medium"
                 })
                 
@@ -162,7 +177,7 @@ def search():
                 match_info["score"] += 6
                 match_info["matches"].append({
                     "field": "text",
-                    "text": strategy_text,
+                    "text": html.escape(strategy_text),
                     "priority": "medium"
                 })
             
@@ -172,7 +187,7 @@ def search():
                 match_info["score"] += 3
                 match_info["matches"].append({
                     "field": "summary",
-                    "text": summary,
+                    "text": html.escape(summary),
                     "priority": "low"
                 })
         
@@ -180,6 +195,11 @@ def search():
         if match_info["score"] > 0:
             # Create a copy of the node with match information
             result_node = node.copy()
+            
+            # Sanitize node fields that will be displayed
+            if "label" in result_node:
+                result_node["label"] = html.escape(result_node["label"])
+            
             result_node["match_info"] = match_info
             results.append(result_node)
     
@@ -198,25 +218,49 @@ def get_node(node_id):
     
     for node in graph_data["nodes"]:
         if node["id"] == node_id:
+            # Create a sanitized copy of the node
+            sanitized_node = node.copy()
+            
+            # Sanitize text fields that will be displayed
+            text_fields = ["label", "description", "overview", "text", "summary"]
+            for field in text_fields:
+                if field in sanitized_node:
+                    sanitized_node[field] = html.escape(str(sanitized_node[field]))
+            
+            # Sanitize arrays of text
+            if "keywords" in sanitized_node:
+                sanitized_node["keywords"] = [html.escape(str(kw)) for kw in sanitized_node["keywords"]]
+            
             # Get connected nodes
             connected = []
             for link in graph_data["links"]:
                 if link["source"] == node_id:
-                    connected.append({
-                        "node": next((n for n in graph_data["nodes"] if n["id"] == link["target"]), None),
-                        "relationship": link.get("type", "related_to")
-                    })
+                    connected_node = next((n.copy() for n in graph_data["nodes"] if n["id"] == link["target"]), None)
+                    if connected_node:
+                        # Sanitize the connected node
+                        for field in text_fields:
+                            if field in connected_node:
+                                connected_node[field] = html.escape(str(connected_node[field]))
+                        
+                        connected.append({
+                            "node": connected_node,
+                            "relationship": html.escape(link.get("type", "related_to"))
+                        })
                 elif link["target"] == node_id:
-                    connected.append({
-                        "node": next((n for n in graph_data["nodes"] if n["id"] == link["source"]), None),
-                        "relationship": link.get("type", "related_to")
-                    })
-            
-            # Filter out any None values that might have occurred
-            connected = [c for c in connected if c["node"] is not None]
+                    connected_node = next((n.copy() for n in graph_data["nodes"] if n["id"] == link["source"]), None)
+                    if connected_node:
+                        # Sanitize the connected node
+                        for field in text_fields:
+                            if field in connected_node:
+                                connected_node[field] = html.escape(str(connected_node[field]))
+                        
+                        connected.append({
+                            "node": connected_node,
+                            "relationship": html.escape(link.get("type", "related_to"))
+                        })
             
             return jsonify({
-                "node": node,
+                "node": sanitized_node,
                 "connections": connected
             })
     
