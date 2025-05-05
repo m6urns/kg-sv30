@@ -75,7 +75,15 @@ def check_file_structure():
 def run_flask_app():
     """Run the Flask application."""
     try:
-        logger.info("Starting Flask application...")
+        # Check environment
+        env = os.environ.get('FLASK_ENV', 'development')
+        host = os.environ.get('HOST', '0.0.0.0')
+        port = int(os.environ.get('PORT', 5000))
+        
+        # Only enable debug mode in development
+        debug = env == 'development'
+        
+        logger.info(f"Starting Flask application in {env.upper()} mode...")
         
         # Create static directory for graph data if it doesn't exist
         os.makedirs('static', exist_ok=True)
@@ -84,11 +92,15 @@ def run_flask_app():
         sys.path.append('src')
         from app import app
         
-        # Open browser
-        # webbrowser.open('http://localhost:5000')
+        # Open browser in development mode
+        if debug and host in ('0.0.0.0', '127.0.0.1', 'localhost'):
+            browser_url = f"http://localhost:{port}"
+            logger.info(f"Opening browser at {browser_url}")
+            webbrowser.open(browser_url)
         
-        # Run the app
-        app.run(debug=True, host='0.0.0.0', port=5000, threaded=True)
+        # Run the app with environment-appropriate settings
+        logger.info(f"Server running at http://{host}:{port}")
+        app.run(debug=debug, host=host, port=port, threaded=True)
         
         return True
     except Exception as e:

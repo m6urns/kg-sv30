@@ -1,9 +1,14 @@
 # Core requirements
 flask==2.0.1
+flask-cors==3.0.10
 networkx==2.8.4
 numpy==1.23.5
 matplotlib==3.5.3
 scikit-learn==1.0.2
+
+# Production server
+gunicorn==20.1.0
+python-dotenv==0.21.0
 
 # Embedding requirements
 sentence-transformers==2.2.2

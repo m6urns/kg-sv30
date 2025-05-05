@@ -5,29 +5,68 @@ import logging
 import html
 from flask_cors import CORS
 
-# Set up logging
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Import configuration
+from .config import get_config
+
+# Get config based on environment
+config = get_config()
+
+# Set up logging with config-based level
+logging_level = getattr(logging, config.LOG_LEVEL)
+logging.basicConfig(
+    level=logging_level,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, 
-            static_folder='../static',
-            template_folder='../templates')
+            static_folder=config.STATIC_FOLDER,
+            template_folder=config.TEMPLATE_FOLDER)
 
-# Configure CORS with secure defaults
-CORS(app, resources={r"/api/*": {"origins": "*", "supports_credentials": False}})
+# Apply configuration
+app.config.from_object(config)
+
+# Configure CORS based on environment
+if hasattr(config, 'CORS_ORIGINS'):
+    # Production - use specific origins
+    CORS(app, resources={r"/api/*": {"origins": config.CORS_ORIGINS, "supports_credentials": False}})
+else:
+    # Development - less restrictive
+    CORS(app, resources={r"/api/*": {"origins": "*", "supports_credentials": False}})
 
 # Security headers middleware
 @app.after_request
 def add_security_headers(response):
     # Content Security Policy to prevent XSS
-    response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://d3js.org https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data:; font-src 'self' https://cdn.jsdelivr.net;"
+    csp = "default-src 'self'; "
+    
+    # In development, allow unsafe-inline for easier debugging
+    if app.config.get('DEBUG', False):
+        csp += "script-src 'self' 'unsafe-inline' https://d3js.org https://cdn.jsdelivr.net; "
+        csp += "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+    else:
+        # In production, prefer stronger security
+        csp += "script-src 'self' https://d3js.org https://cdn.jsdelivr.net; "
+        csp += "style-src 'self' https://cdn.jsdelivr.net; "
+    
+    # Common settings for all environments
+    csp += "img-src 'self' data:; font-src 'self' https://cdn.jsdelivr.net;"
+    
+    response.headers['Content-Security-Policy'] = csp
+    
     # Prevent MIME type sniffing
     response.headers['X-Content-Type-Options'] = 'nosniff'
+    
     # Prevents the browser from rendering the page if it detects a reflected XSS attack
     response.headers['X-XSS-Protection'] = '1; mode=block'
+    
     # Prevents page from being displayed in an iframe
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    
+    # Add Strict-Transport-Security header in production
+    if not app.config.get('DEBUG', False):
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    
     return response
 
 # Global variable to store the processed graph data
