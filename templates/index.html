@@ -54,18 +54,16 @@
   
   <script src="https://d3js.org/d3.v7.min.js"></script>
   
+  <!-- DOMPurify for XSS protection -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
+  
   <!-- Load the main graph module which coordinates everything -->
   <script type="module" src="/static/js/graph.js"></script>
   
   <!-- Utils module load -->
   <script src="/static/js/modules/utils.js" type="module"></script>
   
-  <!-- Disable Cloudflare analytics to prevent blocked requests -->
-  <script>
-    // Prevent Cloudflare analytics from loading if it exists
-    if (window.cflare) {
-      window.cflare.beacon = function() {};
-    }
-  </script>
+  <!-- Analytics protection module (moved from inline script) -->
+  <script type="module" src="/static/js/modules/analytics.js"></script>
 </body>
 </html>

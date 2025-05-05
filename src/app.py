@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request, render_template, send_from_directory
 import os
 import json
 import logging
-import html
+import bleach
 from flask_cors import CORS
 
 # Import configuration
@@ -42,12 +42,19 @@ def add_security_headers(response):
     
     # In development, allow unsafe-inline for easier debugging
     if app.config.get('DEBUG', False):
-        csp += "script-src 'self' 'unsafe-inline' https://d3js.org https://cdn.jsdelivr.net; "
+        csp += "script-src 'self' 'unsafe-inline' https://d3js.org https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
         csp += "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
     else:
-        # In production, prefer stronger security
-        csp += "script-src 'self' https://d3js.org https://cdn.jsdelivr.net; "
-        csp += "style-src 'self' https://cdn.jsdelivr.net; "
+        # In production, we need unsafe-inline for styles to work properly, but keep scripts secure
+        # Explicitly block CloudFlare analytics but allow necessary scripts
+        csp += "script-src 'self' https://d3js.org https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+        csp += "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        
+        # Add a connect-src directive to allow our own domains but block others
+        csp += "connect-src 'self'; "
+        
+        # Add a hash for the minimal inline script to prevent errors
+        csp += "script-src-elem 'self' 'sha256-HvoXRTZMiPyW/QvmLb9nQby9gkuJuXSV7wsY9KIhh+8=' https://d3js.org https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
     
     # Common settings for all environments
     csp += "img-src 'self' data:; font-src 'self' https://cdn.jsdelivr.net;"
@@ -71,6 +78,30 @@ def add_security_headers(response):
 
 # Global variable to store the processed graph data
 graph_data = None
+
+# Configure bleach for sanitization
+ALLOWED_TAGS = []  # No HTML tags allowed
+ALLOWED_ATTRIBUTES = {}  # No attributes allowed
+ALLOWED_PROTOCOLS = ['http', 'https', 'mailto']
+
+def secure_sanitize(text):
+    """
+    Securely sanitize text using bleach while preserving special characters
+    for display purposes.
+    """
+    if not text:
+        return ""
+    
+    # Handle non-string inputs
+    if not isinstance(text, str):
+        text = str(text)
+    
+    # Sanitize the text while preserving entities for special characters
+    return bleach.clean(text, 
+                       tags=ALLOWED_TAGS,
+                       attributes=ALLOWED_ATTRIBUTES,
+                       protocols=ALLOWED_PROTOCOLS,
+                       strip=True)
 
 @app.route('/')
 def index():
@@ -147,12 +178,12 @@ def search():
             match_info["score"] += 10
             match_info["matches"].append({
                 "field": "label",
-                "text": html.escape(node.get("label", "")),
+                "text": secure_sanitize(node.get("label", "")),
                 "priority": "high"
             })
         
         # Search in keywords (high priority)
-        keyword_matches = [html.escape(kw) for kw in node.get("keywords", []) if query in kw.lower()]
+        keyword_matches = [secure_sanitize(kw) for kw in node.get("keywords", []) if query in kw.lower()]
         if keyword_matches:
             match_info["score"] += 8 * len(keyword_matches)
             match_info["matches"].append({
@@ -172,7 +203,7 @@ def search():
                 match_info["score"] += 5
                 match_info["matches"].append({
                     "field": "description",
-                    "text": html.escape(description),
+                    "text": secure_sanitize(description),
                     "priority": "medium"
                 })
             
@@ -182,7 +213,7 @@ def search():
                 match_info["score"] += 3
                 match_info["matches"].append({
                     "field": "overview",
-                    "text": html.escape(overview),
+                    "text": secure_sanitize(overview),
                     "priority": "medium"
                 })
         
@@ -194,7 +225,7 @@ def search():
                 match_info["score"] += 6
                 match_info["matches"].append({
                     "field": "text",
-                    "text": html.escape(goal_text),
+                    "text": secure_sanitize(goal_text),
                     "priority": "medium"
                 })
                 
@@ -216,7 +247,7 @@ def search():
                 match_info["score"] += 6
                 match_info["matches"].append({
                     "field": "text",
-                    "text": html.escape(strategy_text),
+                    "text": secure_sanitize(strategy_text),
                     "priority": "medium"
                 })
             
@@ -226,7 +257,7 @@ def search():
                 match_info["score"] += 3
                 match_info["matches"].append({
                     "field": "summary",
-                    "text": html.escape(summary),
+                    "text": secure_sanitize(summary),
                     "priority": "low"
                 })
         
@@ -237,7 +268,7 @@ def search():
             
             # Sanitize node fields that will be displayed
             if "label" in result_node:
-                result_node["label"] = html.escape(result_node["label"])
+                result_node["label"] = secure_sanitize(result_node["label"])
             
             result_node["match_info"] = match_info
             results.append(result_node)
@@ -264,11 +295,11 @@ def get_node(node_id):
             text_fields = ["label", "description", "overview", "text", "summary"]
             for field in text_fields:
                 if field in sanitized_node:
-                    sanitized_node[field] = html.escape(str(sanitized_node[field]))
+                    sanitized_node[field] = secure_sanitize(str(sanitized_node[field]))
             
             # Sanitize arrays of text
             if "keywords" in sanitized_node:
-                sanitized_node["keywords"] = [html.escape(str(kw)) for kw in sanitized_node["keywords"]]
+                sanitized_node["keywords"] = [secure_sanitize(str(kw)) for kw in sanitized_node["keywords"]]
             
             # Get connected nodes
             connected = []
@@ -279,11 +310,11 @@ def get_node(node_id):
                         # Sanitize the connected node
                         for field in text_fields:
                             if field in connected_node:
-                                connected_node[field] = html.escape(str(connected_node[field]))
+                                connected_node[field] = secure_sanitize(str(connected_node[field]))
                         
                         connected.append({
                             "node": connected_node,
-                            "relationship": html.escape(link.get("type", "related_to"))
+                            "relationship": secure_sanitize(link.get("type", "related_to"))
                         })
                 elif link["target"] == node_id:
                     connected_node = next((n.copy() for n in graph_data["nodes"] if n["id"] == link["source"]), None)
@@ -291,11 +322,11 @@ def get_node(node_id):
                         # Sanitize the connected node
                         for field in text_fields:
                             if field in connected_node:
-                                connected_node[field] = html.escape(str(connected_node[field]))
+                                connected_node[field] = secure_sanitize(str(connected_node[field]))
                         
                         connected.append({
                             "node": connected_node,
-                            "relationship": html.escape(link.get("type", "related_to"))
+                            "relationship": secure_sanitize(link.get("type", "related_to"))
                         })
             
             return jsonify({

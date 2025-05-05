@@ -112,19 +112,30 @@ export function getNodeLevel(node) {
 }
 
 /**
- * Sanitize a string to prevent XSS attacks
+ * Sanitize a string to prevent XSS attacks while properly displaying special characters
  * @param {string} str - The string to sanitize
  * @returns {string} - Sanitized string
  */
 export function sanitizeString(str) {
   if (!str) return '';
   
-  // Create a temporary div element
-  const temp = document.createElement('div');
+  // Handle non-string inputs
+  if (typeof str !== 'string') {
+    str = String(str);
+  }
   
-  // Set the div's text content which automatically escapes HTML
-  temp.textContent = str;
+  // First, decode HTML entities if present
+  if (str.includes('&') && str.includes(';')) {
+    // Create a temporary element in memory to decode entities
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(`<!DOCTYPE html><html><body>${str}</body></html>`, 'text/html');
+    str = doc.body.textContent || '';
+  }
   
-  // Return the escaped string
-  return temp.innerHTML;
+  // Then sanitize with DOMPurify to ensure no XSS - strip all HTML tags
+  return DOMPurify.sanitize(str, {
+    ALLOWED_TAGS: [], // No HTML tags allowed
+    ALLOWED_ATTR: [], // No attributes allowed
+    KEEP_CONTENT: true // Keep the content of removed tags
+  });
 }

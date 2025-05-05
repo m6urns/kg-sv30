@@ -70,7 +70,8 @@ export async function searchNodes(query) {
     
     // Process results to add useful display information
     return results.map(result => {
-      // Extra client-side sanitization for critical display fields
+      // Handle client-side sanitization for critical display fields
+      // This will decode pre-escaped HTML entities if they exist
       if (result.label) {
         result.label = sanitizeString(result.label);
       }
@@ -89,7 +90,7 @@ export async function searchNodes(query) {
           return priorityOrder[b.priority] - priorityOrder[a.priority];
         });
         
-        // Sanitize each match text
+        // Handle each match text - properly decode pre-escaped HTML entities
         sortedMatches.forEach(match => {
           if (match.text) {
             match.text = sanitizeString(match.text);

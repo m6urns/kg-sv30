@@ -1,5 +1,5 @@
 // Node interaction module for handling node highlighting and interactions
-import { calculateNodeSize, getLinkColor } from './utils.js';
+import { calculateNodeSize, getLinkColor, sanitizeString } from './utils.js';
 import { fetchNodeDetails } from './dataService.js';
 
 // Variables for tracking node interaction state
@@ -255,12 +255,19 @@ export function canNavigateForward() {
  * @param {Object} tooltip - The D3 tooltip element
  */
 export function showTooltip(event, d, tooltip) {
-  let content = `<strong>${d.label || d.id}</strong><br/>`;
+  // Using sanitizeString imported at the top of the file
+
+  // Sanitize and decode labels and content
+  const nodeLabel = sanitizeString(d.label || d.id);
+  let content = `<strong>${nodeLabel}</strong><br/>`;
   
   if (d.type === 'topic') {
-    content += `<strong>Keywords:</strong> ${(d.keywords || []).join(', ')}<br/>`;
+    // Process keywords - decode each one if needed
+    const decodedKeywords = (d.keywords || []).map(k => sanitizeString(k)).join(', ');
+    content += `<strong>Keywords:</strong> ${decodedKeywords}<br/>`;
+    
     if (d.community_label) {
-      content += `<strong>Cluster:</strong> ${d.community_label}<br/>`;
+      content += `<strong>Cluster:</strong> ${sanitizeString(d.community_label)}<br/>`;
     }
     if (d.docs) {
       content += `<strong>Documents:</strong> ${d.docs.length}`;
@@ -269,14 +276,18 @@ export function showTooltip(event, d, tooltip) {
       content += `<br/><em>Central topic in this cluster</em>`;
     }
   } else if (d.type === 'strategy') {
-    // For strategy nodes, show a shortened version of the text
-    content += `${d.text ? d.text.substring(0, 100) + (d.text.length > 100 ? '...' : '') : ''}`;
+    // For strategy nodes, show a decoded/sanitized shortened version of the text
+    const decodedText = sanitizeString(d.text || '');
+    content += `${decodedText ? decodedText.substring(0, 100) + (decodedText.length > 100 ? '...' : '') : ''}`;
+    
     // Add similarity connections count if available
     if (d.connections && d.connections.length > 0) {
       content += `<br/><em>Has ${d.connections.length} similar strategies</em>`;
     }
   } else {
-    content += `${d.text ? d.text.substring(0, 100) + (d.text.length > 100 ? '...' : '') : ''}`;
+    // For any other node type, decode the text for display
+    const decodedText = sanitizeString(d.text || '');
+    content += `${decodedText ? decodedText.substring(0, 100) + (decodedText.length > 100 ? '...' : '') : ''}`;
   }
   
   tooltip.transition()
