@@ -119,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // HTTPS specific fallbacks for utils
   if (window.location.protocol === 'https:') {
-    // console.log('Running over HTTPS protocol');
+    console.log('Running over HTTPS protocol');
     
     // Ensure calculateNodeSize function exists
     if (typeof calculateNodeSize !== 'function') {

@@ -1,5 +1,4 @@
-// Data service for fetching graph data
-import { sanitizeString } from './utils.js';
+// Data service for fetching graph data - optimized for static deployment
 
 /**
  * Load graph data directly from static file
@@ -10,7 +9,7 @@ import { sanitizeString } from './utils.js';
 export async function loadGraphData(onSuccess, showStatus) {
   try {
     // Load directly from static file instead of API
-    const response = await fetch('/graph_data.json');
+    const response = await fetch('/static/graph_data.json');
     const data = await response.json();
     
     if (onSuccess) {
@@ -32,7 +31,7 @@ export async function loadGraphData(onSuccess, showStatus) {
 export async function fetchCommunities() {
   try {
     // Load graph data directly and extract communities
-    const response = await fetch('/graph_data.json');
+    const response = await fetch('/static/graph_data.json');
     const graphData = await response.json();
     
     // Extract communities from the graph data
@@ -80,7 +79,7 @@ export async function fetchCommunities() {
 export async function fetchNodeDetails(nodeId) {
   try {
     // Load graph data directly and find the specific node
-    const response = await fetch('/graph_data.json');
+    const response = await fetch('/static/graph_data.json');
     const graphData = await response.json();
     
     // Find the node
@@ -138,56 +137,7 @@ export async function searchNodes(query) {
   try {
     // Use the API for search operations
     const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-    const results = await response.json();
-    
-    // Process results to add useful display information
-    return results.map(result => {
-      // Handle client-side sanitization for critical display fields
-      // This will decode pre-escaped HTML entities if they exist
-      if (result.label) {
-        result.label = sanitizeString(result.label);
-      }
-      
-      // Add a display-friendly version of match info if available
-      if (result.match_info) {
-        // Get the highest priority match for display summary
-        const priorityOrder = {
-          "high": 3,
-          "medium": 2,
-          "low": 1
-        };
-        
-        // Sort matches by priority
-        const sortedMatches = [...result.match_info.matches].sort((a, b) => {
-          return priorityOrder[b.priority] - priorityOrder[a.priority];
-        });
-        
-        // Handle each match text - properly decode pre-escaped HTML entities
-        sortedMatches.forEach(match => {
-          if (match.text) {
-            match.text = sanitizeString(match.text);
-          }
-        });
-        
-        // Add a summary of where the match was found
-        const matchFields = sortedMatches.map(match => sanitizeString(match.field));
-        result.match_summary = `Found in: ${matchFields.join(', ')}`;
-        
-        // Add match score for display
-        result.match_score = result.match_info.score;
-        
-        // Add the best match for immediate display
-        if (sortedMatches.length > 0) {
-          const bestMatch = sortedMatches[0];
-          result.best_match = {
-            field: sanitizeString(bestMatch.field),
-            text: sanitizeString(bestMatch.text)
-          };
-        }
-      }
-      
-      return result;
-    });
+    return await response.json();
   } catch (error) {
     console.error('Search error:', error);
     return [];
@@ -203,7 +153,7 @@ export async function loadSampleData(showStatus, onSuccess) {
   showStatus('Loading static data...', 'loading');
   try {
     // Simply load the static file instead of using an API to regenerate
-    const response = await fetch('/graph_data.json');
+    const response = await fetch('/static/graph_data.json');
     await response.json(); // Just to validate the JSON is valid
     
     showStatus('Data loaded successfully!', 'success');

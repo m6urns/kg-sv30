@@ -1,0 +1,985 @@
+/* Main Layout */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+}
+
+.container-fluid {
+  height: 100vh;
+  padding: 0;
+}
+
+.row {
+  height: 100%;
+  margin: 0;
+}
+
+/* Sidebar */
+.sidebar {
+  background-color: #f8f9fa;
+  padding: 20px 20px 70px 20px; /* Add bottom padding to account for nav bar */
+  height: 100vh; /* Use viewport height for full height */
+  overflow: hidden; /* Prevent sidebar itself from scrolling */
+  border-right: 1px solid #dee2e6;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Graph Container */
+#graph-container {
+  height: 100vh;
+  width: 100%;
+  background-color: #ffffff;
+}
+
+/* Navigation Panel */
+#navigation-panel {
+  background-color: #f8f9fa;
+  flex-grow: 1; /* Take up all available space in the sidebar */
+  position: relative; /* For absolute positioning of buttons */
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* Ensure it takes full height */
+}
+
+#nav-content-wrapper {
+  flex-grow: 1;
+  overflow-y: auto; /* Enable scrolling */
+  padding-bottom: 0; /* Removed, since we use padding in the container */
+  scrollbar-width: thin; /* For Firefox */
+}
+
+/* Ensure all elements in nav content are visible */
+.nav-padding-container {
+  /* Ensure sufficient space at bottom so content isn't hidden behind navigation buttons */
+  margin-bottom: 100px;
+  padding-bottom: 20px;
+}
+
+/* Apply padding to all scrollable content areas to ensure visibility above navigation */
+#nav-content-wrapper, #clusters-container, #filtered-nodes-panel {
+  padding-bottom: 90px;
+}
+
+/* Footer space to prevent content from being hidden behind buttons */
+#navigation-footer-space {
+  height: 80px; /* Match the height of the button area */
+  flex-shrink: 0;
+  display: none; /* Hide by default, we'll use padding instead */
+}
+
+/* Custom scrollbar styling */
+#nav-content-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+#nav-content-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+#nav-content-wrapper::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+#nav-content-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Navigation Buttons */
+#navigation-buttons {
+  position: fixed;
+  bottom: 0;
+  left: 0; /* Align with left edge of window */
+  width: 33.33%; /* Full width of the sidebar column */
+  background-color: #f8f9fa;
+  border-top: 1px solid #dee2e6;
+  padding: 15px 20px; /* Maintain horizontal padding inside */
+  display: flex !important; /* Force display at all times */
+  justify-content: space-between;
+  box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+  z-index: 9999; /* Ensure it's above all other elements */
+  height: 70px; /* Slightly increased height for buttons */
+  box-sizing: border-box;
+  /* Make sure the buttons are visible against all backgrounds */
+  background-color: rgba(248, 249, 250, 0.98);
+  pointer-events: auto; /* Ensure clicks are captured */
+}
+
+.nav-button-container {
+  flex: 1;
+  padding: 0 5px; /* Space between buttons */
+  display: flex;
+}
+
+.nav-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  flex: 1; /* Take up full width of container */
+  transition: all 0.2s ease;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-button:hover {
+  background-color: #0069d9;
+}
+
+.nav-button.disabled {
+  background-color: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.nav-button.overview {
+  background-color: #28a745;
+  flex: 1.0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 8px;
+  min-width: 40px;
+}
+
+.nav-button.overview:hover {
+  background-color: #218838;
+}
+
+/* Home icon for overview button */
+.overview-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* Content Styling */
+#navigation-panel h2 {
+  font-size: 1.4rem;
+  margin-bottom: 15px;
+  margin-top: 0;
+}
+
+#navigation-panel h3 {
+  font-size: 1.05rem;
+  color: #495057;
+  margin-top: 5px;
+  margin-bottom: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 8px;
+}
+
+/* List styling */
+#navigation-panel ul {
+  padding-left: 0;
+  margin-bottom: 20px;
+  list-style-type: none;
+}
+
+#navigation-panel li {
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid #6c757d;
+  transition: all 0.2s ease;
+}
+
+#navigation-panel li:hover {
+  background-color: #e9ecef;
+  border-left-width: 5px;
+}
+
+#navigation-panel a {
+  display: block;
+  color: #495057;
+  text-decoration: none;
+}
+
+#navigation-panel a:hover {
+  color: #0d6efd;
+}
+
+.item-context {
+  display: block;
+  color: #6c757d;
+  font-size: 0.85rem;
+  margin-top: 3px;
+}
+
+/* Node labels and descriptions */
+.node-type-label {
+  display: inline-block;
+  font-size: 0.9rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.node-type-theme {
+  background-color: #e8f5e9;
+  color: #28a745;
+}
+
+.node-type-goal {
+  background-color: #e6f2ff;
+  color: #0066cc;
+}
+
+.node-type-strategy {
+  background-color: #fff3e6;
+  color: #fd7e14;
+}
+
+/* Graph Visualization */
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+.node.central-node {
+  stroke: #000;
+  stroke-width: 2px;
+}
+
+.link {
+  stroke-opacity: 0.6;
+}
+
+.label {
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.community-label {
+  font-size: 18px;
+  pointer-events: none;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.7);
+}
+
+
+/* Tooltip */
+.tooltip {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  pointer-events: none;
+  max-width: 300px;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Status container */
+.status-container {
+  margin-bottom: 0;
+  flex-shrink: 0; /* Prevent from shrinking */
+  min-height: 0;
+}
+
+/* Search */
+.search-container {
+  margin-bottom: 20px;
+  margin-top: 10px; /* Add space at top since title is removed */
+  flex-shrink: 0; /* Prevent from shrinking */
+}
+
+#search-results {
+  max-height: 400px; /* Increased height to show more results with previews */
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-top: 10px;
+  display: none;
+  background: white;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
+
+#search-results ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#search-results li {
+  padding: 10px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+#search-results li:hover {
+  background-color: #f5f8ff;
+}
+
+/* Enhanced search results styling */
+.search-results-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.search-result-item {
+  padding: 12px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  transition: background-color 0.2s;
+}
+
+.search-result-item:hover {
+  background-color: #f0f7ff;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.result-title {
+  font-weight: 600;
+  color: #0066cc;
+  font-size: 14px;
+}
+
+.result-type {
+  font-size: 12px;
+  background-color: #e6f2ff;
+  color: #0066cc;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+.match-summary {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.match-preview {
+  font-size: 13px;
+  color: #333;
+  background-color: #f9f9f9;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border-left: 3px solid #7cb5ec;
+  margin-top: 5px;
+  white-space: pre-line;
+  line-height: 1.4;
+}
+
+/* Clusters Container */
+#clusters-container {
+  flex-grow: 1; /* Take all available space */
+  overflow-y: auto;
+  height: 100%; /* Ensure it takes full height */
+  scrollbar-width: thin; /* For Firefox */
+}
+
+/* Custom scrollbar styling for clusters container */
+#clusters-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+#clusters-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+#clusters-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+#clusters-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+#clusters-container h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1.2rem;
+}
+
+/* Cluster Panel */
+.community-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.community-section h3 {
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  margin-top: 0;
+}
+
+/* Clickable cluster header */
+.clickable-header {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.clickable-header a {
+  cursor: pointer;
+  display: inline-block;
+  position: relative;
+}
+
+.clickable-header a:hover {
+  opacity: 0.8;
+}
+
+/* Removed arrow */
+
+.community-section h4 {
+  font-size: 0.95rem;
+  margin-top: 10px;
+  margin-bottom: 8px;
+}
+
+.community-section ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.community-section li {
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid #6c757d;
+  transition: all 0.2s ease;
+}
+
+.community-section li:hover {
+  background-color: #e9ecef;
+  border-left-width: 5px;
+}
+
+.community-section a {
+  display: block;
+  color: #495057;
+  text-decoration: none;
+}
+
+.community-section a:hover {
+  color: #0d6efd;
+}
+
+/* Status messages */
+#status-message {
+  padding: 5px;
+  border-radius: 4px;
+  display: none; /* Hide by default */
+}
+
+.success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.loading {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+}
+
+/* Hierarchical Navigation Styling */
+.hierarchy-list {
+  list-style-type: none;
+  padding-left: 0;
+  margin-top: 12px;
+}
+
+.hierarchy-list li {
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid #6c757d;
+  transition: all 0.2s ease;
+}
+
+.hierarchy-list li:hover {
+  background-color: #e9ecef;
+  border-left: 3px solid #0d6efd;
+}
+
+.hierarchy-list a {
+  display: block;
+  color: #495057;
+  text-decoration: none;
+}
+
+.hierarchy-list a:hover {
+  color: #0d6efd;
+}
+
+/* Color-coding for different levels */
+.theme-item {
+  border-left-color: #28a745 !important; /* Green for themes */
+}
+
+.theme-item:hover {
+  border-left-color: #218838 !important;
+  background-color: #e8f5e9;
+}
+
+.goal-item {
+  border-left-color: #007bff !important; /* Blue for goals */
+}
+
+.goal-item:hover {
+  border-left-color: #0069d9 !important;
+  background-color: #e6f2ff;
+}
+
+.strategy-item {
+  border-left-color: #fd7e14 !important; /* Orange for strategies */
+}
+
+.strategy-item:hover {
+  border-left-color: #e76b00 !important;
+  background-color: #fff3e6;
+}
+
+/* Description styling - unified style */
+.node-description {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #fff;
+  border-radius: 8px;
+  border-left: 5px solid #6c757d;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* General node information styling */
+.node-info-section {
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 15px;
+}
+
+.node-info-section:last-child {
+  border-bottom: none;
+}
+
+.node-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.node-meta-item {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: #495057;
+}
+
+.node-meta-item strong {
+  margin-right: 5px;
+  color: #212529;
+}
+
+.theme-description {
+  border-left-color: #28a745;
+  background-color: #f8fff9;
+}
+
+.goal-description {
+  border-left-color: #007bff;
+  background-color: #f8fbff;
+}
+
+.strategy-description {
+  border-left-color: #fd7e14;
+  background-color: #fff9f5;
+}
+
+/* Keep backward compatibility with previous class names */
+.strategies-list {
+  list-style-type: none;
+  padding-left: 0;
+  margin-top: 12px;
+}
+
+.strategies-list li {
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid #fd7e14;
+  transition: all 0.2s ease;
+}
+
+.strategies-list li:hover {
+  background-color: #fff3e6;
+  border-left: 3px solid #e76b00;
+}
+
+.strategies-list a {
+  display: block;
+  color: #495057;
+  text-decoration: none;
+}
+
+.strategies-list a:hover {
+  color: #fd7e14;
+}
+
+.node-navigation-bar {
+  margin-bottom: 15px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.node-navigation-button {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  display: inline-block;
+  flex: 1;
+  text-align: center;
+  max-width: 100px;
+}
+
+.node-navigation-button:hover {
+  background-color: #e5e5e5;
+  border-color: #ccc;
+}
+
+.node-navigation-button:active {
+  background-color: #ddd;
+  transform: translateY(1px);
+}
+
+.node-navigation-button.disabled {
+  background-color: #f9f9f9;
+  border-color: #eee;
+  color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.node-navigation-button.disabled:hover {
+  background-color: #f9f9f9;
+  border-color: #eee;
+  transform: none;
+}
+
+/* Focus Mode Toggle Button */
+.node-navigation-button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #0069d9;
+}
+
+.node-navigation-button.active:hover {
+  background-color: #0069d9;
+}
+
+#node-back-button {
+  text-align: left;
+}
+
+#node-forward-button {
+  text-align: right;
+}
+
+#focus-mode-button {
+  max-width: 120px;
+}
+
+#overview-button {
+  max-width: 120px;
+}
+
+/* Similar strategies styling */
+.similar-strategies-container {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 2px solid #e6e6e6;
+}
+
+.similar-strategies-header {
+  font-size: 16px;
+  margin-bottom: 12px;
+  color: #333;
+  font-weight: bold;
+}
+
+.similar-strategies-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.similar-strategy-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+  position: relative;
+}
+
+.similar-strategy-item:last-child {
+  border-bottom: none;
+}
+
+.similar-strategy-link {
+  color: #0066cc;
+  text-decoration: none;
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.similar-strategy-link:hover {
+  text-decoration: underline;
+}
+
+.similar-strategy-context {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.context-theme, .context-goal {
+  color: #555;
+}
+
+.empty-connections {
+  color: #6c757d;
+  font-style: italic;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+/* Cluster keywords styling */
+.cluster-keywords {
+  margin-bottom: 15px;
+}
+
+.keywords-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.keyword-tag {
+  background-color: #f0f0f0;
+  color: #333;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  display: inline-block;
+  white-space: nowrap;
+  border: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 0;
+  font-family: inherit;
+}
+
+.keyword-tag:hover {
+  background-color: #e0e0e0;
+  border-color: #ccc;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.keyword-tag:active {
+  background-color: #d8d8d8;
+  transform: translateY(1px);
+}
+
+/* Filtered nodes panel styling */
+.filtered-nodes-panel {
+  background-color: #f8f9fa;
+  flex-grow: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.filtered-header {
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.keyword-back-button {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  margin-bottom: 10px;
+}
+
+.keyword-back-button:hover {
+  background-color: #e9ecef;
+  border-color: #ced4da;
+}
+
+.filter-subtitle {
+  margin-top: -5px;
+  font-style: italic;
+  font-size: 14px;
+}
+
+.filter-summary {
+  font-size: 14px;
+  margin-bottom: 20px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid #007bff;
+}
+
+/* Keyword excerpt styling */
+.keyword-excerpt {
+  font-size: 13px;
+  color: #555;
+  margin-top: 6px;
+  margin-bottom: 4px;
+  line-height: 1.4;
+  background-color: #fafafa;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border-left: 2px solid #ddd;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+}
+
+.keyword-highlight {
+  background-color: #ffffc5;
+  font-weight: 500;
+  padding: 1px 2px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.header-container h2 {
+  margin-right: 15px;
+  margin-bottom: 0; /* Remove bottom margin */
+}
+
+.header-container .node-type-label {
+  margin-bottom: 0; /* Remove bottom margin from the label */
+}
+
+/* Hierarchical tags container */
+.hierarchical-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+/* Common tag styling */
+.node-type-label {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Tag hover effect for clickable tags only */
+.clickable-tag {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  padding-right: 25px; /* Space for arrow icon */
+}
+
+.clickable-tag:hover {
+  filter: brightness(0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Add arrow icon to indicate clickable tags */
+.clickable-tag::after {
+  content: '→';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+/* Current node tag styling */
+.current-node-tag {
+  opacity: 0.8; /* Slightly dimmed to indicate it's the current node */
+}
+
+/* Modify existing tag colors to work better in a row */
+.node-type-theme {
+  background-color: #e8f5e9;
+  color: #1b7e2b;
+  border: 1px solid #c8e6c9;
+}
+
+.node-type-goal {
+  background-color: #e6f2ff;
+  color: #0055aa;
+  border: 1px solid #bbdefb;
+}
+
+.node-type-strategy {
+  background-color: #fff3e6;
+  color: #e65100;
+  border: 1px solid #ffe0b2;
+}
