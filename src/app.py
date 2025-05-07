@@ -29,16 +29,28 @@ app.config.from_object(config)
 # Configure CORS based on environment
 if hasattr(config, 'CORS_ORIGINS'):
     # Production - use specific origins
-    CORS(app, resources={r"/api/*": {"origins": config.CORS_ORIGINS, "supports_credentials": False}})
+    CORS(app, resources={r"/api/*": {"origins": config.CORS_ORIGINS, "supports_credentials": True}})
 else:
     # Development - less restrictive
-    CORS(app, resources={r"/api/*": {"origins": "*", "supports_credentials": False}})
+    CORS(app, resources={r"/api/*": {"origins": "*", "supports_credentials": True}})
 
 # Security headers middleware
 @app.after_request
 def add_security_headers(response):
     # Content Security Policy to prevent XSS
     csp = "default-src 'self'; "
+    
+    # Check if this is a dashboard request (either endpoint)
+    path = request.path
+    if path.startswith('/api/analytics/dashboard') or path == '/api/analytics/dashboard' or \
+       path.startswith('/api/usage/dashboard') or path == '/api/usage/dashboard':
+        # Allow unsafe-inline for any dashboard page
+        csp = "default-src 'self'; script-src 'self' 'unsafe-inline' https://d3js.org https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+        csp += "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+        csp += "connect-src 'self'; "
+        csp += "img-src 'self' data:; font-src 'self' https://cdn.jsdelivr.net;"
+        response.headers['Content-Security-Policy'] = csp
+        return response
     
     # In development, allow unsafe-inline for easier debugging
     if app.config.get('DEBUG', False):
@@ -493,6 +505,10 @@ with app.app_context():
             logger.info("Generated and saved structured data graph")
     except Exception as e:
         logger.warning(f"Error loading or generating initial data: {e}")
+
+# Register analytics routes
+from .analytics_routes import register_analytics_routes
+register_analytics_routes(app)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

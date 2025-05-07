@@ -1,5 +1,6 @@
 // Data service for fetching graph data
 import { sanitizeString } from './utils.js';
+import { trackSearch, trackError } from './analytics.js';
 
 /**
  * Load graph data from the API
@@ -49,11 +50,37 @@ export async function fetchCommunities() {
  * @returns {Promise} - Promise for the node data
  */
 export async function fetchNodeDetails(nodeId) {
+  const startTime = performance.now();
+  
   try {
     const response = await fetch(`/api/node/${nodeId}`);
-    return await response.json();
+    const data = await response.json();
+    
+    // Calculate response time for performance tracking
+    const responseTime = Math.round(performance.now() - startTime);
+    
+    // Track node details view in analytics
+    if (data && data.node) {
+      // Import here to avoid circular dependency
+      import('./analytics.js').then(analytics => {
+        analytics.trackNodeInteraction(nodeId, 'node_details_view', {
+          type: data.node.type || 'unknown',
+          responseTime: responseTime,
+          connectionCount: data.connections ? data.connections.length : 0
+        });
+      });
+    }
+    
+    return data;
   } catch (error) {
     console.error('Error fetching node details:', error);
+    
+    // Track error in analytics
+    trackError('api_error', error.message, {
+      endpoint: `node/${nodeId}`,
+      context: 'fetchNodeDetails'
+    });
+    
     return null;
   }
 }
@@ -64,9 +91,19 @@ export async function fetchNodeDetails(nodeId) {
  * @returns {Promise} - Promise for the enhanced search results with match information
  */
 export async function searchNodes(query) {
+  const startTime = performance.now();
+  let results = [];
+  
   try {
     const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-    const results = await response.json();
+    results = await response.json();
+    
+    // Calculate response time
+    const endTime = performance.now();
+    const responseTime = Math.round(endTime - startTime);
+    
+    // Track search in analytics
+    trackSearch(query, results.length, responseTime);
     
     // Process results to add useful display information
     return results.map(result => {
@@ -118,6 +155,13 @@ export async function searchNodes(query) {
     });
   } catch (error) {
     console.error('Search error:', error);
+    
+    // Track error in analytics
+    trackError('search_error', error.message, {
+      query: query,
+      context: 'searchNodes'
+    });
+    
     return [];
   }
 }

@@ -1,6 +1,7 @@
 // Node interaction module for handling node highlighting and interactions
 import { calculateNodeSize, getLinkColor, sanitizeString } from './utils.js';
 import { fetchNodeDetails } from './dataService.js';
+import { trackNodeInteraction } from './analytics.js';
 
 // Variables for tracking node interaction state
 let _graphViz = null;
@@ -93,6 +94,13 @@ export function focusOnNode(nodeId, fromNavigation = false) {
     .duration(750)
     .call(_graphViz.zoom.transform, transform);
   
+  // Track this interaction in analytics
+  trackNodeInteraction(nodeId, fromNavigation ? 'navigation_focus' : 'focus', {
+    type: node.type || 'unknown',
+    label: node.label || '',
+    fromHistory: fromNavigation
+  });
+  
   // Show node details
   showNodeDetails(node);
 }
@@ -176,6 +184,13 @@ export function nodeClicked(event, d) {
   event.preventDefault();
   event.stopPropagation();
   
+  // Track click in analytics before any processing
+  trackNodeInteraction(d.id, 'node_click', {
+    type: d.type || 'unknown',
+    label: d.label || '',
+    source: 'direct_interaction'
+  });
+  
   // Show details panel with node information
   // This will update the unified navigation history through displayNodeDetails
   showNodeDetails(d);
@@ -219,6 +234,12 @@ export function navigateBack() {
     // Remove it temporarily so it doesn't get added twice
     _nodeViewHistory.pop();
     
+    // Track navigation in analytics
+    trackNodeInteraction(previousNodeId, 'navigation_back', {
+      from: currentNodeId,
+      historySize: _nodeViewHistory.length + 1
+    });
+    
     // Focus on the node - this will add it back to history
     focusOnNode(previousNodeId, true);
   }
@@ -234,6 +255,13 @@ export function navigateForward() {
   if (_nodeForwardHistory.length > 0) {
     // Get node from forward history
     const nextNodeId = _nodeForwardHistory.pop();
+    
+    // Track navigation in analytics
+    const currentNodeId = _nodeViewHistory.length > 0 ? _nodeViewHistory[_nodeViewHistory.length - 1] : null;
+    trackNodeInteraction(nextNodeId, 'navigation_forward', {
+      from: currentNodeId,
+      forwardHistorySize: _nodeForwardHistory.length + 1
+    });
     
     // Focus on the node - this will add it to view history
     focusOnNode(nextNodeId, true);
@@ -297,6 +325,14 @@ export function showTooltip(event, d, tooltip) {
   tooltip.html(content)
     .style('left', (event.pageX + 10) + 'px')
     .style('top', (event.pageY - 28) + 'px');
+    
+  // Track hover event in analytics with a 5% sample rate to avoid too many events
+  // Only track approximately 5% of hover events to reduce data volume
+  if (Math.random() < 0.05) {
+    trackNodeInteraction(d.id, 'node_hover', {
+      type: d.type || 'unknown'
+    });
+  }
 }
 
 /**
