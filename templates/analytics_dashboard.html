@@ -352,14 +352,11 @@
         
         try {
           // Get daily summary data
-          console.log("Fetching summary data...");
           const summaryResponse = await fetch(`/api/usage/summary?days=30`);
           if (!summaryResponse.ok) {
-            console.warn("Summary response not OK:", summaryResponse.status);
             // Continue with empty data
           } else {
             summaryData = await summaryResponse.json();
-            console.log("Summary data received:", summaryData);
           }
         } catch (summaryError) {
           console.error("Error fetching summary data:", summaryError);
@@ -368,14 +365,11 @@
         
         try {
           // Get recent events
-          console.log("Fetching events data...");
           const eventsResponse = await fetch(`/api/usage/data?days=30`);
           if (!eventsResponse.ok) {
-            console.warn("Events response not OK:", eventsResponse.status);
             // Continue with empty data
           } else {
             eventsData = await eventsResponse.json();
-            console.log("Events data received:", eventsData);
           }
         } catch (eventsError) {
           console.error("Error fetching events data:", eventsError);
@@ -390,7 +384,7 @@
         renderSearchAnalysisChart(eventsData);
         renderEventsTable(eventsData);
         
-        console.log("Dashboard rendering complete");
+        // Dashboard rendering complete
       } catch (error) {
         console.error('Error in dashboard data processing:', error);
       }

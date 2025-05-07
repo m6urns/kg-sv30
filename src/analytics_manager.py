@@ -88,11 +88,15 @@ class AnalyticsManager:
         Creates the file with headers if it doesn't exist.
         """
         if not os.path.exists(filepath):
-            os.makedirs(os.path.dirname(filepath), exist_ok=True)
-            with open(filepath, 'w', newline='') as f:
-                writer = csv.writer(f)
-                writer.writerow(CSV_HEADERS)
-            logger.info(f"Created new analytics file: {filepath}")
+            try:
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                with open(filepath, 'w', newline='') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(CSV_HEADERS)
+                logger.info(f"Created new analytics file: {filepath}")
+            except Exception as e:
+                logger.error(f"Error creating analytics file: {e}")
+                # Continue without creating the file - next operations will handle failures gracefully
     
     def record_event(self, 
                     session_id: str,

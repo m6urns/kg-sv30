@@ -40,7 +40,7 @@ export async function initializeAnalytics() {
   userOptOut = document.cookie.includes('sv_analytics_opt_out=true');
   
   if (userOptOut) {
-    console.log('User has opted out of analytics');
+    // User has opted out - silently disable analytics
     isAnalyticsEnabled = false;
     return;
   }
@@ -57,13 +57,13 @@ export async function initializeAnalytics() {
         const data = await response.json();
         if (data && data.session_id) {
           sessionId = data.session_id;
-          console.log('Usage tracking session established');
+          // Session established successfully
         }
       } else {
-        console.warn('Using local session ID due to server response:', response.status);
+        // Using local session ID due to server response
       }
     } catch (sessionError) {
-      console.warn('Using local analytics session ID due to error:', sessionError.message);
+      // Continue with local session ID on error
       // Continue with local session ID
     }
     
@@ -186,16 +186,14 @@ async function flushEventQueue() {
           credentials: 'include' // Include cookies for session ID
         });
         
-        if (!response.ok) {
-          console.warn(`Analytics event not recorded. Status: ${response.status}`);
-        }
+        // Silently handle non-OK responses
       } catch (fetchError) {
         // Skip this event if it fails, but continue with others
-        console.warn(`Failed to send analytics event: ${fetchError.message}`);
+        // No need to warn, as these failures are expected in some environments
       }
     }
   } catch (error) {
-    console.error('Error in analytics event queue processing:', error);
+    // Silently handle overall queue processing errors
     // We don't add back to the queue in case of error to avoid any cascading issues
   }
 }

@@ -139,12 +139,9 @@ def get_analytics_data():
     Returns:
         Analytics data in the requested format
     """
-    # No debug override - require proper authentication
-    debug_override = False
-    
     # Simple authentication check - in a real app, you would use proper auth
     # This is a placeholder for demonstration purposes
-    if current_app.config.get('DEBUG', False) is False and not debug_override:
+    if current_app.config.get('DEBUG', False) is False:
         # In production, require authentication
         # Check both cookie and header for authentication
         auth_cookie = request.cookies.get('Authorization')
@@ -214,11 +211,8 @@ def get_summary():
     Returns:
         JSON summary of analytics data
     """
-    # No debug override - require proper authentication
-    debug_override = False
-    
     # Simple authentication check (same as get_analytics_data)
-    if current_app.config.get('DEBUG', False) is False and not debug_override:
+    if current_app.config.get('DEBUG', False) is False:
         # Check both cookie and header for authentication
         auth_cookie = request.cookies.get('Authorization')
         auth_header = request.headers.get('Authorization')
@@ -254,11 +248,8 @@ def export_data():
     Returns:
         Downloadable file in the requested format
     """
-    # No debug override - require proper authentication
-    debug_override = False
-    
     # Authentication check
-    if current_app.config.get('DEBUG', False) is False and not debug_override:
+    if current_app.config.get('DEBUG', False) is False:
         # Check both cookie and header for authentication
         auth_cookie = request.cookies.get('Authorization')
         auth_header = request.headers.get('Authorization')
@@ -307,11 +298,8 @@ def dashboard():
     Returns:
         HTML dashboard page
     """
-    # No debug override - require proper authentication
-    debug_override = False
-    
     # Authentication check - first try cookie, then header
-    if current_app.config.get('DEBUG', False) is False and not debug_override:
+    if current_app.config.get('DEBUG', False) is False:
         # Check for token in cookie
         auth_cookie = request.cookies.get('Authorization')
         # Check for token in header
