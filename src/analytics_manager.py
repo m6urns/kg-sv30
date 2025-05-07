@@ -119,14 +119,17 @@ class AnalyticsManager:
         Returns:
             bool: True if event was recorded successfully, False otherwise
         """
-        # Validate category and event_type
+        # Validate category
         if category not in EVENT_CATEGORIES:
             logger.warning(f"Invalid event category: {category}")
-            return False
+            # Use a default category instead of rejecting the event
+            category = 'feature_usage'
         
-        if event_type not in EVENT_TYPES.get(category, []):
-            logger.warning(f"Invalid event type '{event_type}' for category '{category}'")
-            return False
+        # Validate event_type, but allow unrecognized types with a warning
+        valid_event_types = EVENT_TYPES.get(category, [])
+        if event_type not in valid_event_types:
+            logger.warning(f"Unknown event type '{event_type}' for category '{category}' - recording anyway")
+            # We'll still record the event, just with a warning in logs
         
         # Prepare the metadata JSON
         metadata_json = "{}"
@@ -252,7 +255,9 @@ class AnalyticsManager:
                 "date": date_str,
                 "total_events": 0,
                 "categories": {},
-                "unique_sessions": set()
+                "unique_sessions": set(),
+                "events_by_session": {},  # Track events per session
+                "avg_events_per_session": 0  # Average events per session
             }
             
             # Check if the file exists
@@ -266,8 +271,16 @@ class AnalyticsManager:
                             # Increment total events
                             day_summary["total_events"] += 1
                             
+                            # Get session ID
+                            session_id = row["session_id"]
+                            
                             # Track unique sessions
-                            day_summary["unique_sessions"].add(row["session_id"])
+                            day_summary["unique_sessions"].add(session_id)
+                            
+                            # Track events per session
+                            if session_id not in day_summary["events_by_session"]:
+                                day_summary["events_by_session"][session_id] = 0
+                            day_summary["events_by_session"][session_id] += 1
                             
                             # Update category counts
                             category = row["category"]
@@ -290,8 +303,28 @@ class AnalyticsManager:
                 except Exception as e:
                     logger.error(f"Error generating summary for {filepath}: {e}")
             
-            # Convert unique sessions set to count
-            day_summary["unique_sessions"] = len(day_summary["unique_sessions"])
+            # Calculate session metrics
+            session_count = len(day_summary["unique_sessions"])
+            day_summary["unique_sessions"] = session_count
+            
+            if session_count > 0:
+                total_events = day_summary["total_events"]
+                day_summary["avg_events_per_session"] = round(total_events / session_count, 1)
+                
+                # Add distribution information about events per session
+                events_per_session = list(day_summary["events_by_session"].values())
+                if events_per_session:
+                    day_summary["min_events_per_session"] = min(events_per_session)
+                    day_summary["max_events_per_session"] = max(events_per_session)
+                    
+                    # Count sessions with only one event
+                    single_event_sessions = sum(1 for count in events_per_session if count == 1)
+                    day_summary["single_event_sessions"] = single_event_sessions
+                    day_summary["single_event_sessions_pct"] = round((single_event_sessions / session_count) * 100, 1)
+            
+            # Remove the detailed events_by_session data before returning
+            # (it's only used for calculations and would make the response too large)
+            del day_summary["events_by_session"]
             
             summary.append(day_summary)
             current_date -= timedelta(days=1)

@@ -18,7 +18,8 @@ EVENT_TYPES = {
     'page_view': [
         'initial_load',
         'graph_load',
-        'return_visit'
+        'return_visit',
+        'performance'    # Added to handle performance tracking events
     ],
     'node_interaction': [
         'node_click',
@@ -27,7 +28,9 @@ EVENT_TYPES = {
         'graph_zoom',
         'graph_pan',
         'focus_mode_toggle',
-        'cluster_expand'
+        'cluster_expand',
+        'focus',                 # Added to handle node focus events
+        'navigation_focus'       # Added for navigation-triggered focus events
     ],
     'search': [
         'search_query',
@@ -41,7 +44,9 @@ EVENT_TYPES = {
         'navigation_back',
         'navigation_forward',
         'data_download',
-        'help_view'
+        'help_view',
+        'window_resize',         # Added to handle window resize events
+        'graph_background'       # Added to handle background clicks
     ],
     'error': [
         'api_error',

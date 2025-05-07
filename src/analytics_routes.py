@@ -27,7 +27,8 @@ def record_event():
         "event_type": "node_click",
         "event_value": "topic_123",
         "duration_ms": 0,
-        "metadata": {"nodeType":"topic","source":"graph_view"}
+        "metadata": {"nodeType":"topic","source":"graph_view"},
+        "session_id": "anon_abc123" (optional, will use cookie if not provided)
     }
     
     Returns:
@@ -35,11 +36,6 @@ def record_event():
     """
     # Get the analytics manager
     analytics_mgr = get_analytics_manager()
-    
-    # Get or create session ID from cookie
-    session_id = request.cookies.get(SESSION_ID_COOKIE)
-    if not session_id:
-        session_id = analytics_mgr.generate_session_id()
     
     # Get event data from request
     try:
@@ -60,6 +56,22 @@ def record_event():
                 "success": False,
                 "error": "Missing required fields: category and event_type"
             }), 400
+
+        # Session ID handling with priority order:
+        # 1. Use session_id from request body if provided (from frontend js)
+        # 2. Use session ID from cookie if present
+        # 3. Generate a new session ID if neither exists
+        
+        # Check request body first
+        session_id = data.get('session_id')
+        
+        # If not in body, check cookie
+        if not session_id:
+            session_id = request.cookies.get(SESSION_ID_COOKIE)
+            
+        # If still no session ID, generate a new one
+        if not session_id:
+            session_id = analytics_mgr.generate_session_id()
         
         # Record the event
         success = analytics_mgr.record_event(
@@ -74,7 +86,7 @@ def record_event():
         # Create response
         resp = make_response(jsonify({"success": success}))
         
-        # Set session cookie if needed
+        # Set session cookie if needed (to ensure consistent session tracking)
         if not request.cookies.get(SESSION_ID_COOKIE):
             expires = datetime.now() + timedelta(days=SESSION_EXPIRY_DAYS)
             resp.set_cookie(

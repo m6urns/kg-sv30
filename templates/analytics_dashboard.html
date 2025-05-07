@@ -128,6 +128,28 @@
         </div>
       </div>
     </div>
+    
+    <!-- Session Quality Metrics -->
+    <div class="row mt-3">
+      <div class="col-md-4">
+        <div class="card metrics-card">
+          <div class="metric-value" id="maxEventsPerSessionMetric">0</div>
+          <div class="metric-label">Max Events Per Session</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card metrics-card">
+          <div class="metric-value" id="singleEventSessionsMetric">0%</div>
+          <div class="metric-label">Single-Event Sessions</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card metrics-card">
+          <div class="metric-value" id="engagedSessionsMetric">0%</div>
+          <div class="metric-label">Engaged Sessions (5+ events)</div>
+        </div>
+      </div>
+    </div>
 
     <!-- Charts Row -->
     <div class="row mt-4">
@@ -394,6 +416,7 @@
     function updateSummaryMetrics(summaryData, eventsData) {
       let totalEvents = 0;
       let uniqueSessions = new Set();
+      let sessionEventCounts = {}; // Track events per session
       
       try {
         if (summaryData && Array.isArray(summaryData) && summaryData.length) {
@@ -409,6 +432,12 @@
           eventsData.forEach(event => {
             if (event && event.session_id) {
               uniqueSessions.add(event.session_id);
+              
+              // Track events per session
+              if (!sessionEventCounts[event.session_id]) {
+                sessionEventCounts[event.session_id] = 0;
+              }
+              sessionEventCounts[event.session_id]++;
             }
           });
         }
@@ -420,11 +449,39 @@
         const searchEvents = Array.isArray(eventsData) ? 
           eventsData.filter(event => event && event.category === 'search').length : 0;
         
-        // Update the UI
+        // Calculate session quality metrics
+        let maxEventsPerSession = 0;
+        let singleEventSessions = 0;
+        let engagedSessions = 0; // Sessions with 5+ events
+        
+        Object.values(sessionEventCounts).forEach(count => {
+          if (count > maxEventsPerSession) {
+            maxEventsPerSession = count;
+          }
+          if (count === 1) {
+            singleEventSessions++;
+          }
+          if (count >= 5) {
+            engagedSessions++;
+          }
+        });
+        
+        // Calculate percentages
+        const singleEventPercentage = uniqueSessionCount > 0 ? 
+          Math.round((singleEventSessions / uniqueSessionCount) * 100) : 0;
+        const engagedPercentage = uniqueSessionCount > 0 ? 
+          Math.round((engagedSessions / uniqueSessionCount) * 100) : 0;
+        
+        // Update the UI - basic metrics
         document.getElementById('totalEventsMetric').textContent = totalEvents;
         document.getElementById('uniqueSessionsMetric').textContent = uniqueSessionCount;
         document.getElementById('avgEventsPerSessionMetric').textContent = avgEventsPerSession;
         document.getElementById('searchCountMetric').textContent = searchEvents;
+        
+        // Update session quality metrics
+        document.getElementById('maxEventsPerSessionMetric').textContent = maxEventsPerSession;
+        document.getElementById('singleEventSessionsMetric').textContent = singleEventPercentage + '%';
+        document.getElementById('engagedSessionsMetric').textContent = engagedPercentage + '%';
       } catch (error) {
         console.error('Error updating summary metrics:', error);
         // Set default values in case of error
@@ -432,6 +489,9 @@
         document.getElementById('uniqueSessionsMetric').textContent = '0';
         document.getElementById('avgEventsPerSessionMetric').textContent = '0';
         document.getElementById('searchCountMetric').textContent = '0';
+        document.getElementById('maxEventsPerSessionMetric').textContent = '0';
+        document.getElementById('singleEventSessionsMetric').textContent = '0%';
+        document.getElementById('engagedSessionsMetric').textContent = '0%';
       }
     }
     
