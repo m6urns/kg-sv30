@@ -175,3 +175,6 @@ cython_debug/
 
 CLAUDE.md
 **/CLAUDE.local.md
+
+requirements.txt
+environment.yml
