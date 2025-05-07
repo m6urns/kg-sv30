@@ -10,6 +10,7 @@ import {
   setupClusterPanel,
   initializeUniversalNavigation
 } from './modules/uiComponents/index.js';
+import { trackFeatureUsage, trackEvent, EVENT_CATEGORIES } from './modules/analytics.js';
 
 // Global state
 let graphViz = null;
@@ -42,7 +43,33 @@ function initializeEventListeners() {
     
     const results = await searchNodes(query);
     displaySearchResults(results);
+    
+    // No need to track search here as it's already tracked in searchNodes function
   }, 300));
+  
+  // Track graph interactions like zoom and pan
+  graphContainer.addEventListener('wheel', debounce(() => {
+    trackFeatureUsage('graph_zoom', 'wheel', { source: 'mouse_wheel' });
+  }, 1000)); // Rate limit to max one event per second
+  
+  // Track when user clicks on the background
+  graphContainer.addEventListener('click', (e) => {
+    // Only track clicks directly on the SVG background (not on nodes)
+    if (e.target.tagName === 'svg' || e.target.classList.contains('graph-background')) {
+      trackFeatureUsage('graph_background', 'click', { 
+        x: e.clientX, 
+        y: e.clientY 
+      });
+    }
+  });
+  
+  // Track window resize events
+  window.addEventListener('resize', debounce(() => {
+    trackFeatureUsage('window_resize', 'resize', {
+      width: window.innerWidth,
+      height: window.innerHeight
+    });
+  }, 1000)); // Only track once per second at most
 }
 
 /**
@@ -78,6 +105,20 @@ function onGraphDataLoaded(data) {
   
   // Set up the cluster panel
   setupClusters();
+  
+  // Track graph loading in analytics
+  trackEvent(
+    EVENT_CATEGORIES.PAGE_VIEW,
+    'graph_load',
+    'success',
+    0,
+    {
+      nodeCount: data.nodes ? data.nodes.length : 0,
+      linkCount: data.links ? data.links.length : 0,
+      topicCount: data.nodes ? data.nodes.filter(n => n.type === 'topic').length : 0,
+      documentCount: data.nodes ? data.nodes.filter(n => n.type === 'document').length : 0
+    }
+  );
   
   // No auto-selection of nodes at startup
 }
