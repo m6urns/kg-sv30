@@ -370,6 +370,20 @@ body {
   margin-bottom: 6px;
 }
 
+/* Semantic match styling */
+.semantic-match {
+  color: #8a2be2; /* Purple color for semantic matches */
+  font-style: italic;
+  font-weight: 500;
+  border-left: 2px solid #8a2be2;
+  padding-left: 6px;
+}
+
+.semantic-preview {
+  background-color: #f9f4ff; /* Light purple background */
+  border-left: 2px solid #8a2be2;
+}
+
 .match-preview {
   font-size: 13px;
   color: #333;

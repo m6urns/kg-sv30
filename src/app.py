@@ -167,7 +167,7 @@ def get_communities():
 
 @app.route('/api/search', methods=['GET'])
 def search():
-    """Search for nodes matching query in keywords and text content."""
+    """Search for nodes matching query in keywords and text content with semantic fallback."""
     global graph_data
     
     if graph_data is None:
@@ -177,11 +177,51 @@ def search():
     if not query:
         return jsonify([])
     
+    # Check if semantic search is requested or should be used as fallback
+    use_semantic = request.args.get('semantic', 'auto').lower()
+    min_keyword_results = 3  # Minimum keyword results before using semantic search
+    
+    # Perform keyword search
+    keyword_results = perform_keyword_search(query, graph_data["nodes"])
+    
+    # Sort keyword results by score (descending)
+    keyword_results.sort(key=lambda x: x["match_info"]["score"], reverse=True)
+    
+    # Determine if we should use semantic search
+    if use_semantic == 'only':
+        # Only use semantic search
+        return jsonify(perform_semantic_search(query, graph_data["nodes"]))
+    elif use_semantic == 'no':
+        # Only use keyword search
+        return jsonify(keyword_results)
+    elif use_semantic == 'auto' and len(keyword_results) < min_keyword_results:
+        # Use semantic search as fallback
+        semantic_results = perform_semantic_search(query, graph_data["nodes"])
+        
+        # Combine results, ensuring no duplicates
+        combined_results = keyword_results.copy()
+        keyword_ids = {node["id"] for node in keyword_results}
+        
+        for node in semantic_results:
+            if node["id"] not in keyword_ids:
+                combined_results.append(node)
+        
+        # Sort combined results by score
+        combined_results.sort(key=lambda x: x["match_info"]["score"], reverse=True)
+        return jsonify(combined_results)
+    else:
+        # Just use keyword results
+        return jsonify(keyword_results)
+
+def perform_keyword_search(query, nodes):
+    """Perform keyword-based search on nodes."""
     results = []
-    for node in graph_data["nodes"]:
+    
+    for node in nodes:
         # Initialize match info
         match_info = {
             "score": 0,
+            "match_type": "keyword",
             "matches": []
         }
         
@@ -283,12 +323,64 @@ def search():
                 result_node["label"] = secure_sanitize(result_node["label"])
             
             result_node["match_info"] = match_info
+            # Add match summary for display
+            result_node["match_summary"] = "Found in: " + ", ".join(
+                [match["field"] for match in match_info["matches"]]
+            )
             results.append(result_node)
     
-    # Sort results by score (descending)
-    results.sort(key=lambda x: x["match_info"]["score"], reverse=True)
-    
-    return jsonify(results)
+    return results
+
+def perform_semantic_search(query, nodes):
+    """Perform semantic search using the SemanticSearch module."""
+    try:
+        # Import the semantic search module
+        from .semantic_search import SemanticSearch
+        
+        # Get base directory for embeddings file
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        base_dir = os.path.dirname(script_dir)
+        embeddings_path = os.path.join(base_dir, 'static', 'embeddings.json')
+        
+        # Initialize the semantic search module
+        semantic_search = SemanticSearch()
+        
+        # Load embeddings if available
+        if not semantic_search.load_embeddings(embeddings_path):
+            # Embeddings not available, generate them
+            if semantic_search.is_available():
+                logger.info("Generating embeddings for semantic search...")
+                embeddings = semantic_search.generate_embeddings_for_graph(nodes)
+                semantic_search.save_embeddings(embeddings, embeddings_path)
+                # Reload the embeddings we just saved
+                semantic_search.load_embeddings(embeddings_path)
+            else:
+                logger.warning("Semantic search is not available - missing sentence-transformers")
+                return []
+        
+        # Perform semantic search
+        results = semantic_search.semantic_search(
+            query, 
+            nodes, 
+            top_k=10,          # Return top 10 matches
+            score_threshold=0.3 # Minimum similarity score
+        )
+        
+        # Scale semantic search scores to be comparable with keyword search
+        for result in results:
+            if "match_info" in result and "score" in result["match_info"]:
+                # Scale semantic scores (0-1) to be comparable with keyword scores (0-10)
+                # A good semantic match (0.7+) should be comparable to a medium keyword match
+                result["match_info"]["score"] = result["match_info"]["score"] * 8
+        
+        return results
+        
+    except ImportError:
+        logger.error("Could not import semantic_search module")
+        return []
+    except Exception as e:
+        logger.error(f"Error performing semantic search: {e}")
+        return []
 
 @app.route('/api/node/<node_id>', methods=['GET'])
 def get_node(node_id):

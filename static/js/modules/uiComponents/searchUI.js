@@ -92,39 +92,83 @@ export function displaySearchResults(results) {
       // Create container for match summary
       const matchSummaryDiv = document.createElement('div');
       matchSummaryDiv.className = 'match-summary';
-      matchSummaryDiv.textContent = result.match_summary || 'Match found';
+      
+      // Check if this is a semantic match and style differently
+      if (result.match_info.match_type === 'semantic') {
+        matchSummaryDiv.className += ' semantic-match';
+        matchSummaryDiv.textContent = '✨ Semantic match: ' + (result.match_summary || 'Similar content found');
+      } else {
+        matchSummaryDiv.textContent = result.match_summary || 'Match found';
+      }
+      
       li.appendChild(matchSummaryDiv);
       
-      // If we have a best match with text content, show a preview
+      // Show a preview of the matching content
+      let previewText = '';
+      
+      // First try to get preview from best_match
       if (result.best_match && result.best_match.text) {
+        previewText = result.best_match.text;
+      } 
+      // If no best_match but we have match_info with matches, use the first match's text
+      else if (result.match_info.matches && result.match_info.matches.length > 0 && result.match_info.matches[0].text) {
+        previewText = result.match_info.matches[0].text;
+      }
+      // If semantic match but no specific text, try to get text from node
+      else if (result.match_info.match_type === 'semantic') {
+        // Try to find best text field based on node type
+        if (result.type === 'strategy' && result.text) {
+          previewText = result.text;
+        } else if (result.type === 'topic' && result.description) {
+          previewText = result.description;
+        } else if (result.text) {
+          previewText = result.text;
+        } else {
+          // No good text field found, use label
+          previewText = result.label;
+        }
+      }
+      
+      if (previewText) {
         // Create container for match preview
         const previewDiv = document.createElement('div');
         previewDiv.className = 'match-preview';
         
-        // Get a relevant snippet of text with the match context
-        let previewText = result.best_match.text;
         const query = searchInput.value.trim().toLowerCase();
         
-        // If text is long, create a snippet around the match
+        // If text is long, create a snippet
         if (previewText.length > 150) {
-          const matchIndex = previewText.toLowerCase().indexOf(query);
-          if (matchIndex >= 0) {
-            // Get text before and after the match
-            const startIndex = Math.max(0, matchIndex - 50);
-            const endIndex = Math.min(previewText.length, matchIndex + query.length + 50);
-            
-            // Create snippet with ellipses if needed
-            previewText = 
-              (startIndex > 0 ? '...' : '') + 
-              previewText.substring(startIndex, endIndex) + 
-              (endIndex < previewText.length ? '...' : '');
-          } else {
-            // Just take the first 150 chars if match not found directly
+          // For semantic matches, we might not find the exact query text
+          // so just take the first 150 chars
+          if (result.match_info.match_type === 'semantic') {
             previewText = previewText.substring(0, 150) + '...';
+          } else {
+            // For keyword matches, try to center on the match
+            const matchIndex = previewText.toLowerCase().indexOf(query);
+            if (matchIndex >= 0) {
+              // Get text before and after the match
+              const startIndex = Math.max(0, matchIndex - 50);
+              const endIndex = Math.min(previewText.length, matchIndex + query.length + 50);
+              
+              // Create snippet with ellipses if needed
+              previewText = 
+                (startIndex > 0 ? '...' : '') + 
+                previewText.substring(startIndex, endIndex) + 
+                (endIndex < previewText.length ? '...' : '');
+            } else {
+              // Just take the first 150 chars if match not found directly
+              previewText = previewText.substring(0, 150) + '...';
+            }
           }
         }
         
         previewDiv.textContent = previewText;
+        
+        // Add special class for semantic matches
+        if (result.match_info.match_type === 'semantic') {
+          previewDiv.className += ' semantic-preview';
+        }
+        
         li.appendChild(previewDiv);
       }
     }

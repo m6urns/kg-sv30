@@ -837,6 +837,7 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                 use_embeddings: Whether to use word embeddings (default: True if available)
                 min_cross_theme_connections: Minimum cross-theme connections (default: 2)
                 embedding_weight: Weight for embedding vs keyword similarity (default: 0.7)
+                generate_search_embeddings: Whether to generate search embeddings (default: True)
             
         Returns:
             dict: D3.js compatible graph structure
@@ -889,6 +890,48 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                 # Sort strategies by section number
                 strategies.sort(key=lambda s: s["section"])
                 goal_map[goal_id]["strategy_entries"] = strategies
+                
+        # Generate search embeddings if requested
+        generate_search_embeddings = kwargs.get('generate_search_embeddings', True)
+        if generate_search_embeddings and EMBEDDINGS_AVAILABLE:
+            try:
+                # Import semantic search module
+                import importlib.util
+                import sys
+                
+                # Determine path to semantic_search.py
+                base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                semantic_search_path = os.path.join(base_dir, 'src', 'semantic_search.py')
+                
+                # Check if module exists
+                if os.path.exists(semantic_search_path):
+                    # Import the module
+                    spec = importlib.util.spec_from_file_location("semantic_search", semantic_search_path)
+                    semantic_search_module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(semantic_search_module)
+                    
+                    # Get the SemanticSearch class
+                    SemanticSearch = semantic_search_module.SemanticSearch
+                    
+                    # Create instance and generate embeddings
+                    print("Generating search embeddings for nodes...")
+                    semantic_search = SemanticSearch()
+                    
+                    if semantic_search.is_available():
+                        # Generate embeddings for all nodes
+                        embeddings = semantic_search.generate_embeddings_for_graph(all_nodes)
+                        
+                        # Save embeddings to static directory
+                        embeddings_path = os.path.join(base_dir, 'static', 'embeddings.json')
+                        if semantic_search.save_embeddings(embeddings, embeddings_path):
+                            print(f"Saved search embeddings to {embeddings_path}")
+                    else:
+                        print("Semantic search model not available, skipping embeddings generation")
+                else:
+                    print(f"Semantic search module not found at {semantic_search_path}")
+            except Exception as e:
+                print(f"Error generating search embeddings: {e}")
+                # Continue without embeddings
         
         # Add updated visualization metadata for the UI
         visualization_metadata = {
