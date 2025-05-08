@@ -370,7 +370,7 @@ body {
   margin-bottom: 6px;
 }
 
-/* Semantic match styling */
+/* Match styling */
 .semantic-match {
   color: #8a2be2; /* Purple color for semantic matches */
   font-style: italic;
@@ -379,9 +379,21 @@ body {
   padding-left: 6px;
 }
 
+.keyword-match {
+  color: #0066cc; /* Blue color for keyword matches */
+  font-weight: 500;
+  border-left: 2px solid #0066cc;
+  padding-left: 6px;
+}
+
 .semantic-preview {
   background-color: #f9f4ff; /* Light purple background */
   border-left: 2px solid #8a2be2;
+}
+
+.keyword-preview {
+  background-color: #f0f7ff; /* Light blue background */
+  border-left: 2px solid #0066cc;
 }
 
 .match-preview {

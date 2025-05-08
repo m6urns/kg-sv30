@@ -98,7 +98,8 @@ export function displaySearchResults(results) {
         matchSummaryDiv.className += ' semantic-match';
         matchSummaryDiv.textContent = '✨ Semantic match: ' + (result.match_summary || 'Similar content found');
       } else {
-        matchSummaryDiv.textContent = result.match_summary || 'Match found';
+        matchSummaryDiv.className += ' keyword-match';
+        matchSummaryDiv.textContent = '🔎 Keyword match: ' + (result.match_summary || 'Exact text found');
       }
       
       li.appendChild(matchSummaryDiv);
@@ -164,9 +165,11 @@ export function displaySearchResults(results) {
         
         previewDiv.textContent = previewText;
         
-        // Add special class for semantic matches
+        // Add special class based on match type
         if (result.match_info.match_type === 'semantic') {
           previewDiv.className += ' semantic-preview';
+        } else {
+          previewDiv.className += ' keyword-preview';
         }
         
         li.appendChild(previewDiv);
