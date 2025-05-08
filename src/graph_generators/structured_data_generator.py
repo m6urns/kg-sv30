@@ -924,7 +924,7 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
                         {
                             "display": "connection_list",
                             "source": "connections",
-                            "title": "Similar Strategies",
+                            "title": "Potentially Similar Strategies",
                             "item_format": "{node_label} - {theme_title} ({weight})",
                             "empty_message": "No similar strategies found",
                             "clickable": True,

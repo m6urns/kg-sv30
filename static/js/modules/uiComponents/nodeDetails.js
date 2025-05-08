@@ -237,8 +237,8 @@ function displayDocumentWithStrategies(data, contentWrapper) {
       item.className = 'strategy-item';
       
       const link = document.createElement('a');
-      // Format according to the item_format if specified, otherwise use default format
-      const displayText = strategy.section + ': ' + strategy.summary;
+      // Use full text instead of summary
+      const displayText = strategy.section + ': ' + strategy.text;
       link.textContent = displayText;
       link.href = strategy.url || '#';
       
@@ -406,8 +406,6 @@ function displaySimilarStrategies(strategyNode, container) {
   
   // Loop through connections and add them to the list
   strategyNode.connections.forEach(connection => {
-    // Log connection data to understand what's coming from the server
-    console.log('Connection data:', connection);
     
     const item = document.createElement('li');
     item.className = 'strategy-item';
