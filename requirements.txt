@@ -10,9 +10,9 @@ gunicorn==23.0.0
 python-dotenv==1.0.0
 
 # Development/testing only (not needed in production)
-# numpy==1.26.4
-# matplotlib==3.8.3
-# scikit-learn==1.3.2  # Changed to an available version
-# sentence-transformers==2.2.2  # Kept at older version
-# transformers==4.26.0  # Kept at older version
-# torch==1.13.1  # Kept at older version
+numpy==1.26.4
+matplotlib==3.8.3
+scikit-learn==1.3.2
+sentence-transformers==4.1.0
+transformers==4.51.3
+torch==2.7.0
