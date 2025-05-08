@@ -388,7 +388,7 @@ function displayGenericDetails(data, contentWrapper) {
 function displaySimilarStrategies(strategyNode, container) {
   // Create header
   const header = document.createElement('h3');
-  header.textContent = 'Similar Strategies';
+  header.textContent = 'Potentially Similar Strategies';
   container.appendChild(header);
   
   // Check if there are any similar strategies
@@ -406,14 +406,26 @@ function displaySimilarStrategies(strategyNode, container) {
   
   // Loop through connections and add them to the list
   strategyNode.connections.forEach(connection => {
+    // Log connection data to understand what's coming from the server
+    console.log('Connection data:', connection);
+    
     const item = document.createElement('li');
     item.className = 'strategy-item';
     
     // Create link to the strategy
     const link = document.createElement('a');
     
-    // Use the display_label if available, otherwise use the node_label
+    // We need to fetch the full strategy text since connection.node_label is truncated
+    // First display the label (which may be truncated)
     link.textContent = connection.node_label;
+    
+    // Then asynchronously fetch and update with full text
+    fetchNodeDetails(connection.node_id).then(nodeData => {
+      if (nodeData && nodeData.node && nodeData.node.text) {
+        // Update with the full text
+        link.textContent = nodeData.node.text;
+      }
+    }).catch(err => console.error("Error fetching full strategy text:", err));
     link.href = '#';
     link.dataset.nodeId = connection.node_id;
     

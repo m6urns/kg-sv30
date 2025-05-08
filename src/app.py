@@ -370,7 +370,7 @@ def process_document():
             sys.path.append(current_dir)
         
         # Use the structured data generator by default
-        from graph_generators import StructuredDataGraphGenerator
+        from .graph_generators import StructuredDataGraphGenerator
         generator = StructuredDataGraphGenerator()
         logger.info(f"Using generator: {generator.get_name()}")
         
@@ -413,7 +413,7 @@ def process_document():
         # Try to use sample data as fallback
         try:
             logger.info("Using structured data generator as fallback after processing error")
-            from graph_generators import StructuredDataGraphGenerator
+            from .graph_generators import StructuredDataGraphGenerator
             generator = StructuredDataGraphGenerator()
             
             # Try to get the vision statement from JSON if possible
@@ -490,7 +490,7 @@ with app.app_context():
             logger.info(f"Pre-loaded graph data with {len(graph_data['nodes'])} nodes and {len(graph_data['links'])} links")
         else:
             # No saved data, generate using structured data
-            from graph_generators import StructuredDataGraphGenerator
+            from .graph_generators import StructuredDataGraphGenerator
             logger.info("Initializing with structured data (no saved data found)")
             generator = StructuredDataGraphGenerator()
             graph_data = generator.generate_graph("")
