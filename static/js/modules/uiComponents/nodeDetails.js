@@ -419,9 +419,14 @@ function displaySimilarStrategies(strategyNode, container) {
     
     // Then asynchronously fetch and update with full text
     fetchNodeDetails(connection.node_id).then(nodeData => {
-      if (nodeData && nodeData.node && nodeData.node.text) {
-        // Update with the full text
-        link.textContent = nodeData.node.text;
+      if (nodeData && nodeData.node) {
+        // Extract section number if available
+        const sectionNumber = nodeData.node.section_number;
+        
+        if (nodeData.node.text) {
+          // Update with the section number + full text
+          link.textContent = sectionNumber ? `${sectionNumber}: ${nodeData.node.text}` : nodeData.node.text;
+        }
       }
     }).catch(err => console.error("Error fetching full strategy text:", err));
     link.href = '#';

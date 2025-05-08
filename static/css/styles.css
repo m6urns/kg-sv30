@@ -94,7 +94,7 @@ body {
   position: fixed;
   bottom: 0;
   left: 0; /* Align with left edge of window */
-  width: 33.33%; /* Full width of the sidebar column */
+  width: 41.67%; /* Full width of the sidebar column (matching Bootstrap col-md-5) */
   background-color: #f8f9fa;
   border-top: 1px solid #dee2e6;
   padding: 15px 20px; /* Maintain horizontal padding inside */

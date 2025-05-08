@@ -179,7 +179,7 @@ def search():
     
     # Check if semantic search is requested or should be used as fallback
     use_semantic = request.args.get('semantic', 'auto').lower()
-    min_keyword_results = 3  # Minimum keyword results before using semantic search
+    min_keyword_results = 5  # Minimum keyword results before using semantic search
     
     # Perform keyword search
     keyword_results = perform_keyword_search(query, graph_data["nodes"])
