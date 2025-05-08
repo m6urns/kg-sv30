@@ -266,7 +266,8 @@ class SemanticSearch:
             return 0.0
     
     def semantic_search(self, query: str, node_data: List[Dict[str, Any]], 
-                        top_k: int = 10, score_threshold: float = 0.3) -> List[Dict[str, Any]]:
+                        top_k: int = 10, score_threshold: float = 0.3,
+                        timeout: Optional[float] = None) -> List[Dict[str, Any]]:
         """
         Perform semantic search using query and return best matches.
         
@@ -275,6 +276,7 @@ class SemanticSearch:
             node_data: List of node dictionaries from the graph
             top_k: Maximum number of results to return
             score_threshold: Minimum similarity score to include in results
+            timeout: Optional timeout in seconds
             
         Returns:
             List of node dictionaries with match information
@@ -283,6 +285,9 @@ class SemanticSearch:
             return []
             
         try:
+            import time
+            start_time = time.time()
+            
             # Generate embedding for query
             query_embedding = self.get_embedding(query)
             if query_embedding is None:
@@ -293,8 +298,18 @@ class SemanticSearch:
             
             # Calculate similarity for each node
             results = []
+            processed_nodes = 0
+            total_nodes = len(self.embeddings)
             
             for node_id, field_embeddings in self.embeddings.items():
+                # Check for timeout
+                if timeout and time.time() - start_time > timeout:
+                    logger.warning(f"Semantic search timed out after {timeout} seconds")
+                    break
+                
+                processed_nodes += 1
+                
+                # Skip if node is not in our data
                 if node_id not in node_map:
                     continue
                     
@@ -332,6 +347,10 @@ class SemanticSearch:
                     
                     result_node["match_summary"] = f"Semantic match in: {field_display_name}"
                     results.append(result_node)
+            
+            # Log performance metrics
+            elapsed_time = time.time() - start_time
+            logger.info(f"Semantic search completed in {elapsed_time:.2f}s, processed {processed_nodes}/{total_nodes} nodes")
             
             # Sort by score and return top_k
             results.sort(key=lambda x: x["match_info"]["score"], reverse=True)

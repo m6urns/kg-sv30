@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template, send_from_directory
+from flask import Flask, jsonify, request, render_template, send_from_directory, make_response
 import os
 import json
 import logging
@@ -179,7 +179,24 @@ def search():
     
     # Check if semantic search is requested or should be used as fallback
     use_semantic = request.args.get('semantic', 'auto').lower()
-    min_keyword_results = 5  # Minimum keyword results before using semantic search
+    min_keyword_results = 3  # Minimum keyword results before using semantic search
+    
+    # Get client timeout header if present (in milliseconds)
+    client_timeout_ms = request.headers.get('X-Client-Timeout')
+    semantic_timeout_sec = None
+    
+    if client_timeout_ms:
+        try:
+            # Convert to seconds and leave 10% buffer for network overhead
+            client_timeout_sec = float(client_timeout_ms) / 1000
+            semantic_timeout_sec = client_timeout_sec * 0.9
+            logger.info(f"Client specified timeout: {client_timeout_sec}s, semantic timeout: {semantic_timeout_sec}s")
+        except (ValueError, TypeError):
+            logger.warning(f"Invalid client timeout header: {client_timeout_ms}")
+    
+    # Start search timer
+    import time
+    start_time = time.time()
     
     # Perform keyword search
     keyword_results = perform_keyword_search(query, graph_data["nodes"])
@@ -187,16 +204,27 @@ def search():
     # Sort keyword results by score (descending)
     keyword_results.sort(key=lambda x: x["match_info"]["score"], reverse=True)
     
+    # Log keyword search time
+    keyword_time = time.time() - start_time
+    logger.info(f"Keyword search completed in {keyword_time:.2f}s with {len(keyword_results)} results")
+    
     # Determine if we should use semantic search
     if use_semantic == 'only':
         # Only use semantic search
-        return jsonify(perform_semantic_search(query, graph_data["nodes"]))
+        results = perform_semantic_search(query, graph_data["nodes"], timeout=semantic_timeout_sec)
+        response = make_response(jsonify(results))
     elif use_semantic == 'no':
         # Only use keyword search
-        return jsonify(keyword_results)
+        response = make_response(jsonify(keyword_results))
     elif use_semantic == 'auto' and len(keyword_results) < min_keyword_results:
         # Use semantic search as fallback
-        semantic_results = perform_semantic_search(query, graph_data["nodes"])
+        if len(keyword_results) > 0:
+            logger.info(f"Using semantic search as fallback for '{query}' ({len(keyword_results)} keyword results)")
+        else:
+            logger.info(f"Using semantic search for '{query}' (no keyword results)")
+        
+        # Run semantic search with timeout
+        semantic_results = perform_semantic_search(query, graph_data["nodes"], timeout=semantic_timeout_sec)
         
         # Combine results, ensuring no duplicates
         combined_results = keyword_results.copy()
@@ -208,10 +236,24 @@ def search():
         
         # Sort combined results by score
         combined_results.sort(key=lambda x: x["match_info"]["score"], reverse=True)
-        return jsonify(combined_results)
+        
+        # Log total time
+        total_time = time.time() - start_time
+        logger.info(f"Combined search completed in {total_time:.2f}s with {len(combined_results)} results")
+        
+        # Create response with combined results
+        response = make_response(jsonify(combined_results))
+        response.headers['X-Search-Progress'] = 'Search completed'
+        response.headers['X-Search-Percent'] = '100'
     else:
         # Just use keyword results
-        return jsonify(keyword_results)
+        response = make_response(jsonify(keyword_results))
+    
+    # Add search time headers
+    total_time = time.time() - start_time
+    response.headers['X-Search-Time'] = f"{total_time:.2f}"
+    
+    return response
 
 def perform_keyword_search(query, nodes):
     """Perform keyword-based search on nodes."""
@@ -331,8 +373,18 @@ def perform_keyword_search(query, nodes):
     
     return results
 
-def perform_semantic_search(query, nodes):
-    """Perform semantic search using the SemanticSearch module."""
+def perform_semantic_search(query, nodes, timeout=None):
+    """
+    Perform semantic search using the SemanticSearch module.
+    
+    Args:
+        query: The search query string
+        nodes: List of node dictionaries from the graph
+        timeout: Optional timeout in seconds
+        
+    Returns:
+        List of node dictionaries with match information
+    """
     try:
         # Import the semantic search module
         from .semantic_search import SemanticSearch
@@ -358,13 +410,20 @@ def perform_semantic_search(query, nodes):
                 logger.warning("Semantic search is not available - missing sentence-transformers")
                 return []
         
-        # Perform semantic search
+        # Perform semantic search with optional timeout
         results = semantic_search.semantic_search(
             query, 
             nodes, 
-            top_k=10,          # Return top 10 matches
-            score_threshold=0.3 # Minimum similarity score
+            top_k=10,             # Return top 10 matches
+            score_threshold=0.3,  # Minimum similarity score
+            timeout=timeout       # Optional timeout in seconds
         )
+        
+        # Count how many results came from a timeout vs. complete search
+        if timeout:
+            total_nodes = len(semantic_search.embeddings)
+            processed_nodes = min(total_nodes, len(nodes))  # Conservative estimate
+            logger.info(f"Semantic search processed approximately {processed_nodes}/{total_nodes} nodes with timeout={timeout}s")
         
         # Scale semantic search scores to be comparable with keyword search
         for result in results:

@@ -294,8 +294,9 @@ export function trackNodeInteraction(nodeId, interactionType, nodeData = {}) {
  * @param {string} query - Search query
  * @param {number} resultCount - Number of results
  * @param {number} responseTimeMs - Search response time
+ * @param {string} searchType - Type of search (keyword, semantic, or combined)
  */
-export function trackSearch(query, resultCount, responseTimeMs = 0) {
+export function trackSearch(query, resultCount, responseTimeMs = 0, searchType = 'keyword') {
   // Track response time for performance monitoring
   if (responseTimeMs > 0) {
     performanceMetrics.searchResponseTimes.push(responseTimeMs);
@@ -310,7 +311,9 @@ export function trackSearch(query, resultCount, responseTimeMs = 0) {
     query,
     responseTimeMs,
     {
-      resultCount
+      resultCount,
+      search_type: searchType,
+      duration_ms: responseTimeMs
     }
   );
 }
