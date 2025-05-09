@@ -51,40 +51,40 @@ function createLoadingIndicator(message = 'Searching...', isLongRunning = false)
   container.appendChild(spinner);
   
   // Create message
-  const messageElem = document.createElement('div');
-  messageElem.className = 'search-loading-message';
-  messageElem.textContent = message;
-  container.appendChild(messageElem);
+  // const messageElem = document.createElement('div');
+  // messageElem.className = 'search-loading-message';
+  // messageElem.textContent = message;
+  // container.appendChild(messageElem);
   
   // Add cancel button for long-running searches
-  if (isLongRunning) {
-    const cancelButton = document.createElement('button');
-    cancelButton.className = 'search-cancel-button';
-    cancelButton.textContent = 'Cancel';
-    cancelButton.addEventListener('click', () => {
-      // This will trigger the dataService to abort the active request
-      // The onSearchProgress handler will update the UI
-      triggerSearchCancel();
-    });
-    container.appendChild(cancelButton);
+  // if (isLongRunning) {
+  //   const cancelButton = document.createElement('button');
+  //   cancelButton.className = 'search-cancel-button';
+  //   cancelButton.textContent = 'Cancel';
+  //   cancelButton.addEventListener('click', () => {
+  //     // This will trigger the dataService to abort the active request
+  //     // The onSearchProgress handler will update the UI
+  //     triggerSearchCancel();
+  //   });
+  //   container.appendChild(cancelButton);
     
-    // Add potential timeout message for long-running searches
-    const timeoutMessage = document.createElement('div');
-    timeoutMessage.className = 'search-timeout-message';
-    timeoutMessage.textContent = 'Semantic search may take longer on resource-constrained systems';
-    timeoutMessage.style.display = 'none';
-    container.appendChild(timeoutMessage);
+    // // Add potential timeout message for long-running searches
+    // const timeoutMessage = document.createElement('div');
+    // timeoutMessage.className = 'search-timeout-message';
+    // timeoutMessage.textContent = 'Semantic search may take longer on resource-constrained systems';
+    // timeoutMessage.style.display = 'none';
+    // container.appendChild(timeoutMessage);
     
-    // Store reference for later visibility toggling
-    searchTimeoutMessage = timeoutMessage;
+    // // Store reference for later visibility toggling
+    // searchTimeoutMessage = timeoutMessage;
     
-    // Show timeout message after 3 seconds
-    setTimeout(() => {
-      if (isSearching && searchTimeoutMessage) {
-        searchTimeoutMessage.style.display = 'block';
-      }
-    }, 3000);
-  }
+    // // Show timeout message after 3 seconds
+    // setTimeout(() => {
+    //   if (isSearching && searchTimeoutMessage) {
+    //     searchTimeoutMessage.style.display = 'block';
+    //   }
+    // }, 3000);
+  // }
   
   return container;
 }
@@ -92,22 +92,22 @@ function createLoadingIndicator(message = 'Searching...', isLongRunning = false)
 /**
  * Request cancellation of the current search
  */
-function triggerSearchCancel() {
-  // This will be picked up by the AbortController in dataService.js
-  const searchInput = getDOMReference('searchInput');
+// function triggerSearchCancel() {
+//   // This will be picked up by the AbortController in dataService.js
+//   const searchInput = getDOMReference('searchInput');
   
-  // Re-trigger search with empty query to force cancellation
-  if (searchInput) {
-    // Mark search as complete to avoid UI jumping
-    isSearching = false;
+//   // Re-trigger search with empty query to force cancellation
+//   if (searchInput) {
+//     // Mark search as complete to avoid UI jumping
+//     isSearching = false;
     
-    // Clear the input - this will trigger the input event handler
-    searchInput.value = '';
+//     // Clear the input - this will trigger the input event handler
+//     searchInput.value = '';
     
-    // Dispatch input event to trigger search cancellation
-    searchInput.dispatchEvent(new Event('input'));
-  }
-}
+//     // Dispatch input event to trigger search cancellation
+//     searchInput.dispatchEvent(new Event('input'));
+//   }
+// }
 
 /**
  * Handle search progress updates
