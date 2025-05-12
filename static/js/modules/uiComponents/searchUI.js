@@ -310,7 +310,7 @@ export function displaySearchResults(results) {
       // Check if this is a semantic match and style differently
       if (result.match_info.match_type === 'semantic') {
         matchSummaryDiv.className += ' semantic-match';
-        matchSummaryDiv.textContent = '✨ Semantic match: ' + (result.match_summary || 'Similar content found');
+        matchSummaryDiv.textContent = '✨ Intelligent match: ' + (result.match_summary || 'Similar content found');
       } else {
         matchSummaryDiv.className += ' keyword-match';
         matchSummaryDiv.textContent = '🔎 Keyword match: ' + (result.match_summary || 'Exact text found');
