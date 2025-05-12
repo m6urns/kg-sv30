@@ -85,28 +85,128 @@ export async function fetchNodeDetails(nodeId) {
   }
 }
 
+// Track active search requests to allow cancellation
+let activeSearchController = null;
+let searchCache = {};
+const CACHE_MAX_SIZE = 20;  // Maximum number of cached search results
+const CACHE_TTL = 5 * 60 * 1000;  // 5 minutes in milliseconds
+const SEARCH_TIMEOUT = 12000;  // 12 seconds until client-side timeout
+
 /**
- * Search nodes by query
+ * Search nodes by query with improved cancellation and timeout handling
  * @param {string} query - Search query
+ * @param {Object} options - Search options
+ * @param {boolean} options.useCache - Whether to use cached results if available
+ * @param {boolean} options.semantic - Force semantic search option
+ * @param {Function} options.onProgress - Callback for search progress updates
  * @returns {Promise} - Promise for the enhanced search results with match information
  */
-export async function searchNodes(query) {
+export async function searchNodes(query, options = {}) {
   const startTime = performance.now();
   let results = [];
   
+  // Set default options
+  const {
+    useCache = true,
+    semantic = 'auto',
+    onProgress = null
+  } = options;
+  
+  // Check if search is cached and not expired
+  if (useCache && searchCache[query] && 
+     (Date.now() - searchCache[query].timestamp < CACHE_TTL)) {
+    // Use cached results but run in background for fresh results
+    setTimeout(() => refreshCacheInBackground(query, options), 0);
+    
+    // Return cached results immediately
+    return searchCache[query].results;
+  }
+  
+  // Cancel any ongoing search
+  if (activeSearchController) {
+    activeSearchController.abort();
+  }
+  
+  // Create a new abort controller for this search
+  activeSearchController = new AbortController();
+  const signal = activeSearchController.signal;
+  
+  // Set up client-side timeout
+  const timeoutId = setTimeout(() => {
+    if (activeSearchController) {
+      activeSearchController.abort();
+    }
+  }, SEARCH_TIMEOUT);
+  
   try {
-    const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+    // Notify about search starting
+    if (onProgress) {
+      onProgress({
+        status: 'started',
+        query: query,
+        message: 'Starting search...'
+      });
+    }
+    
+    // Build search URL with parameters
+    const searchParams = new URLSearchParams();
+    searchParams.append('q', query);
+    if (semantic !== 'auto') {
+      searchParams.append('semantic', semantic);
+    }
+    
+    // Make the request with the abort signal
+    const response = await fetch(`/api/search?${searchParams.toString()}`, {
+      signal: signal,
+      headers: {
+        'X-Client-Timeout': SEARCH_TIMEOUT.toString()
+      }
+    });
+    
+    // Clear the timeout since the request completed
+    clearTimeout(timeoutId);
+    
+    // Handle search progress based on response headers
+    if (onProgress && response.headers.get('X-Search-Progress')) {
+      onProgress({
+        status: 'progress',
+        query: query,
+        message: response.headers.get('X-Search-Progress'),
+        percent: parseInt(response.headers.get('X-Search-Percent') || '50')
+      });
+    }
+    
     results = await response.json();
     
     // Calculate response time
     const endTime = performance.now();
     const responseTime = Math.round(endTime - startTime);
     
-    // Track search in analytics
-    trackSearch(query, results.length, responseTime);
+    // Notify about search completion
+    if (onProgress) {
+      onProgress({
+        status: 'completed',
+        query: query,
+        message: `Found ${results.length} results`,
+        responseTime: responseTime
+      });
+    }
+    
+    // Determine search type based on headers or response content
+    let searchType = 'keyword';
+    
+    // Check for response headers indicating search type
+    if (response.headers.get('X-Search-Progress')) {
+      searchType = 'semantic';
+    } else if (results.some(result => result.match_info && result.match_info.match_type === 'semantic')) {
+      searchType = 'combined';
+    }
+    
+    // Track search in analytics with search type
+    trackSearch(query, results.length, responseTime, searchType);
     
     // Process results to add useful display information
-    return results.map(result => {
+    const processedResults = results.map(result => {
       // Handle client-side sanitization for critical display fields
       // This will decode pre-escaped HTML entities if they exist
       if (result.label) {
@@ -153,8 +253,43 @@ export async function searchNodes(query) {
       
       return result;
     });
+    
+    // Cache the results
+    updateSearchCache(query, processedResults);
+    
+    return processedResults;
+    
   } catch (error) {
+    // Clear the timeout if it's still active
+    clearTimeout(timeoutId);
+    
+    // Check if this is an abort error (user cancelled or timeout)
+    if (error.name === 'AbortError') {
+      console.log('Search request was cancelled');
+      
+      // Notify about search cancellation
+      if (onProgress) {
+        onProgress({
+          status: 'cancelled',
+          query: query,
+          message: 'Search was cancelled'
+        });
+      }
+      
+      // Return empty results for aborted search
+      return [];
+    }
+    
     console.error('Search error:', error);
+    
+    // Notify about search error
+    if (onProgress) {
+      onProgress({
+        status: 'error',
+        query: query,
+        message: `Error: ${error.message}`
+      });
+    }
     
     // Track error in analytics
     trackError('search_error', error.message, {
@@ -163,6 +298,52 @@ export async function searchNodes(query) {
     });
     
     return [];
+  } finally {
+    // Clear the controller reference when done
+    activeSearchController = null;
+  }
+}
+
+/**
+ * Update the search cache with new results
+ * @param {string} query - The search query
+ * @param {Array} results - The search results
+ */
+function updateSearchCache(query, results) {
+  // Add/update cache entry
+  searchCache[query] = {
+    results: results,
+    timestamp: Date.now()
+  };
+  
+  // Trim cache if it gets too large
+  const cacheKeys = Object.keys(searchCache);
+  if (cacheKeys.length > CACHE_MAX_SIZE) {
+    // Sort by age (oldest first)
+    cacheKeys.sort((a, b) => searchCache[a].timestamp - searchCache[b].timestamp);
+    
+    // Remove oldest entries
+    const keysToRemove = cacheKeys.slice(0, cacheKeys.length - CACHE_MAX_SIZE);
+    keysToRemove.forEach(key => delete searchCache[key]);
+  }
+}
+
+/**
+ * Refresh cache in background without blocking UI
+ * @param {string} query - The search query
+ * @param {Object} options - Search options
+ */
+async function refreshCacheInBackground(query, options) {
+  try {
+    // Run a fresh search but don't use cache and don't update UI
+    await searchNodes(query, {
+      ...options,
+      useCache: false,
+      onProgress: null // Don't show progress for background refresh
+    });
+  } catch (error) {
+    console.log('Background cache refresh failed:', error);
+    // Failures here can be ignored as they don't affect the user experience
   }
 }
 

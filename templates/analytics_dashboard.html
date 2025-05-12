@@ -133,14 +133,14 @@
       </div>
       <div class="col-md-4">
         <div class="card metrics-card">
-          <div class="metric-value" id="singleEventSessionsMetric">0%</div>
-          <div class="metric-label">Single-Event Sessions</div>
+          <div class="metric-value" id="keywordSearchTimeMetric">0ms</div>
+          <div class="metric-label">Avg Keyword Search Time</div>
         </div>
       </div>
       <div class="col-md-4">
         <div class="card metrics-card">
-          <div class="metric-value" id="engagedSessionsMetric">0%</div>
-          <div class="metric-label">Engaged Sessions (5+ events)</div>
+          <div class="metric-value" id="semanticSearchTimeMetric">0ms</div>
+          <div class="metric-label">Avg Semantic Search Time</div>
         </div>
       </div>
     </div>
@@ -419,8 +419,38 @@
         
         // Update session quality metrics
         document.getElementById('maxEventsPerSessionMetric').textContent = maxEventsPerSession;
-        document.getElementById('singleEventSessionsMetric').textContent = singleEventPercentage + '%';
-        document.getElementById('engagedSessionsMetric').textContent = engagedPercentage + '%';
+        
+        // Calculate average search times
+        let keywordSearchTimes = 0;
+        let keywordSearchCount = 0;
+        let semanticSearchTimes = 0;
+        let semanticSearchCount = 0;
+        
+        if (eventsData && Array.isArray(eventsData)) {
+          eventsData.forEach(event => {
+            if (event.category === 'search' && event.metadata) {
+              try {
+                let metadata = typeof event.metadata === 'string' ? JSON.parse(event.metadata) : event.metadata;
+                
+                if (metadata.search_type === 'keyword' && metadata.duration_ms) {
+                  keywordSearchTimes += parseFloat(metadata.duration_ms);
+                  keywordSearchCount++;
+                } else if (metadata.search_type === 'semantic' && metadata.duration_ms) {
+                  semanticSearchTimes += parseFloat(metadata.duration_ms);
+                  semanticSearchCount++;
+                }
+              } catch (e) {
+                // Skip events with invalid metadata
+              }
+            }
+          });
+        }
+        
+        const avgKeywordTime = keywordSearchCount > 0 ? Math.round(keywordSearchTimes / keywordSearchCount) : 0;
+        const avgSemanticTime = semanticSearchCount > 0 ? Math.round(semanticSearchTimes / semanticSearchCount) : 0;
+        
+        document.getElementById('keywordSearchTimeMetric').textContent = avgKeywordTime + 'ms';
+        document.getElementById('semanticSearchTimeMetric').textContent = avgSemanticTime + 'ms';
       } catch (error) {
         console.error('Error updating summary metrics:', error);
         // Set default values in case of error
@@ -429,8 +459,8 @@
         document.getElementById('avgEventsPerSessionMetric').textContent = '0';
         document.getElementById('searchCountMetric').textContent = '0';
         document.getElementById('maxEventsPerSessionMetric').textContent = '0';
-        document.getElementById('singleEventSessionsMetric').textContent = '0%';
-        document.getElementById('engagedSessionsMetric').textContent = '0%';
+        document.getElementById('keywordSearchTimeMetric').textContent = '0ms';
+        document.getElementById('semanticSearchTimeMetric').textContent = '0ms';
       }
     }
     

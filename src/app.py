@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template, send_from_directory
+from flask import Flask, jsonify, request, render_template, send_from_directory, make_response
 import os
 import json
 import logging
@@ -167,7 +167,7 @@ def get_communities():
 
 @app.route('/api/search', methods=['GET'])
 def search():
-    """Search for nodes matching query in keywords and text content."""
+    """Search for nodes matching query in keywords and text content with semantic fallback."""
     global graph_data
     
     if graph_data is None:
@@ -177,11 +177,93 @@ def search():
     if not query:
         return jsonify([])
     
+    # Check if semantic search is requested or should be used as fallback
+    use_semantic = request.args.get('semantic', 'auto').lower()
+    min_keyword_results = 3  # Minimum keyword results before using semantic search
+    
+    # Get client timeout header if present (in milliseconds)
+    client_timeout_ms = request.headers.get('X-Client-Timeout')
+    semantic_timeout_sec = None
+    
+    if client_timeout_ms:
+        try:
+            # Convert to seconds and leave 10% buffer for network overhead
+            client_timeout_sec = float(client_timeout_ms) / 1000
+            semantic_timeout_sec = client_timeout_sec * 0.9
+            logger.info(f"Client specified timeout: {client_timeout_sec}s, semantic timeout: {semantic_timeout_sec}s")
+        except (ValueError, TypeError):
+            logger.warning(f"Invalid client timeout header: {client_timeout_ms}")
+    
+    # Start search timer
+    import time
+    start_time = time.time()
+    
+    # Perform keyword search
+    keyword_results = perform_keyword_search(query, graph_data["nodes"])
+    
+    # Sort keyword results by score (descending)
+    keyword_results.sort(key=lambda x: x["match_info"]["score"], reverse=True)
+    
+    # Log keyword search time
+    keyword_time = time.time() - start_time
+    logger.info(f"Keyword search completed in {keyword_time:.2f}s with {len(keyword_results)} results")
+    
+    # Determine if we should use semantic search
+    if use_semantic == 'only':
+        # Only use semantic search
+        results = perform_semantic_search(query, graph_data["nodes"], timeout=semantic_timeout_sec)
+        response = make_response(jsonify(results))
+    elif use_semantic == 'no':
+        # Only use keyword search
+        response = make_response(jsonify(keyword_results))
+    elif use_semantic == 'auto' and len(keyword_results) < min_keyword_results:
+        # Use semantic search as fallback
+        if len(keyword_results) > 0:
+            logger.info(f"Using semantic search as fallback for '{query}' ({len(keyword_results)} keyword results)")
+        else:
+            logger.info(f"Using semantic search for '{query}' (no keyword results)")
+        
+        # Run semantic search with timeout
+        semantic_results = perform_semantic_search(query, graph_data["nodes"], timeout=semantic_timeout_sec)
+        
+        # Combine results, ensuring no duplicates
+        combined_results = keyword_results.copy()
+        keyword_ids = {node["id"] for node in keyword_results}
+        
+        for node in semantic_results:
+            if node["id"] not in keyword_ids:
+                combined_results.append(node)
+        
+        # Sort combined results by score
+        combined_results.sort(key=lambda x: x["match_info"]["score"], reverse=True)
+        
+        # Log total time
+        total_time = time.time() - start_time
+        logger.info(f"Combined search completed in {total_time:.2f}s with {len(combined_results)} results")
+        
+        # Create response with combined results
+        response = make_response(jsonify(combined_results))
+        response.headers['X-Search-Progress'] = 'Search completed'
+        response.headers['X-Search-Percent'] = '100'
+    else:
+        # Just use keyword results
+        response = make_response(jsonify(keyword_results))
+    
+    # Add search time headers
+    total_time = time.time() - start_time
+    response.headers['X-Search-Time'] = f"{total_time:.2f}"
+    
+    return response
+
+def perform_keyword_search(query, nodes):
+    """Perform keyword-based search on nodes."""
     results = []
-    for node in graph_data["nodes"]:
+    
+    for node in nodes:
         # Initialize match info
         match_info = {
             "score": 0,
+            "match_type": "keyword",
             "matches": []
         }
         
@@ -283,12 +365,72 @@ def search():
                 result_node["label"] = secure_sanitize(result_node["label"])
             
             result_node["match_info"] = match_info
+            # Add match summary for display
+            result_node["match_summary"] = "Found in: " + ", ".join(
+                [match["field"] for match in match_info["matches"]]
+            )
             results.append(result_node)
     
-    # Sort results by score (descending)
-    results.sort(key=lambda x: x["match_info"]["score"], reverse=True)
+    return results
+
+def perform_semantic_search(query, nodes, timeout=None):
+    """
+    Perform semantic search using the optimized multi-user implementation.
     
-    return jsonify(results)
+    Args:
+        query: The search query string
+        nodes: List of node dictionaries from the graph
+        timeout: Optional timeout in seconds
+        
+    Returns:
+        List of node dictionaries with match information
+    """
+    try:
+        # Import the semantic search module with multi-user support
+        from .semantic_search import EnhancedSemanticSearch, start_load_monitor
+        
+        # Get base directory for embeddings file
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        base_dir = os.path.dirname(script_dir)
+        embeddings_path = os.path.join(base_dir, 'static', 'embeddings.json')
+        
+        # Initialize the semantic search module
+        semantic_search = EnhancedSemanticSearch()
+        
+        # Load embeddings if available
+        if not semantic_search.load_embeddings(embeddings_path):
+            logger.warning("Could not load embeddings, semantic search will not work")
+            return []
+        
+        # Start system load monitor if not already started
+        if not hasattr(perform_semantic_search, '_monitor_started'):
+            start_load_monitor(semantic_search.model_manager)
+            perform_semantic_search._monitor_started = True
+            logger.info("Started system load monitoring for semantic search")
+        
+        # Perform semantic search with optional timeout
+        results = semantic_search.semantic_search(
+            query, 
+            nodes, 
+            top_k=10,             # Return top 10 matches
+            score_threshold=0.3,  # Minimum similarity score
+            timeout=timeout       # Optional timeout in seconds
+        )
+        
+        # Scale semantic search scores to be comparable with keyword search
+        for result in results:
+            if "match_info" in result and "score" in result["match_info"]:
+                # Scale semantic scores (0-1) to be comparable with keyword scores (0-10)
+                result["match_info"]["score"] = result["match_info"]["score"] * 8
+        
+        return results
+        
+    except ImportError as e:
+        logger.error(f"Could not import semantic search module: {e}")
+        return []
+    except Exception as e:
+        logger.error(f"Error performing semantic search: {e}")
+        return []
 
 @app.route('/api/node/<node_id>', methods=['GET'])
 def get_node(node_id):
@@ -370,7 +512,7 @@ def process_document():
             sys.path.append(current_dir)
         
         # Use the structured data generator by default
-        from graph_generators import StructuredDataGraphGenerator
+        from .graph_generators import StructuredDataGraphGenerator
         generator = StructuredDataGraphGenerator()
         logger.info(f"Using generator: {generator.get_name()}")
         
@@ -413,7 +555,7 @@ def process_document():
         # Try to use sample data as fallback
         try:
             logger.info("Using structured data generator as fallback after processing error")
-            from graph_generators import StructuredDataGraphGenerator
+            from .graph_generators import StructuredDataGraphGenerator
             generator = StructuredDataGraphGenerator()
             
             # Try to get the vision statement from JSON if possible
@@ -490,7 +632,7 @@ with app.app_context():
             logger.info(f"Pre-loaded graph data with {len(graph_data['nodes'])} nodes and {len(graph_data['links'])} links")
         else:
             # No saved data, generate using structured data
-            from graph_generators import StructuredDataGraphGenerator
+            from .graph_generators import StructuredDataGraphGenerator
             logger.info("Initializing with structured data (no saved data found)")
             generator = StructuredDataGraphGenerator()
             graph_data = generator.generate_graph("")

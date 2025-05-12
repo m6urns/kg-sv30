@@ -179,3 +179,4 @@ CLAUDE.md
 requirements.txt
 environment.yml
 *.csv
+**/.claude/settings.local.json

@@ -13,7 +13,8 @@ export {
 // Search functionality
 export { 
   displaySearchResults, 
-  showStatus 
+  showStatus,
+  performSearch
 } from './searchUI.js';
 
 // Node detail display

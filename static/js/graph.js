@@ -8,7 +8,8 @@ import {
   showStatus, 
   displaySearchResults, 
   setupClusterPanel,
-  initializeUniversalNavigation
+  initializeUniversalNavigation,
+  performSearch
 } from './modules/uiComponents/index.js';
 import { trackFeatureUsage, trackEvent, EVENT_CATEGORIES } from './modules/analytics.js';
 
@@ -41,8 +42,9 @@ function initializeEventListeners() {
       return;
     }
     
-    const results = await searchNodes(query);
-    displaySearchResults(results);
+    // Use the enhanced search functionality from searchUI.js
+    // This will handle loading indicators and cancellation
+    await performSearch(query);
     
     // No need to track search here as it's already tracked in searchNodes function
   }, 300));
