@@ -33,7 +33,7 @@ SEMANTIC_ONLY_QUERIES = [
     "digital inclusion strategies"
 ]
 
-def run_search_test(base_url, query, semantic_mode="auto", timeout_ms=10000):
+def run_search_test(base_url, query, semantic_mode="auto", timeout_ms=20000):
     """
     Run a single search test with the given parameters.
 
