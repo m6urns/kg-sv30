@@ -375,7 +375,7 @@ def perform_keyword_search(query, nodes):
 
 def perform_semantic_search(query, nodes, timeout=None):
     """
-    Perform semantic search using the SemanticSearch module.
+    Perform semantic search using the optimized multi-user implementation.
     
     Args:
         query: The search query string
@@ -386,8 +386,8 @@ def perform_semantic_search(query, nodes, timeout=None):
         List of node dictionaries with match information
     """
     try:
-        # Import the semantic search module
-        from .semantic_search import SemanticSearch
+        # Import the semantic search module with multi-user support
+        from .semantic_search import EnhancedSemanticSearch, start_load_monitor
         
         # Get base directory for embeddings file
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -395,20 +395,18 @@ def perform_semantic_search(query, nodes, timeout=None):
         embeddings_path = os.path.join(base_dir, 'static', 'embeddings.json')
         
         # Initialize the semantic search module
-        semantic_search = SemanticSearch()
+        semantic_search = EnhancedSemanticSearch()
         
         # Load embeddings if available
         if not semantic_search.load_embeddings(embeddings_path):
-            # Embeddings not available, generate them
-            if semantic_search.is_available():
-                logger.info("Generating embeddings for semantic search...")
-                embeddings = semantic_search.generate_embeddings_for_graph(nodes)
-                semantic_search.save_embeddings(embeddings, embeddings_path)
-                # Reload the embeddings we just saved
-                semantic_search.load_embeddings(embeddings_path)
-            else:
-                logger.warning("Semantic search is not available - missing sentence-transformers")
-                return []
+            logger.warning("Could not load embeddings, semantic search will not work")
+            return []
+        
+        # Start system load monitor if not already started
+        if not hasattr(perform_semantic_search, '_monitor_started'):
+            start_load_monitor(semantic_search.model_manager)
+            perform_semantic_search._monitor_started = True
+            logger.info("Started system load monitoring for semantic search")
         
         # Perform semantic search with optional timeout
         results = semantic_search.semantic_search(
@@ -419,23 +417,16 @@ def perform_semantic_search(query, nodes, timeout=None):
             timeout=timeout       # Optional timeout in seconds
         )
         
-        # Count how many results came from a timeout vs. complete search
-        if timeout:
-            total_nodes = len(semantic_search.embeddings)
-            processed_nodes = min(total_nodes, len(nodes))  # Conservative estimate
-            logger.info(f"Semantic search processed approximately {processed_nodes}/{total_nodes} nodes with timeout={timeout}s")
-        
         # Scale semantic search scores to be comparable with keyword search
         for result in results:
             if "match_info" in result and "score" in result["match_info"]:
                 # Scale semantic scores (0-1) to be comparable with keyword scores (0-10)
-                # A good semantic match (0.7+) should be comparable to a medium keyword match
                 result["match_info"]["score"] = result["match_info"]["score"] * 8
         
         return results
         
-    except ImportError:
-        logger.error("Could not import semantic_search module")
+    except ImportError as e:
+        logger.error(f"Could not import semantic search module: {e}")
         return []
     except Exception as e:
         logger.error(f"Error performing semantic search: {e}")
