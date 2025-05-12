@@ -375,58 +375,49 @@ def perform_keyword_search(query, nodes):
 
 def perform_semantic_search(query, nodes, timeout=None):
     """
-    Perform semantic search using the optimized multi-user implementation.
-    
+    Perform semantic search using the modular search implementation.
+
     Args:
         query: The search query string
         nodes: List of node dictionaries from the graph
         timeout: Optional timeout in seconds
-        
+
     Returns:
         List of node dictionaries with match information
     """
     try:
-        # Import the semantic search module with multi-user support
-        from .semantic_search import EnhancedSemanticSearch, start_load_monitor
-        
-        # Get base directory for embeddings file
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        base_dir = os.path.dirname(script_dir)
-        embeddings_path = os.path.join(base_dir, 'static', 'embeddings.json')
-        
-        # Initialize the semantic search module
-        semantic_search = EnhancedSemanticSearch()
-        
-        # Load embeddings if available
-        if not semantic_search.load_embeddings(embeddings_path):
-            logger.warning("Could not load embeddings, semantic search will not work")
+        # Import the semantic search module
+        from .search import perform_semantic_search as search_function
+        from .search import initialize_search_system, get_system_status
+
+        # Initialize search system if not already done
+        if not hasattr(perform_semantic_search, '_system_initialized'):
+            # We don't wait for the model here - that should have happened at startup
+            # This is just a fallback in case somehow the initialization didn't happen
+            initialize_search_system(wait_for_model=False)
+            perform_semantic_search._system_initialized = True
+
+        # Check if the system is actually ready
+        system_status = get_system_status()
+        if not system_status.get('available', False):
+            # If the model is still loading, log an informative message and return empty results
+            logger.warning(f"Semantic search model is still loading, skipping semantic search for query: '{query}'")
             return []
-        
-        # Start system load monitor if not already started
-        if not hasattr(perform_semantic_search, '_monitor_started'):
-            start_load_monitor(semantic_search.model_manager)
-            perform_semantic_search._monitor_started = True
-            logger.info("Started system load monitoring for semantic search")
-        
+
         # Perform semantic search with optional timeout
-        results = semantic_search.semantic_search(
-            query, 
-            nodes, 
+        results = search_function(
+            query=query,
+            nodes=nodes,
             top_k=10,             # Return top 10 matches
             score_threshold=0.3,  # Minimum similarity score
-            timeout=timeout       # Optional timeout in seconds
+            timeout=timeout,      # Optional timeout in seconds
+            use_async=True        # Use async implementation for better concurrency
         )
-        
-        # Scale semantic search scores to be comparable with keyword search
-        for result in results:
-            if "match_info" in result and "score" in result["match_info"]:
-                # Scale semantic scores (0-1) to be comparable with keyword scores (0-10)
-                result["match_info"]["score"] = result["match_info"]["score"] * 8
-        
+
         return results
-        
+
     except ImportError as e:
-        logger.error(f"Could not import semantic search module: {e}")
+        logger.error(f"Could not import search module: {e}")
         return []
     except Exception as e:
         logger.error(f"Error performing semantic search: {e}")
@@ -625,7 +616,7 @@ with app.app_context():
         script_dir = os.path.dirname(os.path.abspath(__file__))
         base_dir = os.path.dirname(script_dir)
         graph_path = os.path.join(base_dir, 'static', 'graph_data.json')
-        
+
         if os.path.exists(graph_path):
             with open(graph_path, 'r') as f:
                 graph_data = json.load(f)
@@ -636,15 +627,29 @@ with app.app_context():
             logger.info("Initializing with structured data (no saved data found)")
             generator = StructuredDataGraphGenerator()
             graph_data = generator.generate_graph("")
-            
+
             # Save the generated data
             static_dir = os.path.join(base_dir, 'static')
             os.makedirs(static_dir, exist_ok=True)
-            
+
             with open(os.path.join(static_dir, 'graph_data.json'), 'w') as f:
                 json.dump(graph_data, f)
-            
+
             logger.info("Generated and saved structured data graph")
+
+        # Initialize semantic search system
+        try:
+            from .search import initialize_search_system
+            # Allow up to 60 seconds for model loading, which should be sufficient
+            # for most models on modern hardware
+            if initialize_search_system(wait_for_model=True, timeout=60.0):
+                logger.info("Semantic search system fully initialized and ready to use")
+            else:
+                logger.warning("Could not fully initialize semantic search system, some functionality may be limited")
+        except ImportError as e:
+            logger.error(f"Could not import search module: {e}")
+        except Exception as e:
+            logger.error(f"Error initializing semantic search system: {e}")
     except Exception as e:
         logger.warning(f"Error loading or generating initial data: {e}")
 
