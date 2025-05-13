@@ -11,7 +11,7 @@ from typing import Dict, Any
 logger = logging.getLogger(__name__)
 
 # Default model to use for embeddings
-DEFAULT_MODEL = 'all-MiniLM-L6-v2'
+DEFAULT_MODEL = 'all-MiniLM-L12-v2'
 
 # Default score threshold for semantic matching
 DEFAULT_SCORE_THRESHOLD = 0.3

@@ -4,6 +4,7 @@ Semantic search module for knowledge graph and document search.
 This module provides the main entry point for performing semantic search
 operations on the knowledge graph and text content.
 """
+import os
 import logging
 import time
 from typing import Dict, List, Any, Optional, Union
@@ -12,6 +13,7 @@ from typing import Dict, List, Any, Optional, Union
 from ..search_api.client import get_search_client
 from ..search_api.async_engine import get_async_search_client
 from ..search_api.performance import get_performance_optimizer
+from ..search_core.generate_embeddings import regenerate_embeddings
 from ..search_utils.config import (
     DEFAULT_TOP_K,
     DEFAULT_SCORE_THRESHOLD,
@@ -22,7 +24,8 @@ from ..search_utils.config import (
 # Set up logging
 logger = logging.getLogger(__name__)
 
-def initialize_search_system(wait_for_model: bool = True, timeout: float = 30.0) -> bool:
+def initialize_search_system(wait_for_model: bool = True, timeout: float = 30.0, 
+                          auto_generate_embeddings: bool = True) -> bool:
     """
     Initialize the semantic search system.
 
@@ -32,6 +35,7 @@ def initialize_search_system(wait_for_model: bool = True, timeout: float = 30.0)
     Args:
         wait_for_model: Whether to wait for the model to be fully loaded
         timeout: Maximum time to wait for model loading (in seconds)
+        auto_generate_embeddings: Whether to automatically generate embeddings if not found
 
     Returns:
         bool: True if initialization was successful, False otherwise
@@ -46,6 +50,27 @@ def initialize_search_system(wait_for_model: bool = True, timeout: float = 30.0)
 
         # First load the embeddings
         embeddings_loaded = client.load_embeddings()
+        
+        # If embeddings failed to load and auto-generation is enabled
+        if not embeddings_loaded and auto_generate_embeddings:
+            embeddings_path = get_embeddings_file_path()
+            graph_data_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
+                                         'static', 'graph_data.json')
+            
+            # Check if the graph data exists
+            if os.path.exists(graph_data_path):
+                logger.info("Embeddings not found, attempting to generate them automatically")
+                
+                # Generate embeddings
+                if regenerate_embeddings(graph_file_path=graph_data_path):
+                    logger.info("Successfully generated embeddings")
+                    # Try loading again
+                    embeddings_loaded = client.load_embeddings()
+                else:
+                    logger.error("Failed to auto-generate embeddings")
+            else:
+                logger.warning("Graph data not found, cannot auto-generate embeddings")
+        
         if not embeddings_loaded:
             logger.warning("Semantic search initialization failed to load embeddings")
             return False
