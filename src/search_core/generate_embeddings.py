@@ -1,31 +1,25 @@
-#!/usr/bin/env python3
 """
-Regenerate embeddings for the knowledge graph.
+Embedding generation module for knowledge graph nodes.
 
-This script loads the existing graph data, regenerates embeddings for all nodes
-using the current embedding model, and saves them to the correct location.
+This module provides functionality to generate embeddings for all nodes
+in the knowledge graph and save them to the correct location.
 """
 import os
 import json
-import sys
 import logging
 import time
-import argparse
 from typing import Dict, List, Any, Optional
 
-# Add the src directory to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+# Import required modules from the project
+from .models import get_model_manager
+from .embeddings import get_embedding_manager
+from ..search_utils.config import get_embeddings_file_path
+from ..search_utils.logging import log_method_call
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# Set up logging
 logger = logging.getLogger(__name__)
 
-# Import required modules from the project
-from src.search_core.models import get_model_manager
-from src.search_core.embeddings import get_embedding_manager
-from src.search_utils.config import get_embeddings_file_path
-
+@log_method_call()
 def load_graph_data(file_path: str = 'static/graph_data.json') -> List[Dict[str, Any]]:
     """
     Load the graph data from the specified file.
@@ -54,6 +48,7 @@ def load_graph_data(file_path: str = 'static/graph_data.json') -> List[Dict[str,
         logger.error(f"Error loading graph data: {e}")
         return []
 
+@log_method_call()
 def generate_embeddings_for_nodes(nodes: List[Dict[str, Any]]) -> Dict[str, Dict[str, List[float]]]:
     """
     Generate embeddings for all nodes using the current model.
@@ -90,7 +85,7 @@ def generate_embeddings_for_nodes(nodes: List[Dict[str, Any]]) -> Dict[str, Dict
     embeddings_dict = {}
     
     # Fields to embed (can be customized)
-    fields_to_embed = ['label', 'description', 'content', 'summary']
+    fields_to_embed = ['label', 'description', 'content', 'summary', 'text']
     
     # Generate embeddings for each node
     total_nodes = len(nodes)
@@ -122,8 +117,9 @@ def generate_embeddings_for_nodes(nodes: List[Dict[str, Any]]) -> Dict[str, Dict
     logger.info(f"Generated embeddings for {len(embeddings_dict)} nodes")
     return embeddings_dict
 
+@log_method_call()
 def save_embeddings(embeddings: Dict[str, Dict[str, List[float]]], 
-                   file_path: Optional[str] = None) -> bool:
+                  file_path: Optional[str] = None) -> bool:
     """
     Save embeddings to a JSON file.
     
@@ -167,42 +163,40 @@ def save_embeddings(embeddings: Dict[str, Dict[str, List[float]]],
         logger.error(f"Error saving embeddings: {e}")
         return False
 
-def main():
-    """Main function to regenerate embeddings."""
-    parser = argparse.ArgumentParser(description='Regenerate embeddings for the knowledge graph')
-    parser.add_argument('--graph-file', type=str, default='static/graph_data.json',
-                      help='Path to the graph data JSON file')
-    parser.add_argument('--output-file', type=str, 
-                      help='Path to save the embeddings file (default: static/embeddings.json)')
-    parser.add_argument('--verbose', '-v', action='store_true',
-                      help='Enable verbose logging')
+@log_method_call()
+def regenerate_embeddings(graph_file_path: str = 'static/graph_data.json', 
+                        output_file_path: Optional[str] = None) -> bool:
+    """
+    Regenerate embeddings for the knowledge graph.
     
-    args = parser.parse_args()
+    This function loads the existing graph data, regenerates
+    embeddings for all nodes using the current embedding model,
+    and saves them to the correct location.
     
-    # Set log level
-    if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
-    
+    Args:
+        graph_file_path: Path to the graph data JSON file
+        output_file_path: Path to save the embeddings file, or None to use default
+        
+    Returns:
+        True if regeneration was successful, False otherwise
+    """
     # Load graph data
-    nodes = load_graph_data(args.graph_file)
+    nodes = load_graph_data(graph_file_path)
     if not nodes:
-        logger.error("Failed to load graph data, aborting")
-        return 1
+        logger.error("Failed to load graph data, aborting embedding regeneration")
+        return False
     
     # Generate embeddings
     embeddings = generate_embeddings_for_nodes(nodes)
     if not embeddings:
         logger.error("Failed to generate embeddings, aborting")
-        return 1
+        return False
     
     # Save embeddings
-    success = save_embeddings(embeddings, args.output_file)
+    success = save_embeddings(embeddings, output_file_path)
     if not success:
         logger.error("Failed to save embeddings")
-        return 1
+        return False
     
     logger.info("Embedding regeneration completed successfully")
-    return 0
-
-if __name__ == "__main__":
-    sys.exit(main())
+    return True
