@@ -113,7 +113,7 @@ class StructuredDataGraphGenerator(BaseGraphGenerator):
         # Reinitialize embedding model if needed
         if self.use_embeddings and not hasattr(self, 'embedding_model'):
             try:
-                self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+                self.embedding_model = SentenceTransformer('all-MiniLM-L12-v2')
                 print("Embedding model loaded successfully")
             except Exception as e:
                 print(f"Error loading embedding model: {e}")
