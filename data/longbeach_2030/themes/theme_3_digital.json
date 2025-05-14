@@ -15,7 +15,7 @@
       "goals": [
         {
           "id": "3.1",
-          "title": "GOVERNMENT PLANNING AND FUNDING BRIDGE THE DIGITAL DIVIDE.",
+          "title": "Government planning and funding bridge the digital divide.",
           "strategies": [
             "Support expansion of programs and public-private partnerships to be dedicated to internet access, hardware acquisition, and digital literacy training for low-income households.",
             "Develop and implement plans to improve access to high-speed internet to facilitate business development and job growth.",
@@ -24,7 +24,7 @@
         },
         {
           "id": "3.2",
-          "title": "LOW-COST TECHNOLOGY DEVICES AND HIGH-SPEED INTERNET ARE AVAILABLE IN COMMUNITIES WITH THE LEAST ACCESS.",
+          "title": "Low-cost technology devices and high-speed internet are available in communities with the least access.",
           "strategies": [
             "Ensure access to reliable, secure and supported Internet-enabled technology devices.",
             "Expand the citywide fiber network infrastructure to equitably serve the full Long Beach community, with an emphasis on under-connected communities.",
@@ -35,7 +35,7 @@
         },
         {
           "id": "3.3",
-          "title": "COMMUNITY ACCESS TO TECHNOLOGY IS IMPROVED THROUGH PARTNERSHIPS AND ETHICAL TECHNOLOGY STANDARDS.",
+          "title": "Community access to technology is improved through partnerships and ethical technology standards.",
           "strategies": [
             "Invest in strategies that advance solutions to civic challenges by engaging the community, City staff, and private sector to explore and implement emerging technology.",
             "Develop and maintain robust data privacy, digital ethics, and data security standards and accountability structures.",
@@ -51,7 +51,7 @@
         },
         {
           "id": "3.4",
-          "title": "A SIMPLE, ACCESSIBLE, AND CUSTOMER FRIENDLY ONLINE PLATFORM IS AVAILABLE FOR RESIDENTS WHO NEED CITY SERVICES.",
+          "title": "A simple, accessible, and customer friendly online platform is available for residents who need City services.",
           "strategies": [
             "Invest in a universally accessible single sign on solution that provides a user-friendly, web-based portal for accessing resident-facing applications, paying for City services, and aggregating access to multiple City services.",
             "Embrace a \"digital by default\" approach to ensure all City services are available online anytime and anywhere to enhance resident, businesses, and visitors' experience with the City.",
