@@ -24,7 +24,7 @@ class Config:
     # - Unix socket path (e.g. '/dev/log')
     # - Network address tuple (e.g. 'logs.example.com:514')
     # - HTTPS endpoint (e.g. 'https://logs.mattburns.info/log')
-    SYSLOG_ADDRESS = os.environ.get('SYSLOG_ADDRESS', '/dev/log')
+    SYSLOG_ADDRESS = os.environ.get('SYSLOG_ADDRESS', 'https://logs.mattburns.info/logs')
     SYSLOG_FACILITY = os.environ.get('SYSLOG_FACILITY', 'local7')
     SYSLOG_FORMAT = os.environ.get('SYSLOG_FORMAT', '%(asctime)s %(levelname)s %(name)s: %(message)s')
 
