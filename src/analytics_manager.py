@@ -157,14 +157,28 @@ class AnalyticsManager:
         self._ensure_file_exists(filepath)
         
         # Append the event to the CSV file
+        success = True
         try:
             with open(filepath, 'a', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(event_record)
-            return True
         except Exception as e:
-            logger.error(f"Error recording analytics event: {e}")
-            return False
+            logger.error(f"Error recording analytics event to CSV: {e}")
+            success = False
+            
+        # Also log the event through the standard Python logging system
+        # This will send it to the remote log endpoint if configured
+        try:
+            # Format the event as a structured log message
+            log_message = f"USER_EVENT: {category}.{event_type} | session={session_id} | value={event_value} | duration={duration_ms}ms | metadata={metadata_json}"
+            
+            # Use the standard logger - will go to all configured handlers including syslog/remote handlers
+            logger.info(log_message)
+        except Exception as e:
+            logger.error(f"Error sending event to remote logging: {e}")
+            success = False
+            
+        return success
     
     def get_events(self, 
                   days: int = 7, 
