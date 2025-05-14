@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, render_template, send_from_directory,
 import os
 import json
 import logging
+from logging.handlers import SysLogHandler
 import bleach
 from flask_cors import CORS
 
@@ -17,6 +18,58 @@ logging.basicConfig(
     level=logging_level,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
+# Configure syslog handler if enabled
+def setup_syslog_handler():
+    """Set up syslog handler if enabled in configuration."""
+    if not hasattr(config, 'SYSLOG_ENABLED') or not config.SYSLOG_ENABLED:
+        return None
+    
+    try:
+        # Get syslog facility from config
+        facility_str = config.SYSLOG_FACILITY
+        facility = getattr(SysLogHandler, f'LOG_{facility_str.upper()}', SysLogHandler.LOG_LOCAL7)
+        
+        # Check if address is a URL (for remote HTTPS logging)
+        address = config.SYSLOG_ADDRESS
+        if address.startswith(('http://', 'https://')):
+            # For HTTP endpoints, we'll use an HTTPHandler instead
+            from logging.handlers import HTTPHandler
+            url_parts = address.split('://', 1)[1].split('/', 1)
+            host = url_parts[0]
+            path = '/' + url_parts[1] if len(url_parts) > 1 else '/'
+            
+            # Create HTTP handler with secure=True for HTTPS
+            secure = address.startswith('https://')
+            handler = HTTPHandler(host=host, url=path, method='POST', secure=secure)
+            logging.info(f"Using HTTPHandler for remote logging to {host}{path}")
+        else:
+            # Traditional syslog handler for local or network socket
+            handler = SysLogHandler(address=address, facility=facility)
+            logging.info(f"Using SysLogHandler with address {address}")
+        
+        # Set formatter
+        syslog_format = config.SYSLOG_FORMAT
+        formatter = logging.Formatter(syslog_format)
+        handler.setFormatter(formatter)
+        
+        # Set logging level
+        handler.setLevel(logging_level)
+        
+        # Add to root logger
+        logging.getLogger().addHandler(handler)
+        
+        return handler
+    except Exception as e:
+        # Log error but continue with console logging
+        logging.error(f"Failed to set up syslog handler: {e}")
+        return None
+
+# Set up syslog handler if enabled
+syslog_handler = setup_syslog_handler()
+if syslog_handler:
+    logging.info("Syslog handler configured successfully")
+
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, 
