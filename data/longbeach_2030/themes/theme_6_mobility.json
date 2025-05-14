@@ -23,7 +23,7 @@
       "goals": [
         {
           "id": "6.1",
-          "title": "RESIDENTS HAVE MULTIPLE CHOICES TO GET AROUND THE CITY BESIDES DRIVING.",
+          "title": "Residents have multiple choices to get around the city besides driving.",
           "strategies": [
             "Provide a safe, high-quality roadway, sidewalk, and alley network for all users.",
             "Ensure a minimum standard of maintenance and cleanliness of all streets and sidewalks across the City, focusing investments on Long Beach streets and alleys that are rated poor or very poor.",
@@ -35,7 +35,7 @@
         },
         {
           "id": "6.2",
-          "title": "GETTING AROUND LONG BEACH IS ACCESSIBLE AND CONVENIENT.",
+          "title": "Getting around Long Beach is accessible and convenient.",
           "strategies": [
             "Promote roadway safety for all users through education, roadway design, and regulations such as speed limits.",
             "Plan, maintain, and operate mobility systems consistent with the principles of complete streets, active living, and sustainable community design.",
@@ -48,7 +48,7 @@
         },
         {
           "id": "6.3",
-          "title": "HEALTHY AND CLIMATE-FRIENDLY TRANSPORTATION MODE CHOICES ARE CONVENIENT.",
+          "title": "Healthy and climate-friendly transportation mode choices are convenient.",
           "strategies": [
             "Encourage mode of travel options particularly for short trips, including walking, micro-mobility, and public transit to improve quality of life and reduce carbon emissions.",
             "Focus new housing and development near public transit.",
@@ -59,7 +59,7 @@
         },
         {
           "id": "6.4",
-          "title": "COMMUNITIES ARE CONNECTED AND ALLOW RESIDENTS TO MORE EQUITABLY AND SAFELY VISIT ALL AMENITIES THAT THE CITY HAS TO OFFER.",
+          "title": "Communities are connected and allow residents to more equitably and safely visit all amenities that the city has to offer.",
           "strategies": [
             "Better connect residents to citywide assets and areas, including downtown, regional parks, neighborhood parks and the waterfront, by improving streets, sidewalks, micro-mobility options and expanding the bikeshare program.",
             "Increase contiguous park space and accessible greenbelt for recreational and family development activities."
@@ -67,7 +67,7 @@
         },
         {
           "id": "6.5",
-          "title": "RESIDENTS OF ALL ABILITIES ARE CONSIDERED IN TRANSPORTATION PLANNING AND ROADWAY IMPROVEMENTS.",
+          "title": "Residents of all abilities are considered in transportation planning and roadway improvements.",
           "strategies": [
             "Utilize universal design to address pedestrian and bicycle safety and access in the design and maintenance of all street projects.",
             "Address transportation needs for older adults and people of all ability statuses.",
