@@ -47,7 +47,7 @@ function initializeEventListeners() {
     await performSearch(query);
     
     // No need to track search here as it's already tracked in searchNodes function
-  }, 300));
+  }, 1200));
   
   // Track graph interactions like zoom and pan
   graphContainer.addEventListener('wheel', debounce(() => {
